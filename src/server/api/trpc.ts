@@ -11,8 +11,12 @@ import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import { ZodError } from "zod";
 
-import { auth } from "~/server/better-auth";
+import { and, eq, gt } from "drizzle-orm";
+
+import { auth, type Session as AuthSession } from "~/server/better-auth";
 import { db } from "~/server/db";
+import { subscription } from "~/server/db/schema";
+import { getCurrentAdmin } from "~/server/admin/auth";
 
 /**
  * 1. CONTEXT
@@ -87,14 +91,14 @@ export const createTRPCRouter = t.router;
  */
 const timingMiddleware = t.middleware(async ({ next, path }) => {
   const start = Date.now();
-
+  
   if (t._config.isDev) {
     // artificial delay in dev
     const waitMs = Math.floor(Math.random() * 400) + 100;
     await new Promise((resolve) => setTimeout(resolve, waitMs));
   }
-
   const result = await next();
+
 
   const end = Date.now();
   console.log(`[TRPC] ${path} took ${end - start}ms to execute`);
@@ -112,23 +116,65 @@ const timingMiddleware = t.middleware(async ({ next, path }) => {
 export const publicProcedure = t.procedure.use(timingMiddleware);
 
 /**
- * Protected (authenticated) procedure
- *
- * If you want a query or mutation to ONLY be accessible to logged in users, use this. It verifies
- * the session is valid and guarantees `ctx.session.user` is not null.
- *
- * @see https://trpc.io/docs/procedures
+ * Protected (authenticated) procedure – any logged in user.
  */
-export const protectedProcedure = t.procedure
-  .use(timingMiddleware)
-  .use(({ ctx, next }) => {
-    if (!ctx.session?.user) {
-      throw new TRPCError({ code: "UNAUTHORIZED" });
-    }
-    return next({
-      ctx: {
-        // infers the `session` as non-nullable
-        session: { ...ctx.session, user: ctx.session.user },
-      },
-    });
+export const protectedProcedure = publicProcedure.use(({ ctx, next }) => {
+  if (!ctx.session?.user) {
+    throw new TRPCError({ code: "UNAUTHORIZED" });
+  }
+  const session = ctx.session as AuthSession;
+  return next({
+    ctx: {
+      session,
+    },
   });
+});
+
+/**
+ * Admin procedure – only for admins authenticated via the dedicated admin auth system.
+ */
+export const adminProcedure = publicProcedure.use(async ({ ctx, next }) => {
+  const admin = await getCurrentAdmin();
+  if (!admin) {
+    throw new TRPCError({ code: "FORBIDDEN", message: "Admins only" });
+  }
+  return next({
+    ctx: {
+      ...ctx,
+      admin,
+    },
+  });
+});
+
+/**
+ * Paid procedure – requires authenticated user with an active monthly subscription.
+ * Use for any mutation/query that should be gated behind subscription (e.g. post, access content).
+ */
+export const paidProcedure = protectedProcedure.use(async ({ ctx, next }) => {
+  const now = new Date();
+  const [activeSubscription] = await db
+    .select()
+    .from(subscription)
+    .where(
+      and(
+        eq(subscription.userId, ctx.session.user.id),
+        eq(subscription.status, "active"),
+        gt(subscription.currentPeriodEnd, now),
+      ),
+    )
+    .limit(1);
+
+  if (!activeSubscription) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message:
+        "Active monthly subscription required. Subscribe to access this feature.",
+    });
+  }
+  return next({
+    ctx: {
+      ...ctx,
+      subscription: activeSubscription,
+    },
+  });
+});
