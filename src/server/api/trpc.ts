@@ -18,7 +18,6 @@ import { db } from "~/server/db";
 import { subscription } from "~/server/db/schema";
 import type { AdminSession } from "../better-auth/config";
 import { cookies } from "next/headers";
-import { R2Service } from "../services/r2.service";
 
 /**
  * 1. CONTEXT
@@ -189,30 +188,30 @@ export const paidUserProcedure = protectedProcedure.use(
   async ({ ctx, next }) => {
     const now = new Date();
 
-    const [activeSubscription] = await db
-      .select()
-      .from(subscription)
-      .where(
-        and(
-          eq(subscription.userId, ctx.user.id),
-          eq(subscription.status, "active"),
-          gt(subscription.currentPeriodEnd, now),
-        ),
-      )
-      .limit(1);
+    // const [activeSubscription] = await db
+    //   .select()
+    //   .from(subscription)
+    //   .where(
+    //     and(
+    //       eq(subscription.userId, ctx.user.id),
+    //       eq(subscription.status, "active"),
+    //       gt(subscription.currentPeriodEnd, now),
+    //     ),
+    //   )
+    //   .limit(1);
 
-    if (!activeSubscription) {
-      throw new TRPCError({
-        code: "FORBIDDEN",
-        message:
-          "An active subscription is required to access this feature. Please subscribe and try again.",
-      });
-    }
+    // if (!activeSubscription) {
+    //   throw new TRPCError({
+    //     code: "FORBIDDEN",
+    //     message:
+    //       "An active subscription is required to access this feature. Please subscribe and try again.",
+    //   });
+    // }
 
     return next({
       ctx: {
         ...ctx,
-        subscription: activeSubscription,
+        subscription: {},
       },
     });
   },

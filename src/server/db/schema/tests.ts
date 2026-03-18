@@ -1,14 +1,32 @@
-import { index, pgEnum } from "drizzle-orm/pg-core";
-import { pgTable, text, uuid, integer, timestamp } from "drizzle-orm/pg-core";
+import {
+  boolean,
+  index,
+  integer,
+  pgEnum,
+  pgTable,
+  text,
+  timestamp,
+} from "drizzle-orm/pg-core";
+import { nanoid } from "nanoid";
 import { admin } from "./admin";
 import { user } from "./user";
-import { nanoid } from "nanoid";
+import { relations } from "drizzle-orm";
 
 export const testTypeEnum = pgEnum("test_type", ["legal", "general"]);
 
 export const testStatusEnum = pgEnum("test_status", ["draft", "active"]);
 
-export const attemptTypeEnum = pgEnum("attempt_type", ["real", "practice"]);
+export const attemptTypeEnum = pgEnum("attempt_type", [
+  "assessment",
+  "practice",
+]);
+
+export const attemptStageEnum = pgEnum("attempt_stage", [
+  "audio",
+  "break",
+  "writing",
+  "submitted",
+]);
 
 export const tests = pgTable("tests", {
   id: text("id")
@@ -19,7 +37,7 @@ export const tests = pgTable("tests", {
 
   type: testTypeEnum("type").notNull(),
 
-  audioKey: text("audio_key"),
+  audioKey: text("audio_key").notNull(),
 
   matter: text("matter").notNull(),
   outline: text("outline").notNull(),
@@ -60,16 +78,70 @@ export const testAttempts = pgTable(
 
     type: attemptTypeEnum("type").notNull(),
 
+    stage: attemptStageEnum("stage").notNull().default("audio"),
+
+    stageStartedAt: timestamp("stage_started_at", {
+      withTimezone: true,
+    }).defaultNow(),
+
+    audioProgressSeconds: integer("audio_progress_seconds").default(0),
+
+    lastAudioSyncAt: timestamp("last_audio_sync_at", {
+      withTimezone: true,
+    }),
+
+    answerDraft: text("answer_draft"),
+    answerFinal: text("answer_final"),
+
+    writingStartedAt: timestamp("writing_started_at", {
+      withTimezone: true,
+    }),
+
+    breakSkipped: boolean("break_skipped").default(false),
+
     score: integer("score"),
-    answer: text("answer"),
+
+    skippedAt: timestamp("skipped_at", { withTimezone: true }),
+
+    submittedAt: timestamp("submitted_at", {
+      withTimezone: true,
+    }),
+
+    isSubmitted: boolean("is_submitted").default(false),
 
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
+
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date()),
   },
   (table) => ({
     userTestIdx: index("idx_user_test").on(table.userId, table.testId),
 
-    userTestTypesIdx: index("idx_user_type").on(table.userId, table.type),
+    userTypeIdx: index("idx_user_type").on(table.userId, table.type),
+
+    stageIdx: index("idx_stage").on(table.stage),
   }),
 );
+
+export const testsRelations = relations(tests, ({ many }) => ({
+  attempts: many(testAttempts),
+}));
+
+export const userRelations = relations(user, ({ many }) => ({
+  attempts: many(testAttempts),
+}));
+
+export const testAttemptsRelations = relations(testAttempts, ({ one }) => ({
+  test: one(tests, {
+    fields: [testAttempts.testId],
+    references: [tests.id],
+  }),
+
+  user: one(user, {
+    fields: [testAttempts.userId],
+    references: [user.id],
+  }),
+}));

@@ -5,8 +5,10 @@ import type {
   CreateTestInput,
   GetTestInput,
   ListTestsInput,
+  listUserTestsSchema,
   UpdateTestInput,
 } from "./test.schema";
+import R2Service from "~/server/services/r2.service";
 
 const PAGE_SIZE = 12;
 
@@ -114,6 +116,75 @@ export const testService = {
     };
   },
 
+  async listForUserFeed(input: listUserTestsSchema, userId: string) {
+    const { page } = input;
+    const offset = (page - 1) * PAGE_SIZE;
+
+    const data = await db.query.tests.findMany({
+      where: eq(tests.status, "active"),
+      limit: PAGE_SIZE,
+      offset,
+      orderBy: desc(tests.createdAt),
+    });
+
+    const testIds = data.map((t) => t.id);
+
+    if (testIds.length === 0) {
+      return {
+        data: [],
+        page,
+        pageSize: PAGE_SIZE,
+        total: 0,
+        totalPages: 0,
+      };
+    }
+
+    const attemptRows = await db
+      .select({
+        testId: testAttempts.testId,
+        count: count(),
+      })
+      .from(testAttempts)
+      .where(inArray(testAttempts.testId, testIds))
+      .groupBy(testAttempts.testId);
+
+    const attemptCountMap = Object.fromEntries(
+      attemptRows.map((r) => [r.testId, r.count]),
+    );
+
+    const userAttemptRows = await db
+      .select({
+        testId: testAttempts.testId,
+      })
+      .from(testAttempts)
+      .where(
+        and(
+          eq(testAttempts.userId, userId),
+          inArray(testAttempts.testId, testIds),
+        ),
+      )
+      .groupBy(testAttempts.testId);
+
+    const userAttemptSet = new Set(userAttemptRows.map((r) => r.testId));
+
+    const enriched = data.map((t) => ({
+      ...t,
+      attemptCount: attemptCountMap[t.id] ?? 0,
+      hasAttempted: userAttemptSet.has(t.id),
+    }));
+
+    const totalRows = await db.select({ total: count() }).from(tests);
+    const total = totalRows[0]?.total ?? 0;
+
+    return {
+      data: enriched,
+      page,
+      pageSize: PAGE_SIZE,
+      total,
+      totalPages: Math.ceil(total / PAGE_SIZE),
+    };
+  },
+
   async getById(input: GetTestInput) {
     const test = await db.query.tests.findFirst({
       where: eq(tests.id, input.id),
@@ -121,6 +192,6 @@ export const testService = {
 
     if (!test) throw new Error("Test not found");
 
-    return test;
+    return { ...test, audioUrl: R2Service.getPublicUrl(test.audioKey) };
   },
 };

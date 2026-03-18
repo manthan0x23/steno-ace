@@ -1,6 +1,7 @@
 import {
   adminProcedure,
   createTRPCRouter,
+  protectedProcedure,
   publicProcedure,
 } from "~/server/api/trpc";
 
@@ -9,6 +10,7 @@ import {
   updateTestSchema,
   getTestSchema,
   listTestsSchema,
+  listUserTestsSchema,
 } from "./test.schema";
 
 import { testService } from "./test.service";
@@ -29,6 +31,12 @@ export const testRouter = createTRPCRouter({
   list: publicProcedure.input(listTestsSchema).query(({ input }) => {
     return testService.list(input);
   }),
+
+  listForUser: protectedProcedure
+    .input(listUserTestsSchema)
+    .query(({ input, ctx }) => {
+      return testService.listForUserFeed(input, ctx.user.id);
+    }),
 
   get: publicProcedure.input(getTestSchema).query(({ input }) => {
     return testService.getById(input);

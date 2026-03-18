@@ -34,7 +34,12 @@ export const listTestsSchema = z.object({
   status: z.enum(["active", "draft", "all"]).default("all"),
 });
 
+export const listUserTestsSchema = z.object({
+  page: z.number().int().min(1).default(1),
+});
+
 export type CreateTestInput = z.infer<typeof createTestSchema>;
 export type UpdateTestInput = z.infer<typeof updateTestSchema>;
 export type ListTestsInput = z.infer<typeof listTestsSchema>;
 export type GetTestInput = z.infer<typeof getTestSchema>;
+export type listUserTestsSchema = z.infer<typeof listUserTestsSchema>;

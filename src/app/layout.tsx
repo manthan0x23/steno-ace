@@ -1,18 +1,22 @@
 import "~/styles/globals.css";
 
 import { type Metadata } from "next";
-import { Geist, Geist_Mono, Roboto_Slab, Public_Sans, Inter } from "next/font/google";
+import { Geist_Mono, Roboto_Slab, Inter } from "next/font/google";
 
 import { TRPCReactProvider } from "~/trpc/react";
 import { TooltipProvider } from "~/components/ui/tooltip";
 import { Toaster } from "~/components/ui/sonner";
 import { cn } from "~/lib/utils";
+import { ThemeProvider } from "~/providers/theme-provider"; // 👈 create this
 
-const inter = Inter({subsets:['latin'],variable:'--font-sans'});
+const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
-const robotoSlab = Roboto_Slab({subsets:['latin'],variable:'--font-serif'});
+const robotoSlab = Roboto_Slab({
+  subsets: ["latin"],
+  variable: "--font-serif",
+});
 
-const geistMono = Geist_Mono({subsets:['latin'],variable:'--font-mono'});
+const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-mono" });
 
 export const metadata: Metadata = {
   title: "Create T3 App",
@@ -24,12 +28,45 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={cn( geistMono.variable, robotoSlab.variable, "font-sans", inter.variable)}>
+    <html
+      lang="en"
+      className={cn(
+        geistMono.variable,
+        robotoSlab.variable,
+        inter.variable,
+        "font-sans",
+      )}
+    >
+      <head>
+        {/* 🔥 Prevent theme flicker */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function () {
+                try {
+                  const stored = localStorage.getItem("theme");
+                  const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                  const theme = stored || (systemDark ? "dark" : "light");
+
+                  if (theme === "dark") {
+                    document.documentElement.classList.add("dark");
+                  } else {
+                    document.documentElement.classList.remove("dark");
+                  }
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
+      </head>
+
       <body>
-        <TooltipProvider>
-          <TRPCReactProvider>{children}</TRPCReactProvider>
-        </TooltipProvider>
-        <Toaster />
+        <ThemeProvider>
+          <TooltipProvider>
+            <TRPCReactProvider>{children}</TRPCReactProvider>
+          </TooltipProvider>
+          <Toaster />
+        </ThemeProvider>
       </body>
     </html>
   );
