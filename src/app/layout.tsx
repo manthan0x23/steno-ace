@@ -1,12 +1,14 @@
 import "~/styles/globals.css";
 
 import { type Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Roboto_Slab } from "next/font/google";
 
 import { TRPCReactProvider } from "~/trpc/react";
 import { TooltipProvider } from "~/components/ui/tooltip";
 import { Toaster } from "~/components/ui/sonner";
 import { cn } from "~/lib/utils";
+
+const robotoSlab = Roboto_Slab({subsets:['latin'],variable:'--font-serif'});
 
 const geistMono = Geist_Mono({subsets:['latin'],variable:'--font-mono'});
 
@@ -20,7 +22,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={cn("font-mono", geistMono.variable)}>
+    <html lang="en" className={cn( geistMono.variable, "font-serif", robotoSlab.variable)}>
       <body>
         <TooltipProvider>
           <TRPCReactProvider>{children}</TRPCReactProvider>
