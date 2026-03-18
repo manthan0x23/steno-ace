@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { requireAdmin } from "~/server/guards";
-import { api } from "~/trpc/server";
+import { SidebarProvider, SidebarInset } from "~/components/ui/sidebar";
+import { AdminNavbar } from "~/app/_components/admin/common/navbar";
+import { AdminSidebar } from "~/app/_components/admin/common/sidebar";
 
 export const metadata: Metadata = {
   title: "StenoDexter Admin",
@@ -12,7 +14,15 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  await requireAdmin();
+  const admin = await requireAdmin();
 
-  return <>{children}</>;
+  return (
+    <SidebarProvider>
+      <AdminSidebar />
+      <SidebarInset>
+        <AdminNavbar admin={admin} />
+        <main className="flex flex-1 flex-col gap-4 p-6">{children}</main>
+      </SidebarInset>
+    </SidebarProvider>
+  );
 }
