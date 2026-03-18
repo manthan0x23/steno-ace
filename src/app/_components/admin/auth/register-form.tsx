@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader } from "~/components/ui/card";
 import { Label } from "~/components/ui/label";
 import { trpc } from "~/trpc/react";
 import { toast } from "sonner";
+import Link from "next/link";
 
 function FieldError({ message }: { message: string | undefined }) {
   if (!message) return null;
@@ -228,12 +229,12 @@ export function RegisterForm() {
 
         <p className="text-muted-foreground text-center text-sm">
           Already have an account?{" "}
-          <a
+          <Link
             href="/admin/login"
             className="text-foreground hover:text-primary font-medium underline underline-offset-4"
           >
             Sign in
-          </a>
+          </Link>
         </p>
       </CardContent>
     </Card>
