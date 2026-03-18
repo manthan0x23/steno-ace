@@ -7,7 +7,7 @@ import {
   timestamp,
 } from "drizzle-orm/pg-core";
 
-export const admin = pgTable("admin_user", {
+export const admin = pgTable("admin", {
   id: text("id").primaryKey(),
 
   name: text("name").notNull(),
@@ -15,6 +15,8 @@ export const admin = pgTable("admin_user", {
   username: text("username").notNull().unique(),
 
   passwordHash: text("password_hash").notNull(),
+
+  image: text("profile_picture_key"),
 
   isSuper: boolean("is_super").default(false).notNull(),
 

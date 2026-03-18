@@ -22,19 +22,6 @@ export const user = pgTable("user", {
     .notNull(),
 });
 
-export const posts = pgTable("post", (d) => ({
-  id: d.integer().primaryKey().generatedByDefaultAsIdentity(),
-  name: d.varchar({ length: 256 }),
-  createdById: d
-    .varchar({ length: 255 })
-    .notNull()
-    .references(() => user.id),
-  createdAt: d
-    .timestamp({ withTimezone: true })
-    .$defaultFn(() => new Date())
-    .notNull(),
-  updatedAt: d.timestamp({ withTimezone: true }).$onUpdate(() => new Date()),
-}));
 
 export const session = pgTable("session", {
   id: text("id").primaryKey(),
