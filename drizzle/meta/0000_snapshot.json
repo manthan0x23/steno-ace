@@ -1,5 +1,5 @@
 {
-  "id": "b527dc17-965c-442e-86dc-e6577d17b08b",
+  "id": "59913274-607c-442b-819a-e8c97c68b746",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -100,74 +100,6 @@
             "id"
           ],
           "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.post": {
-      "name": "post",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "integer",
-          "primaryKey": true,
-          "notNull": true,
-          "identity": {
-            "type": "byDefault",
-            "name": "post_id_seq",
-            "schema": "public",
-            "increment": "1",
-            "startWith": "1",
-            "minValue": "1",
-            "maxValue": "2147483647",
-            "cache": "1",
-            "cycle": false
-          }
-        },
-        "name": {
-          "name": "name",
-          "type": "varchar(256)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "createdById": {
-          "name": "createdById",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "createdAt": {
-          "name": "createdAt",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "updatedAt": {
-          "name": "updatedAt",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "post_createdById_user_id_fk": {
-          "name": "post_createdById_user_id_fk",
-          "tableFrom": "post",
-          "tableTo": "user",
-          "columnsFrom": [
-            "createdById"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
           "onUpdate": "no action"
         }
       },
@@ -465,8 +397,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.admin_user": {
-      "name": "admin_user",
+    "public.admin": {
+      "name": "admin",
       "schema": "",
       "columns": {
         "id": {
@@ -492,6 +424,12 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true
+        },
+        "profile_picture_key": {
+          "name": "profile_picture_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         },
         "is_super": {
           "name": "is_super",
@@ -523,10 +461,10 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "admin_user_invited_by_admin_id_admin_user_id_fk": {
-          "name": "admin_user_invited_by_admin_id_admin_user_id_fk",
-          "tableFrom": "admin_user",
-          "tableTo": "admin_user",
+        "admin_invited_by_admin_id_admin_id_fk": {
+          "name": "admin_invited_by_admin_id_admin_id_fk",
+          "tableFrom": "admin",
+          "tableTo": "admin",
           "columnsFrom": [
             "invited_by_admin_id"
           ],
@@ -539,8 +477,8 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "admin_user_username_unique": {
-          "name": "admin_user_username_unique",
+        "admin_username_unique": {
+          "name": "admin_username_unique",
           "nullsNotDistinct": false,
           "columns": [
             "username"
@@ -602,10 +540,10 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "admin_invite_created_by_admin_id_admin_user_id_fk": {
-          "name": "admin_invite_created_by_admin_id_admin_user_id_fk",
+        "admin_invite_created_by_admin_id_admin_id_fk": {
+          "name": "admin_invite_created_by_admin_id_admin_id_fk",
           "tableFrom": "admin_invite",
-          "tableTo": "admin_user",
+          "tableTo": "admin",
           "columnsFrom": [
             "created_by_admin_id"
           ],
@@ -675,10 +613,10 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "admin_invite_usage_used_by_admin_id_admin_user_id_fk": {
-          "name": "admin_invite_usage_used_by_admin_id_admin_user_id_fk",
+        "admin_invite_usage_used_by_admin_id_admin_id_fk": {
+          "name": "admin_invite_usage_used_by_admin_id_admin_id_fk",
           "tableFrom": "admin_invite_usage",
-          "tableTo": "admin_user",
+          "tableTo": "admin",
           "columnsFrom": [
             "used_by_admin_id"
           ],
@@ -744,10 +682,10 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "admin_session_admin_id_admin_user_id_fk": {
-          "name": "admin_session_admin_id_admin_user_id_fk",
+        "admin_session_admin_id_admin_id_fk": {
+          "name": "admin_session_admin_id_admin_id_fk",
           "tableFrom": "admin_session",
-          "tableTo": "admin_user",
+          "tableTo": "admin",
           "columnsFrom": [
             "admin_id"
           ],
@@ -771,9 +709,265 @@
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
+    },
+    "public.test_attempts": {
+      "name": "test_attempts",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "test_id": {
+          "name": "test_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "attempt_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "score": {
+          "name": "score",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "answer": {
+          "name": "answer",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_user_test": {
+          "name": "idx_user_test",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "test_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_user_type": {
+          "name": "idx_user_type",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "type",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "test_attempts_user_id_user_id_fk": {
+          "name": "test_attempts_user_id_user_id_fk",
+          "tableFrom": "test_attempts",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "test_attempts_test_id_tests_id_fk": {
+          "name": "test_attempts_test_id_tests_id_fk",
+          "tableFrom": "test_attempts",
+          "tableTo": "tests",
+          "columnsFrom": [
+            "test_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.tests": {
+      "name": "tests",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "test_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "audio_key": {
+          "name": "audio_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "matter": {
+          "name": "matter",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "outline": {
+          "name": "outline",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "explanation": {
+          "name": "explanation",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "break_seconds": {
+          "name": "break_seconds",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "written_duration_seconds": {
+          "name": "written_duration_seconds",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "test_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'draft'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "admin_id": {
+          "name": "admin_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'system'"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "tests_admin_id_admin_id_fk": {
+          "name": "tests_admin_id_admin_id_fk",
+          "tableFrom": "tests",
+          "tableTo": "admin",
+          "columnsFrom": [
+            "admin_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set default",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
     }
   },
-  "enums": {},
+  "enums": {
+    "public.attempt_type": {
+      "name": "attempt_type",
+      "schema": "public",
+      "values": [
+        "real",
+        "practice"
+      ]
+    },
+    "public.test_status": {
+      "name": "test_status",
+      "schema": "public",
+      "values": [
+        "draft",
+        "active"
+      ]
+    },
+    "public.test_type": {
+      "name": "test_type",
+      "schema": "public",
+      "values": [
+        "legal",
+        "general"
+      ]
+    }
+  },
   "schemas": {},
   "sequences": {},
   "roles": {},

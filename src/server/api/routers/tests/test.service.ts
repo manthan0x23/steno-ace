@@ -1,6 +1,6 @@
 import { db } from "~/server/db";
-import { tests } from "~/server/db/schema/tests";
-import { eq, desc } from "drizzle-orm";
+import { testAttempts, tests } from "~/server/db/schema/tests";
+import { eq, desc, count, and, asc, inArray } from "drizzle-orm";
 import type {
   CreateTestInput,
   GetTestInput,
@@ -8,7 +8,7 @@ import type {
   UpdateTestInput,
 } from "./test.schema";
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 12;
 
 export const testService = {
   async create(input: CreateTestInput, adminId: string) {
@@ -17,6 +17,7 @@ export const testService = {
       .values({
         ...input,
         adminId,
+        outline: input.outline ?? "",
       })
       .returning();
 
@@ -38,7 +39,7 @@ export const testService = {
 
     const [updated] = await db
       .update(tests)
-      .set(rest)
+      .set({ ...rest, outline: rest.outline ?? "" })
       .where(eq(tests.id, id))
       .returning();
 
@@ -53,16 +54,63 @@ export const testService = {
   async list(input: ListTestsInput) {
     const offset = (input.page - 1) * PAGE_SIZE;
 
+    // Build where conditions
+    const conditions = [];
+
+    if (input.type !== "all") {
+      conditions.push(eq(tests.type, input.type));
+    }
+
+    if (input.status !== "all") {
+      conditions.push(eq(tests.status, input.status));
+    }
+
+    const orderBy =
+      input.sort === "oldest" ? asc(tests.createdAt) : desc(tests.createdAt);
+
+    // Fetch tests
     const data = await db.query.tests.findMany({
       limit: PAGE_SIZE,
       offset,
-      orderBy: desc(tests.createdAt),
+      orderBy,
+      where: conditions.length > 0 ? and(...conditions) : undefined,
     });
 
+    // Fetch attempt counts for each test in one query
+    const testIds = data.map((t) => t.id);
+
+    const attemptRows =
+      testIds.length > 0
+        ? await db
+            .select({
+              testId: testAttempts.testId,
+              count: count(),
+            })
+            .from(testAttempts)
+            .where(inArray(testAttempts.testId, testIds))
+            .groupBy(testAttempts.testId)
+        : [];
+
+    const attemptCounts = Object.fromEntries(
+      attemptRows.map((r) => [r.testId, r.count]),
+    );
+
+    const totalRows = await db
+      .select({ total: count() })
+      .from(tests)
+      .where(conditions.length > 0 ? and(...conditions) : undefined);
+
+    const total = totalRows[0]?.total ?? 0;
+
     return {
-      data,
+      data: data.map((t) => ({
+        ...t,
+        attemptCount: attemptCounts[t.id] ?? 0,
+      })),
       page: input.page,
       pageSize: PAGE_SIZE,
+      total,
+      totalPages: Math.ceil(total / PAGE_SIZE),
     };
   },
 

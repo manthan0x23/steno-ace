@@ -58,7 +58,7 @@ const formSchema = z.object({
   dictationDuration: z.number().min(1),
   breakAfterAudio: z.number().min(0),
   typingDuration: z.number().min(1),
-  audioUrl: z.string().url("Please upload an audio file"),
+  audioUrl: z.string().min(1, "Please upload an audio file"),
   matter: z.string().min(10, "Correct answer must be at least 10 characters"),
   outlines: z.string().optional(),
 });
@@ -85,7 +85,7 @@ function TimelineBar({
     <div className="space-y-2">
       <div className="text-muted-foreground flex items-center justify-between text-xs">
         <span>Timeline Preview</span>
-        <span>Total: {total}m</span>
+        <span>Total: {total}s</span>
       </div>
       <div className="bg-muted flex h-2.5 w-full overflow-hidden rounded-full">
         <div
@@ -104,22 +104,21 @@ function TimelineBar({
       <div className="text-muted-foreground flex gap-4 text-xs">
         <span className="flex items-center gap-1.5">
           <span className="inline-block h-2 w-2 rounded-full bg-blue-500" />
-          Dictation ({dictation}m)
+          Dictation ({dictation}s)
         </span>
         <span className="flex items-center gap-1.5">
           <span className="inline-block h-2 w-2 rounded-full bg-amber-400" />
-          Break ({pause}m)
+          Break ({pause}s)
         </span>
         <span className="flex items-center gap-1.5">
           <span className="inline-block h-2 w-2 rounded-full bg-emerald-500" />
-          Typing ({typing}m)
+          Typing ({typing}s)
         </span>
       </div>
     </div>
   );
 }
 
-// ── Audio Dropzone ────────────────────────────────────────────────────────────
 function AudioDropzone({
   value,
   onChange,
@@ -127,8 +126,8 @@ function AudioDropzone({
   error,
 }: {
   value: string;
-  onChange: (url: string) => void;
-  onDurationDetected: (minutes: number) => void;
+  onChange: (key: string) => void;
+  onDurationDetected: (seconds: number) => void;
   error?: string;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -137,14 +136,14 @@ function AudioDropzone({
 
   const generatePresignedUrl = trpc.store.generatePresignedUrl.useMutation();
 
-  const getAudioDurationMinutes = (file: File): Promise<number> =>
+  const getAudioDurationSeconds = (file: File): Promise<number> =>
     new Promise((resolve) => {
       const audio = new Audio();
       const url = URL.createObjectURL(file);
       audio.src = url;
       audio.addEventListener("loadedmetadata", () => {
         URL.revokeObjectURL(url);
-        resolve(Math.ceil(audio.duration / 60));
+        resolve(Math.ceil(audio.duration));
       });
       audio.addEventListener("error", () => {
         URL.revokeObjectURL(url);
@@ -162,16 +161,15 @@ function AudioDropzone({
     setFileName(file.name);
 
     try {
-      // 1. Detect duration before upload
-      const durationMinutes = await getAudioDurationMinutes(file);
+      const durationSeconds = await getAudioDurationSeconds(file);
 
-      // 2. Get presigned URL
       const ext = file.name.split(".").pop() ?? "mp3";
-      const { uploadUrl, fileUrl } = await generatePresignedUrl.mutateAsync({
-        folder: "audio",
-        contentType: file.type,
-        ext,
-      });
+      const { uploadUrl, fileUrl, key } =
+        await generatePresignedUrl.mutateAsync({
+          folder: "dictations",
+          contentType: file.type,
+          ext,
+        });
 
       // 3. Upload directly to R2
       const uploadRes = await fetch(uploadUrl, {
@@ -182,11 +180,11 @@ function AudioDropzone({
 
       if (!uploadRes.ok) throw new Error("Upload failed");
 
-      // 4. Commit values
-      onChange(fileUrl);
-      if (durationMinutes > 0) {
-        onDurationDetected(durationMinutes);
-        toast.success(`Audio uploaded · ${durationMinutes}m detected`);
+      // 4. Commit values — store the R2 object key, not the full URL
+      onChange(key);
+      if (durationSeconds > 0) {
+        onDurationDetected(durationSeconds);
+        toast.success(`Audio uploaded · ${durationSeconds}s detected`);
       } else {
         toast.success("Audio uploaded successfully.");
       }
@@ -281,38 +279,34 @@ function AudioDropzone({
   );
 }
 
-// ── Field Error ───────────────────────────────────────────────────────────────
-
 function FieldError({ errors }: { errors: string[] }) {
   if (!errors.length) return null;
   return <p className="text-destructive mt-1 text-xs">{errors[0]}</p>;
 }
 
-// ── Main Form ─────────────────────────────────────────────────────────────────
-
 export function CreateTestForm() {
   const router = useRouter();
-  const [submitMode, setSubmitMode] = useState<"draft" | "launch">("draft");
+  const [submitMode, setSubmitMode] = useState<"draft" | "active">("draft");
 
-  //   const createTest = trpc.admin.test.create.useMutation({
-  //     onSuccess: () => {
-  //       toast.success(
-  //         submitMode === "draft"
-  //           ? "Test saved as draft."
-  //           : "Test launched successfully!",
-  //       );
-  //       router.push("/admin/tests");
-  //     },
-  //     onError: (err) => toast.error(err.message),
-  //   });
+  const createTest = trpc.test.create.useMutation({
+    onSuccess: () => {
+      toast.success(
+        submitMode === "draft"
+          ? "Test saved as draft."
+          : "Test launched successfully!",
+      );
+      router.push("/admin/tests");
+    },
+    onError: (err) => toast.error(err.message),
+  });
 
   const form = useForm({
     defaultValues: {
       title: "",
       tag: "general",
       dictationDuration: 0,
-      breakAfterAudio: 1,
-      typingDuration: 10,
+      breakAfterAudio: 60,
+      typingDuration: 600,
       audioUrl: "",
       matter: "",
       outlines: "",
@@ -323,7 +317,17 @@ export function CreateTestForm() {
         toast.error("Please fix the errors before submitting.");
         return;
       }
-      //   await createTest.mutateAsync({ ...parsed.data, status: submitMode });
+      await createTest.mutateAsync({
+        title: parsed.data.title,
+        matter: parsed.data.matter,
+        audioKey: parsed.data.audioUrl,
+        type: parsed.data.tag,
+        outline: parsed.data.outlines,
+        explanation: parsed.data.matter,
+        breakSeconds: parsed.data.breakAfterAudio,
+        writtenDurationSeconds: parsed.data.typingDuration,
+        dictationSeconds: parsed.data.dictationDuration,
+      });
     },
   });
 
@@ -443,8 +447,8 @@ export function CreateTestForm() {
                 <AudioDropzone
                   value={field.state.value}
                   onChange={field.handleChange}
-                  onDurationDetected={(minutes) =>
-                    form.setFieldValue("dictationDuration", minutes)
+                  onDurationDetected={(seconds) =>
+                    form.setFieldValue("dictationDuration", seconds)
                   }
                   error={(field.state.meta.errors as string[])[0]}
                 />
@@ -471,7 +475,7 @@ export function CreateTestForm() {
                 name="dictationDuration"
                 validators={{
                   onChange: ({ value }) =>
-                    value < 1 ? "Min 1 minute" : undefined,
+                    value < 1 ? "Min 1 second" : undefined,
                 }}
               >
                 {(field) => (
@@ -480,7 +484,7 @@ export function CreateTestForm() {
                       <div className="space-y-1.5">
                         <Label className="flex items-center gap-1.5">
                           <Mic className="h-3.5 w-3.5 text-blue-500" />
-                          Dictation (min)
+                          Dictation (sec)
                           {audioUrl && (
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -527,7 +531,7 @@ export function CreateTestForm() {
                   <div className="space-y-1.5">
                     <Label className="flex items-center gap-1.5">
                       <PauseCircle className="h-3.5 w-3.5 text-amber-500" />
-                      Break (min)
+                      Break (sec)
                     </Label>
                     <Input
                       type="number"
@@ -550,14 +554,14 @@ export function CreateTestForm() {
                 name="typingDuration"
                 validators={{
                   onChange: ({ value }) =>
-                    value < 1 ? "Min 1 minute" : undefined,
+                    value < 1 ? "Min 1 second" : undefined,
                 }}
               >
                 {(field) => (
                   <div className="space-y-1.5">
                     <Label className="flex items-center gap-1.5">
                       <Keyboard className="h-3.5 w-3.5 text-emerald-500" />
-                      Typing (min)
+                      Typing (sec)
                     </Label>
                     <Input
                       type="number"
@@ -697,12 +701,12 @@ export function CreateTestForm() {
                 <Button
                   type="submit"
                   disabled={isSubmitting}
-                  onClick={() => setSubmitMode("launch")}
+                  onClick={() => setSubmitMode("active")}
                 >
                   <Rocket className="mr-2 h-4 w-4" />
-                  {isSubmitting && submitMode === "launch"
-                    ? "Launching…"
-                    : "Launch Test"}
+                  {isSubmitting && submitMode === "active"
+                    ? "Starting..."
+                    : "Start Test"}
                 </Button>
               </>
             )}

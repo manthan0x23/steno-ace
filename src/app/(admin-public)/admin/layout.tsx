@@ -14,7 +14,7 @@ export default async function AdminAuthLayout({
   return (
     <>
       <div className="absolute top-0 left-0 flex w-full items-center justify-between p-4">
-        <h3>StenoDexter</h3>
+        <h2 className="font-extrabold">Steno Dexter</h2>
         <ThemeToggle />
       </div>
       {children}

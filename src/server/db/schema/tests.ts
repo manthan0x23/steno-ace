@@ -2,6 +2,7 @@ import { index, pgEnum } from "drizzle-orm/pg-core";
 import { pgTable, text, uuid, integer, timestamp } from "drizzle-orm/pg-core";
 import { admin } from "./admin";
 import { user } from "./user";
+import { nanoid } from "nanoid";
 
 export const testTypeEnum = pgEnum("test_type", ["legal", "general"]);
 
@@ -10,7 +11,9 @@ export const testStatusEnum = pgEnum("test_status", ["draft", "active"]);
 export const attemptTypeEnum = pgEnum("attempt_type", ["real", "practice"]);
 
 export const tests = pgTable("tests", {
-  id: uuid("id").defaultRandom().primaryKey(),
+  id: text("id")
+    .$defaultFn(() => nanoid(8))
+    .primaryKey(),
 
   title: text("title").notNull(),
 
@@ -24,6 +27,7 @@ export const tests = pgTable("tests", {
 
   breakSeconds: integer("break_seconds").notNull(),
   writtenDurationSeconds: integer("written_duration_seconds").notNull(),
+  dictationSeconds: integer("dictation_duration_seconds").notNull(),
 
   status: testStatusEnum("status").notNull().default("draft"),
 
@@ -42,13 +46,15 @@ export const tests = pgTable("tests", {
 export const testAttempts = pgTable(
   "test_attempts",
   {
-    id: uuid("id").defaultRandom().primaryKey(),
+    id: text("id")
+      .$defaultFn(() => nanoid(8))
+      .primaryKey(),
 
-    userId: uuid("user_id")
+    userId: text("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
 
-    testId: uuid("test_id")
+    testId: text("test_id")
       .notNull()
       .references(() => tests.id, { onDelete: "cascade" }),
 
@@ -64,9 +70,6 @@ export const testAttempts = pgTable(
   (table) => ({
     userTestIdx: index("idx_user_test").on(table.userId, table.testId),
 
-    userTestTypesIdx: index("idx_user_type").on(
-      table.userId,
-      table.type,
-    ),
+    userTestTypesIdx: index("idx_user_type").on(table.userId, table.type),
   }),
 );

@@ -38,7 +38,7 @@ export default class R2Service {
   }
 
   static generateKey(folder: string, ext: string) {
-    return `${folder}/${randomUUID()}.${ext}`;
+    return `steno-dexter/${folder}/${randomUUID()}.${ext}`;
   }
 
   async generatePresignedUploadUrl(params: {

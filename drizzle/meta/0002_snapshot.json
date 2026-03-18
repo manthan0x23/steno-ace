@@ -1,6 +1,6 @@
 {
-  "id": "28b64c68-ec00-461b-833b-7772f7fcc035",
-  "prevId": "59913274-607c-442b-819a-e8c97c68b746",
+  "id": "140df391-f3d4-4a13-ad63-04761cf5b68b",
+  "prevId": "28b64c68-ec00-461b-833b-7772f7fcc035",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -900,8 +900,7 @@
           "name": "dictation_duration_seconds",
           "type": "integer",
           "primaryKey": false,
-          "notNull": true,
-          "default": 0
+          "notNull": true
         },
         "status": {
           "name": "status",
