@@ -11,7 +11,7 @@ import { toast } from "sonner";
 
 function FieldError({ message }: { message: string | undefined }) {
   if (!message) return null;
-  return <p className="text-destructive text-xs mt-1">{message}</p>;
+  return <p className="text-destructive mt-1 text-xs">{message}</p>;
 }
 
 export function RegisterForm() {
@@ -78,7 +78,6 @@ export function RegisterForm() {
               <div className="space-y-1">
                 <Label htmlFor={field.name}>Full name</Label>
                 <Input
-                size={10}
                   id={field.name}
                   placeholder="John Doe"
                   value={field.state.value}
@@ -190,9 +189,7 @@ export function RegisterForm() {
             name="code"
             validators={{
               onBlur: ({ value }) =>
-                !value.trim()
-                  ? "Invite or admin code is required"
-                  : undefined,
+                !value.trim() ? "Invite or admin code is required" : undefined,
             }}
           >
             {(field) => (
@@ -217,7 +214,9 @@ export function RegisterForm() {
               <Button
                 className="w-full"
                 type="submit"
-                disabled={!canSubmit || isSubmitting || registerMutation.isPending}
+                disabled={
+                  !canSubmit || isSubmitting || registerMutation.isPending
+                }
               >
                 {isSubmitting || registerMutation.isPending
                   ? "Creating account…"
@@ -231,7 +230,7 @@ export function RegisterForm() {
           Already have an account?{" "}
           <a
             href="/admin/login"
-            className="text-foreground font-medium underline underline-offset-4 hover:text-primary"
+            className="text-foreground hover:text-primary font-medium underline underline-offset-4"
           >
             Sign in
           </a>

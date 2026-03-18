@@ -1,14 +1,14 @@
 import "~/styles/globals.css";
 
 import { type Metadata } from "next";
-import { Geist, Geist_Mono, Roboto_Slab, Public_Sans } from "next/font/google";
+import { Geist, Geist_Mono, Roboto_Slab, Public_Sans, Inter } from "next/font/google";
 
 import { TRPCReactProvider } from "~/trpc/react";
 import { TooltipProvider } from "~/components/ui/tooltip";
 import { Toaster } from "~/components/ui/sonner";
 import { cn } from "~/lib/utils";
 
-const publicSans = Public_Sans({subsets:['latin'],variable:'--font-sans'});
+const inter = Inter({subsets:['latin'],variable:'--font-sans'});
 
 const robotoSlab = Roboto_Slab({subsets:['latin'],variable:'--font-serif'});
 
@@ -24,7 +24,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={cn( geistMono.variable, robotoSlab.variable, "font-sans", publicSans.variable)}>
+    <html lang="en" className={cn( geistMono.variable, robotoSlab.variable, "font-sans", inter.variable)}>
       <body>
         <TooltipProvider>
           <TRPCReactProvider>{children}</TRPCReactProvider>
