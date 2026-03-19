@@ -6,6 +6,7 @@ import { adminRouter } from "./routers/admin";
 import { storeRouter } from "./routers/store/store.router";
 import { testRouter } from "./routers/tests/test.router";
 import { attemptRouter } from "./routers/attempt/attempt.router";
+import { resultRouter } from "./routers/results/results.router";
 
 /**
  * This is the primary router for your server.
@@ -18,6 +19,7 @@ export const appRouter = createTRPCRouter({
   store: storeRouter,
   test: testRouter,
   attempt: attemptRouter,
+  result:resultRouter,
 
   // User routes
   user: createTRPCRouter({

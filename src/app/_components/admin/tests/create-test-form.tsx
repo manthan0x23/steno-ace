@@ -286,12 +286,20 @@ function FieldError({ errors }: { errors: string[] }) {
 
 export function CreateTestForm() {
   const router = useRouter();
-  const [submitMode, setSubmitMode] = useState<"draft" | "active">("draft");
+
+  // ✅ Use a ref instead of state so the value is always current
+  // when onSubmit fires — no async batching issues.
+  const submitModeRef = useRef<"draft" | "active">("draft");
+
+  // Keep a state copy only for the button label UI
+  const [submitModeLabel, setSubmitModeLabel] = useState<"draft" | "active">(
+    "draft",
+  );
 
   const createTest = trpc.test.create.useMutation({
     onSuccess: () => {
       toast.success(
-        submitMode === "draft"
+        submitModeRef.current === "draft"
           ? "Test saved as draft."
           : "Test launched successfully!",
       );
@@ -317,6 +325,8 @@ export function CreateTestForm() {
         toast.error("Please fix the errors before submitting.");
         return;
       }
+
+      // ✅ submitModeRef.current is always the correct mode here
       await createTest.mutateAsync({
         title: parsed.data.title,
         matter: parsed.data.matter,
@@ -327,6 +337,7 @@ export function CreateTestForm() {
         breakSeconds: parsed.data.breakAfterAudio,
         writtenDurationSeconds: parsed.data.typingDuration,
         dictationSeconds: parsed.data.dictationDuration,
+        status: submitModeRef.current, // ✅ pass mode to mutation if your API supports it
       });
     },
   });
@@ -693,7 +704,10 @@ export function CreateTestForm() {
                   type="submit"
                   variant="outline"
                   disabled={isSubmitting}
-                  onClick={() => setSubmitMode("draft")}
+                  onMouseDown={() => {
+                    submitModeRef.current = "draft";
+                    setSubmitModeLabel("draft");
+                  }}
                 >
                   <Save className="mr-2 h-4 w-4" />
                   Save as Draft
@@ -701,10 +715,13 @@ export function CreateTestForm() {
                 <Button
                   type="submit"
                   disabled={isSubmitting}
-                  onClick={() => setSubmitMode("active")}
+                  onMouseDown={() => {
+                    submitModeRef.current = "active";
+                    setSubmitModeLabel("active");
+                  }}
                 >
                   <Rocket className="mr-2 h-4 w-4" />
-                  {isSubmitting && submitMode === "active"
+                  {isSubmitting && submitModeLabel === "active"
                     ? "Starting..."
                     : "Start Test"}
                 </Button>

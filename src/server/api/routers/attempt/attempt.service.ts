@@ -1,27 +1,24 @@
 // ─── attempt.service.ts ──────────────────────────────────────────────────────
 import { and, eq } from "drizzle-orm";
 import { db } from "~/server/db";
-import { testAttempts, tests } from "~/server/db/schema";
+import { leaderboard, results, testAttempts, tests } from "~/server/db/schema";
 import type {
   CreateAttemptInput,
   SyncAttemptInput,
   SubmitAttemptInput,
 } from "./attempt.schema";
 import R2Service from "~/server/services/r2.service";
+import { scoringEngine } from "~/server/services/scoring.service";
 
 export const attemptService = {
-  /**
-   * Create a new attempt row and return it.
-   * For assessment: enforce one-per-user-per-test.
-   */
   async create(input: CreateAttemptInput, userId: string) {
     const test = await db.query.tests.findFirst({
       where: eq(tests.id, input.testId),
     });
+
     if (!test) throw new Error("Test not found");
     if (test.status !== "active") throw new Error("Test is not active");
 
-    // First attempt ever = assessment, all subsequent = practice
     const prior = await db.query.testAttempts.findFirst({
       where: and(
         eq(testAttempts.userId, userId),
@@ -29,7 +26,23 @@ export const attemptService = {
       ),
     });
 
-    const type = prior ? "practice" : "assessment";
+    const now = new Date();
+
+    // 2. Check if within 24 hours of test launch
+    const isWithinAssessmentWindow =
+      test.createdAt &&
+      now.getTime() - test.createdAt.getTime() <= 24 * 60 * 60 * 1000;
+
+    // 3. Decide type
+    let type: "assessment" | "practice";
+
+    if (prior) {
+      type = "practice";
+    } else if (isWithinAssessmentWindow) {
+      type = "assessment";
+    } else {
+      type = "practice";
+    }
 
     const [attempt] = await db
       .insert(testAttempts)
@@ -38,10 +51,6 @@ export const attemptService = {
         testId: input.testId,
         type,
         stage: "audio",
-        // stageStartedAt is intentionally null here.
-        // The client sets it via sync() once the 3-second countdown finishes
-        // and audio actually begins. This prevents the countdown from eating
-        // into the dictation timer on resume.
         stageStartedAt: null,
       })
       .returning();
@@ -73,7 +82,8 @@ export const attemptService = {
       patch.stage = input.stage;
       patch.stageStartedAt = new Date();
     }
-    if (input.breakSkipped !== undefined) patch.breakSkipped = input.breakSkipped;
+    if (input.breakSkipped !== undefined)
+      patch.breakSkipped = input.breakSkipped;
     // Stamp stageStartedAt only when audio truly begins (post-countdown)
     if (input.markAudioStarted && !attempt.stageStartedAt) {
       patch.stageStartedAt = new Date();
@@ -87,32 +97,93 @@ export const attemptService = {
     return { ok: true };
   },
 
-  /**
-   * Final submission.
-   */
   async submit(input: SubmitAttemptInput, userId: string) {
-    const attempt = await db.query.testAttempts.findFirst({
-      where: and(
-        eq(testAttempts.id, input.attemptId),
-        eq(testAttempts.userId, userId),
-      ),
+    return await db.transaction(async (tx) => {
+      const attempt = await tx.query.testAttempts.findFirst({
+        where: and(
+          eq(testAttempts.id, input.attemptId),
+          eq(testAttempts.userId, userId),
+        ),
+        with: { test: true },
+      });
+
+      if (!attempt) throw new Error("Attempt not found");
+      if (attempt.isSubmitted) return attempt;
+
+      const now = new Date();
+      const durationSeconds = attempt.writingStartedAt
+        ? Math.floor(
+            (now.getTime() - attempt.writingStartedAt.getTime()) / 1000,
+          )
+        : attempt.test.writtenDurationSeconds;
+
+      const evaluation = scoringEngine.evaluate(
+        attempt.test.matter,
+        input.answerFinal,
+        durationSeconds,
+      );
+
+      const [updated] = await tx
+        .update(testAttempts)
+        .set({
+          answerFinal: input.answerFinal,
+          isSubmitted: true,
+          submittedAt: now,
+          stage: "submitted",
+          score: evaluation.score,
+          updatedAt: now,
+        })
+        .where(eq(testAttempts.id, input.attemptId))
+        .returning();
+
+      await tx.insert(results).values({
+        attemptId: attempt.id,
+        userId: userId,
+        testId: attempt.testId,
+        type: attempt.type,
+
+        score: evaluation.score,
+        wpm: evaluation.wpm,
+        accuracy: evaluation.accuracy,
+        mistakes: evaluation.mistakes,
+
+        submittedAt: now,
+      });
+
+      if (attempt.type === "assessment") {
+        const existing = await tx.query.leaderboard.findFirst({
+          where: and(
+            eq(leaderboard.userId, userId),
+            eq(leaderboard.testId, attempt.testId),
+          ),
+        });
+
+        if (!existing) {
+          await tx.insert(leaderboard).values({
+            userId,
+            testId: attempt.testId,
+            bestScore: evaluation.score,
+            bestWpm: evaluation.wpm,
+            bestAccuracy: evaluation.accuracy,
+          });
+        } else if (evaluation.score > existing.bestScore) {
+          await tx
+            .update(leaderboard)
+            .set({
+              bestScore: evaluation.score,
+              bestWpm: evaluation.wpm,
+              bestAccuracy: evaluation.accuracy,
+              updatedAt: now,
+            })
+            .where(eq(leaderboard.id, existing.id));
+        }
+      }
+
+      return {
+        attempt: updated,
+        evaluation,
+      };
     });
-    if (!attempt) throw new Error("Attempt not found");
-    if (attempt.isSubmitted) return attempt; // idempotent
-
-    const [updated] = await db
-      .update(testAttempts)
-      .set({
-        answerFinal: input.answerFinal,
-        isSubmitted: true,
-        submittedAt: new Date(),
-        stage: "submitted",
-        updatedAt: new Date(),
-      })
-      .where(eq(testAttempts.id, input.attemptId))
-      .returning();
-
-    return updated;
   },
 
   /**
@@ -164,7 +235,10 @@ export const attemptService = {
 
     return {
       attempt,
-      test: {...attempt.test, audioUrl: R2Service.getPublicUrl(attempt.test.audioKey) },
+      test: {
+        ...attempt.test,
+        audioUrl: R2Service.getPublicUrl(attempt.test.audioKey),
+      },
       secondsLeft,
       elapsedSeconds,
     };

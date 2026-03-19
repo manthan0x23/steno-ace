@@ -41,8 +41,7 @@ export const tests = pgTable("tests", {
 
   matter: text("matter").notNull(),
   outline: text("outline").notNull(),
-  explanation: text("explanation").notNull(),
-
+ 
   breakSeconds: integer("break_seconds").notNull(),
   writtenDurationSeconds: integer("written_duration_seconds").notNull(),
   dictationSeconds: integer("dictation_duration_seconds").notNull(),
@@ -130,7 +129,7 @@ export const testsRelations = relations(tests, ({ many }) => ({
   attempts: many(testAttempts),
 }));
 
-export const userRelations = relations(user, ({ many }) => ({
+export const userTestRelations = relations(user, ({ many }) => ({
   attempts: many(testAttempts),
 }));
 

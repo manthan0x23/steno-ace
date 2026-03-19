@@ -111,19 +111,23 @@ export function ScoreChart() {
             />
 
             <Tooltip
-              cursor={{ stroke: "hsl(var(--border))", strokeWidth: 1 }}
+              cursor={{ stroke: "hsl(var(--chart-3))", strokeWidth: 1 }}
               content={<CustomTooltip />}
             />
 
             <Area
               type="natural"
               dataKey="score"
-              stroke="hsl(var(--foreground))"
-              strokeWidth={1.8}
-              fill="hsl(var(--foreground))"
-              fillOpacity={0.05}
+              stroke="hsl(var(--chart-2))"
+              strokeWidth={2}
+              fill="hsl(var(--chart-1))"
+              fillOpacity={0.15}
               dot={false}
-              activeDot={{ r: 4 }}
+              activeDot={{
+                r: 4,
+                fill: "hsl(var(--chart-2))",
+                strokeWidth: 0,
+              }}
             />
           </AreaChart>
         </ResponsiveContainer>
