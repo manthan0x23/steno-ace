@@ -390,7 +390,7 @@ export function UserNavbar({ user }: NavbarProps) {
             <Avatar className="h-8 w-8 cursor-pointer">
               <AvatarImage src={user.profilePicUrl ?? ""} alt={user.name} />
               <AvatarFallback>
-                {user?.name[0] ?? user?.email[0] ?? "U"}
+                {user?.name?.[0] ?? user?.email?.[0] ?? "U"}
               </AvatarFallback>
             </Avatar>
           </DropdownMenuTrigger>

@@ -1,5 +1,10 @@
 import TestDetailClient from "~/components/common/clients/test-detail-client";
 
-export default function Page({ params }: { params: { testId: string } }) {
-  return <TestDetailClient testId={params.testId} isAdmin />;
+export default async function Page({
+  params,
+}: {
+  params: Promise<{ testId: string }>;
+}) {
+  const { testId } = await params;
+  return <TestDetailClient testId={testId} isAdmin />;
 }

@@ -466,8 +466,7 @@ function ResultInner({ attemptId }: { attemptId: string }) {
       </div>
 
       {/* ── Audio Player ── */}
-      <AudioPlayer audioUrl={test.audioUrl} />
-
+      {test.audioUrl && <AudioPlayer audioUrl={test.audioUrl} />}
       {/* ── Tabs ── */}
       <Tabs defaultValue="matter" className="w-full space-y-4">
         <TabsList className="w-full">

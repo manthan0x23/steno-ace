@@ -1,17 +1,18 @@
-// ─── app/user/attempt/[attemptId]/page.tsx ───────────────────────────────────
-import { HydrateClient, api } from "~/trpc/server";
 import AttemptResultClient from "~/components/common/clients/attemp-result-client";
+import { api, HydrateClient } from "~/trpc/server";
 
 interface Props {
-  params: { attemptId: string };
+  params: Promise<{ attemptId: string }>;
 }
 
 export default async function AttemptResultPage({ params }: Props) {
-  void api.result.getResult.prefetch({ attemptId: params.attemptId });
+  const { attemptId } = await params;
+
+  void api.result.getResult.prefetch({ attemptId });
 
   return (
     <HydrateClient>
-      <AttemptResultClient attemptId={params.attemptId} />
+      <AttemptResultClient attemptId={attemptId} />
     </HydrateClient>
   );
 }

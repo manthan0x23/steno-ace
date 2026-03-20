@@ -1056,7 +1056,7 @@ function TestDetailInner({
       </div>
 
       {/* ── audio ── */}
-      {isAdmin && <AudioPlayer audioUrl={data.audioUrl} />}
+      {isAdmin && data.audioUrl && <AudioPlayer audioUrl={data.audioUrl} />}
       {/* ── tabs ── */}
       <Tabs defaultValue={defaultTab} className="w-full space-y-4">
         <TabsList className="w-full">

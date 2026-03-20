@@ -1,9 +1,10 @@
 import EditTestClient from "./_components/edit-test-client";
 
-export default function EditTestPage({
+export default async function EditTestPage({
   params,
 }: {
-  params: { testId: string };
+  params: Promise<{ testId: string }>;
 }) {
-  return <EditTestClient testId={params.testId} />;
+  const { testId } = await params;
+  return <EditTestClient testId={testId} />;
 }

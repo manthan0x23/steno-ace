@@ -653,7 +653,7 @@ export default function AttemptPage() {
 
         {stage === "audio" && (
           <AudioStage
-            audioUrl={data.test.audioUrl}
+            audioUrl={data.test.audioUrl ?? ""}
             durationSeconds={data.test.dictationSeconds}
             secondsLeft={timeLeft}
             onEnded={handleStageEnd}
