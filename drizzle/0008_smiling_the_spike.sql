@@ -1,1 +1,0 @@
-ALTER TABLE "admin" ADD COLUMN "is_system" boolean DEFAULT false NOT NULL;

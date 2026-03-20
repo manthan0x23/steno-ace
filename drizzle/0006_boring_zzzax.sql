@@ -1,1 +1,0 @@
-ALTER TABLE "leaderboard" RENAME COLUMN "updated_at" TO "created_at";

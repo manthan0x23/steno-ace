@@ -1,1 +1,0 @@
-ALTER TABLE "tests" ADD COLUMN "dictation_duration_seconds" integer DEFAULT 0 NOT NULL;

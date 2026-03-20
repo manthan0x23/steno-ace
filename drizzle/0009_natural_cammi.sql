@@ -1,2 +1,0 @@
-CREATE TYPE "public"."invite_status" AS ENUM('active', 'invalidated', 'expired', 'limit_reached');--> statement-breakpoint
-ALTER TABLE "admin_invite" ADD COLUMN "status" "invite_status" DEFAULT 'active' NOT NULL;

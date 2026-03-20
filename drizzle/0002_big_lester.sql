@@ -1,1 +1,0 @@
-ALTER TABLE "tests" ALTER COLUMN "dictation_duration_seconds" DROP DEFAULT;
