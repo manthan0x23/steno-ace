@@ -1,6 +1,6 @@
 // ─── app/user/attempt/[attemptId]/page.tsx ───────────────────────────────────
 import { HydrateClient, api } from "~/trpc/server";
-import AttemptResultClient from "~/components/common/attemp-result-client";
+import AttemptResultClient from "~/components/common/clients/attemp-result-client";
 
 interface Props {
   params: { attemptId: string };

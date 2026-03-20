@@ -1,4 +1,4 @@
-import TestDetailClient from "~/components/common/test-detail-client";
+import TestDetailClient from "~/components/common/clients/test-detail-client";
 
 export default function UserTestPage({
   params,

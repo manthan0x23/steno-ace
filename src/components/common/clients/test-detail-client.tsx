@@ -77,6 +77,7 @@ import {
 import { formatDistanceToNow } from "date-fns";
 import Link from "next/link";
 import { TestStartDialog } from "~/components/common/user/test-start-dialog";
+import { cn } from "~/lib/utils";
 
 // ─── types ────────────────────────────────────────────────────────────────────
 
@@ -309,7 +310,12 @@ function KpiCard({
   color?: string;
 }) {
   return (
-    <div className="bg-card flex items-center gap-3 rounded-xl border px-4 py-3">
+    <div
+      className={cn(
+        "flex items-center gap-3 rounded-xl border bg-transparent px-4 py-3",
+        label === "Attempts" && "bg-card",
+      )}
+    >
       <div
         className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${color ?? "bg-muted"}`}
       >

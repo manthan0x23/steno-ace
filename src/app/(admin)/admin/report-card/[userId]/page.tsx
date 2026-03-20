@@ -1,4 +1,4 @@
-import ReportCardClient from "~/components/common/report-card-client";
+import ReportCardClient from "~/components/common/clients/report-card-client";
 import { api } from "~/trpc/server";
 
 export default async function Page({ params }: { params: { userId: string } }) {

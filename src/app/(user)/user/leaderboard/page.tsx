@@ -1,5 +1,5 @@
 "use client";
-import LeaderboardClient from "~/components/common/leaderboard-client";
+import LeaderboardClient from "~/components/common/clients/leaderboard-client";
 import { trpc } from "~/trpc/react";
 
 export default function Page() {
