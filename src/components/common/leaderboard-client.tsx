@@ -1,6 +1,25 @@
 "use client";
 
-// ─── app/admin/leaderboard/_components/leaderboard-client.tsx ─────────────────
+// ─── components/common/leaderboard-client.tsx ────────────────────────────────
+//
+// Generic leaderboard used by both admin and user routes.
+//
+// Admin page:
+//   import LeaderboardClient from "~/components/common/leaderboard-client";
+//   export default function Page() { return <LeaderboardClient isAdmin />; }
+//
+// User page:
+//   import LeaderboardClient from "~/components/common/leaderboard-client";
+//   export default function Page() {
+//     const [me] = trpc.user.me.useSuspenseQuery();
+//     return <LeaderboardClient currentUserId={me.id} />;
+//   }
+//
+// Differences by mode:
+//   isAdmin=true  → every row links to /admin/report-card/[userId]
+//   isAdmin=false → only the current user's own row links to /user/report-card
+//                   own row is highlighted with bg-primary/5 + "(You)" label
+//                   podium shows "You" for own entry
 
 import { Suspense, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -25,7 +44,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// ─── types ────────────────────────────────────────────────────────────────────
 
 type Performer = {
   rank: number;
@@ -40,11 +59,17 @@ type Performer = {
   firstPlaces: number;
 };
 
+export type LeaderboardClientProps = {
+  isAdmin?: boolean;
+  currentUserId?: string;
+};
+
 const PAGE_SIZE_OPTIONS = [10, 20, 50] as const;
 type PageSize = (typeof PAGE_SIZE_OPTIONS)[number];
 const MEDALS = ["🥇", "🥈", "🥉"];
+const FROM_DATE_30D = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── helpers ──────────────────────────────────────────────────────────────────
 
 function initials(u: Performer["user"]) {
   return (u.name ?? u.email ?? "?")[0]?.toUpperCase() ?? "?";
@@ -95,7 +120,7 @@ function badgeFor(p: Performer) {
   return null;
 }
 
-// ─── Mini Bar Chart (top 4 users) ────────────────────────────────────────────
+// ─── mini bar chart ───────────────────────────────────────────────────────────
 
 function MiniBarChart({ data }: { data: Performer[] }) {
   const top4 = data.slice(0, 4);
@@ -144,9 +169,15 @@ function MiniBarChart({ data }: { data: Performer[] }) {
   );
 }
 
-// ─── Podium Card ──────────────────────────────────────────────────────────────
+// ─── podium ───────────────────────────────────────────────────────────────────
 
-function PodiumCard({ top3 }: { top3: Performer[] }) {
+function PodiumCard({
+  top3,
+  currentUserId,
+}: {
+  top3: Performer[];
+  currentUserId?: string;
+}) {
   if (top3.length === 0) return null;
   const order = [top3[1], top3[0], top3[2]].filter(Boolean) as Performer[];
 
@@ -159,9 +190,8 @@ function PodiumCard({ top3 }: { top3: Performer[] }) {
         </span>
       </div>
 
-      {/* Visual podium blocks */}
       <div className="flex items-end justify-center gap-3 px-6 pt-5 pb-0">
-        {order.map((p, i) => {
+        {order.map((p) => {
           const blockH = p.rank === 1 ? "h-16" : p.rank === 2 ? "h-12" : "h-8";
           const blockBg =
             p.rank === 1
@@ -169,6 +199,7 @@ function PodiumCard({ top3 }: { top3: Performer[] }) {
               : p.rank === 2
                 ? "bg-slate-500/15 ring-1 ring-slate-400/30"
                 : "bg-orange-500/10 ring-1 ring-orange-500/20";
+          const isYou = !!currentUserId && p.user.id === currentUserId;
           return (
             <div key={p.user.id} className="flex flex-col items-center gap-1.5">
               <div className="relative">
@@ -177,8 +208,12 @@ function PodiumCard({ top3 }: { top3: Performer[] }) {
                   <span className="absolute -top-2 -right-1 text-sm">👑</span>
                 )}
               </div>
-              <p className="max-w-[60px] truncate text-center text-[11px] font-semibold">
-                {p.user.name?.split(" ")[0] ?? p.user.email.split("@")[0]}
+              <p
+                className={`max-w-[60px] truncate text-center text-[11px] font-semibold ${isYou ? "text-primary" : ""}`}
+              >
+                {isYou
+                  ? "You"
+                  : (p.user.name?.split(" ")[0] ?? p.user.email.split("@")[0])}
               </p>
               <p className="text-muted-foreground text-[10px] font-bold tabular-nums">
                 {Math.round(p.totalPoints)}
@@ -193,31 +228,35 @@ function PodiumCard({ top3 }: { top3: Performer[] }) {
         })}
       </div>
 
-      {/* List below podium */}
       <div className="mt-1 divide-y">
-        {top3.map((p) => (
-          <div
-            key={p.user.id}
-            className="flex items-center gap-2.5 px-4 py-2.5"
-          >
-            <span className="w-5 shrink-0 text-center text-sm">
-              {MEDALS[p.rank - 1]}
-            </span>
-            <UserAvatar user={p.user} size="sm" />
-            <p className="min-w-0 flex-1 truncate text-sm font-medium">
-              {p.user.name ?? p.user.email}
-            </p>
-            <p className="shrink-0 text-sm font-bold text-amber-500 tabular-nums">
-              {Math.round(p.totalPoints)}
-            </p>
-          </div>
-        ))}
+        {top3.map((p) => {
+          const isYou = !!currentUserId && p.user.id === currentUserId;
+          return (
+            <div
+              key={p.user.id}
+              className={`flex items-center gap-2.5 px-4 py-2.5 ${isYou ? "bg-primary/5" : ""}`}
+            >
+              <span className="w-5 shrink-0 text-center text-sm">
+                {MEDALS[p.rank - 1]}
+              </span>
+              <UserAvatar user={p.user} size="sm" />
+              <p
+                className={`min-w-0 flex-1 truncate text-sm font-medium ${isYou ? "text-primary" : ""}`}
+              >
+                {isYou ? "You" : (p.user.name ?? p.user.email)}
+              </p>
+              <p className="shrink-0 text-sm font-bold text-amber-500 tabular-nums">
+                {Math.round(p.totalPoints)}
+              </p>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
 }
 
-// ─── Stats Strip ─────────────────────────────────────────────────────────────
+// ─── stats strip ─────────────────────────────────────────────────────────────
 
 function StatsStrip({ data }: { data: Performer[] }) {
   const total = data.length;
@@ -231,24 +270,24 @@ function StatsStrip({ data }: { data: Performer[] }) {
     <div className="grid grid-cols-3 divide-x rounded-xl border">
       {[
         {
-          icon: Users,
+          Icon: Users,
           label: "Participants",
           value: total,
           color: "text-violet-500",
         },
         {
-          icon: Target,
+          Icon: Target,
           label: "Total Plays",
           value: totalPlays,
           color: "text-blue-500",
         },
         {
-          icon: Zap,
+          Icon: Zap,
           label: "Avg Points",
           value: avgPts,
           color: "text-amber-500",
         },
-      ].map(({ icon: Icon, label, value, color }) => (
+      ].map(({ Icon, label, value, color }) => (
         <div
           key={label}
           className="flex items-center justify-between px-5 py-3.5"
@@ -266,9 +305,17 @@ function StatsStrip({ data }: { data: Performer[] }) {
   );
 }
 
-// ─── Leaderboard Table ────────────────────────────────────────────────────────
+// ─── table ────────────────────────────────────────────────────────────────────
 
-function LeaderboardTable({ data }: { data: Performer[] }) {
+function LeaderboardTable({
+  data,
+  isAdmin,
+  currentUserId,
+}: {
+  data: Performer[];
+  isAdmin?: boolean;
+  currentUserId?: string;
+}) {
   const router = useRouter();
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState<PageSize>(20);
@@ -282,9 +329,17 @@ function LeaderboardTable({ data }: { data: Performer[] }) {
     return Array.from({ length: 5 }, (_, i) => start + i);
   };
 
+  const handleRowClick = (p: Performer) => {
+    if (isAdmin) {
+      router.push(`/admin/report-card/${p.user.id}`);
+    } else if (currentUserId && p.user.id === currentUserId) {
+      router.push("/user/report-card");
+    }
+    // other users' rows are not clickable in user mode
+  };
+
   return (
     <div className="flex flex-col gap-3">
-      {/* Toolbar */}
       <div className="flex items-center justify-between">
         <p className="text-muted-foreground text-sm">
           <span className="text-foreground font-semibold tabular-nums">
@@ -318,48 +373,47 @@ function LeaderboardTable({ data }: { data: Performer[] }) {
       <div className="overflow-hidden rounded-xl border">
         {/* Header */}
         <div className="bg-muted/40 grid grid-cols-[40px_36px_1fr_96px_72px_72px_80px_28px] gap-3 border-b px-4 py-2">
-          {[
-            { h: "#", right: false },
-            { h: "", right: false },
-            { h: "User", right: false },
-            { h: "Points", right: true },
-            { h: "Tests", right: true },
-            { h: "#1 Wins", right: true },
-            { h: "Badge", right: true },
-            { h: "", right: false },
-          ].map(({ h, right }, i) => (
-            <span
-              key={i}
-              className={[
-                "text-muted-foreground text-[10px] font-semibold tracking-widest uppercase",
-                right ? "text-right" : "",
-              ].join(" ")}
-            >
-              {h}
-            </span>
-          ))}
+          {["#", "", "User", "Points", "Tests", "#1 Wins", "Badge", ""].map(
+            (h, i) => (
+              <span
+                key={i}
+                className={[
+                  "text-muted-foreground text-[10px] font-semibold tracking-widest uppercase",
+                  i >= 3 && i <= 6 ? "text-right" : "",
+                ].join(" ")}
+              >
+                {h}
+              </span>
+            ),
+          )}
         </div>
 
         {slice.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-16 text-center">
             <Trophy className="text-muted-foreground/30 h-8 w-8" />
-            <p className="text-muted-foreground text-sm">
-              No participants for this period
-            </p>
+            <p className="text-muted-foreground text-sm">No participants yet</p>
           </div>
         ) : (
           slice.map((p, idx) => {
             const b = badgeFor(p);
             const isTop3 = p.rank <= 3;
+            const isYou = !!currentUserId && p.user.id === currentUserId;
+            // Clickable: always in admin mode; only own row in user mode
+            const clickable = isAdmin || isYou;
+
             return (
               <div
                 key={p.user.id}
-                onClick={() => router.push(`/admin/report-card/${p.user.id}`)}
+                onClick={() => handleRowClick(p)}
                 className={[
-                  "group hover:bg-muted/50 grid cursor-pointer grid-cols-[40px_36px_1fr_96px_72px_72px_80px_28px] items-center gap-3 px-4 py-2.5 transition-colors",
+                  "group grid grid-cols-[40px_36px_1fr_96px_72px_72px_80px_28px] items-center gap-3 px-4 py-2.5 transition-colors",
                   idx !== slice.length - 1 ? "border-b" : "",
                   isTop3 ? "bg-muted/20" : "",
-                ].join(" ")}
+                  isYou ? "bg-primary/5" : "",
+                  clickable ? "hover:bg-muted/50 cursor-pointer" : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
               >
                 {/* Rank */}
                 <div className="flex justify-center">
@@ -375,10 +429,17 @@ function LeaderboardTable({ data }: { data: Performer[] }) {
                 {/* Avatar */}
                 <UserAvatar user={p.user} size="sm" />
 
-                {/* Name */}
+                {/* Name + email */}
                 <div className="min-w-0">
-                  <p className="truncate text-sm leading-none font-medium">
+                  <p
+                    className={`truncate text-sm leading-none font-medium ${isYou ? "text-primary" : ""}`}
+                  >
                     {p.user.name ?? p.user.email}
+                    {isYou && (
+                      <span className="text-primary/60 ml-1 text-xs font-normal">
+                        (You)
+                      </span>
+                    )}
                   </p>
                   {p.user.name && (
                     <p className="text-muted-foreground mt-0.5 truncate text-xs">
@@ -389,10 +450,7 @@ function LeaderboardTable({ data }: { data: Performer[] }) {
 
                 {/* Points */}
                 <p
-                  className={[
-                    "text-right text-sm font-bold tabular-nums",
-                    isTop3 ? "text-amber-500" : "",
-                  ].join(" ")}
+                  className={`text-right text-sm font-bold tabular-nums ${isTop3 ? "text-amber-500" : ""}`}
                 >
                   {Math.round(p.totalPoints)}
                 </p>
@@ -404,12 +462,7 @@ function LeaderboardTable({ data }: { data: Performer[] }) {
 
                 {/* #1 wins */}
                 <p
-                  className={[
-                    "text-right text-sm font-semibold tabular-nums",
-                    p.firstPlaces > 0
-                      ? "text-amber-500"
-                      : "text-muted-foreground",
-                  ].join(" ")}
+                  className={`text-right text-sm font-semibold tabular-nums ${p.firstPlaces > 0 ? "text-amber-500" : "text-muted-foreground"}`}
                 >
                   {p.firstPlaces}
                 </p>
@@ -427,15 +480,18 @@ function LeaderboardTable({ data }: { data: Performer[] }) {
                   )}
                 </div>
 
-                {/* Arrow */}
-                <ArrowRight className="text-muted-foreground/40 h-3.5 w-3.5 opacity-0 transition-opacity group-hover:opacity-100" />
+                {/* Arrow — only for clickable rows */}
+                {clickable ? (
+                  <ArrowRight className="text-muted-foreground/40 h-3.5 w-3.5 opacity-0 transition-opacity group-hover:opacity-100" />
+                ) : (
+                  <span />
+                )}
               </div>
             );
           })
         )}
       </div>
 
-      {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between pt-1">
           <p className="text-muted-foreground text-xs tabular-nums">
@@ -479,22 +535,17 @@ function LeaderboardTable({ data }: { data: Performer[] }) {
   );
 }
 
-// ─── Inner ────────────────────────────────────────────────────────────────────
+// ─── inner ────────────────────────────────────────────────────────────────────
 
-// Stable date computed once at module load — never changes between renders
-const FROM_DATE_30D = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-
-function LeaderboardInner() {
+function LeaderboardInner({ isAdmin, currentUserId }: LeaderboardClientProps) {
   const [data] = trpc.analytics.getGlobalTopPerformers.useSuspenseQuery({
     limit: 100,
     fromDate: FROM_DATE_30D,
   });
-
   const top3 = data.slice(0, 3);
 
   return (
     <div className="flex flex-col gap-5">
-      {/* Row 1: stats + bar chart (left) | podium (right) */}
       <div className="flex gap-5">
         <div className="flex min-w-0 flex-1 flex-col gap-4">
           <StatsStrip data={data} />
@@ -502,7 +553,7 @@ function LeaderboardInner() {
         </div>
         <div className="w-64 shrink-0">
           {top3.length > 0 ? (
-            <PodiumCard top3={top3} />
+            <PodiumCard top3={top3} currentUserId={currentUserId} />
           ) : (
             <div className="flex h-full items-center justify-center rounded-xl border py-12">
               <p className="text-muted-foreground text-sm">No data</p>
@@ -510,14 +561,16 @@ function LeaderboardInner() {
           )}
         </div>
       </div>
-
-      {/* Row 2: table */}
-      <LeaderboardTable data={data} />
+      <LeaderboardTable
+        data={data}
+        isAdmin={isAdmin}
+        currentUserId={currentUserId}
+      />
     </div>
   );
 }
 
-// ─── Skeleton ─────────────────────────────────────────────────────────────────
+// ─── skeleton ─────────────────────────────────────────────────────────────────
 
 function LeaderboardSkeleton() {
   return (
@@ -537,7 +590,7 @@ function LeaderboardSkeleton() {
               <div key={i} className="flex flex-1 flex-col items-center gap-2">
                 <Skeleton className="h-3 w-8" />
                 <Skeleton
-                  className={`w-full rounded-t-sm`}
+                  className="w-full rounded-t-sm"
                   style={{ height: `${30 + i * 15}px` }}
                 />
                 <Skeleton className="h-7 w-7 rounded-full" />
@@ -567,7 +620,7 @@ function LeaderboardSkeleton() {
         <div className="bg-muted/40 border-b px-4 py-2">
           <Skeleton className="h-3 w-40" />
         </div>
-        {Array.from({ length: 5 }).map((_, i) => (
+        {Array.from({ length: 6 }).map((_, i) => (
           <div key={i} className="flex items-center gap-3 px-4 py-2.5">
             <Skeleton className="h-5 w-6" />
             <Skeleton className="h-7 w-7 rounded-full" />
@@ -586,11 +639,12 @@ function LeaderboardSkeleton() {
   );
 }
 
-// ─── Date Range Picker ────────────────────────────────────────────────────────
+// ─── export ───────────────────────────────────────────────────────────────────
 
-// ─── Export ───────────────────────────────────────────────────────────────────
-
-export default function LeaderboardClient() {
+export default function LeaderboardClient({
+  isAdmin = false,
+  currentUserId,
+}: LeaderboardClientProps) {
   return (
     <div className="w-full space-y-5 px-6 py-7">
       <div className="flex items-center gap-3">
@@ -598,13 +652,14 @@ export default function LeaderboardClient() {
         <div>
           <h1 className="text-xl font-semibold tracking-tight">Leaderboard</h1>
           <p className="text-muted-foreground text-sm">
-            Global rankings — last 30 days
+            {isAdmin
+              ? "Global rankings — last 30 days"
+              : "See how you stack up — last 30 days"}
           </p>
         </div>
       </div>
-
       <Suspense fallback={<LeaderboardSkeleton />}>
-        <LeaderboardInner />
+        <LeaderboardInner isAdmin={isAdmin} currentUserId={currentUserId} />
       </Suspense>
     </div>
   );

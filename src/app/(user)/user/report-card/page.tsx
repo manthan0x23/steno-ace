@@ -1,6 +1,5 @@
-import { UserReportCard } from "~/components/common/report-card";
+import ReportCardClient from "~/components/common/report-card-client";
 
-export default function UserReportCardPage() {
-  return <UserReportCard />;
+export default function Page() {
+  return <ReportCardClient />;
 }
- 

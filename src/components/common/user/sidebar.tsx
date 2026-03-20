@@ -22,6 +22,7 @@ import {
   Frame,
   LayoutDashboard,
   ClipboardList,
+  ChartSpline,
 } from "lucide-react";
 
 const MAIN_NAV = [
@@ -29,6 +30,8 @@ const MAIN_NAV = [
   { label: "Tests", href: "/user/tests", icon: ClipboardList },
   { label: "Attempts", href: "/user/attempts", icon: Star },
   { label: "Leaderboard", href: "/user/leaderboard", icon: Trophy },
+
+  { label: "My Report", href: "/user/report-card", icon: ChartSpline },
   { label: "Hall of Fame", href: "/user/hall-of-fame", icon: Frame },
 ];
 

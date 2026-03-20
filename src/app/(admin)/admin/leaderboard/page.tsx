@@ -1,5 +1,5 @@
-import LeaderboardClient from "./_components/leaderboard-client";
+import LeaderboardClient from "~/components/common/leaderboard-client";
 
-export default function LeaderboardPage() {
-  return <LeaderboardClient />;
+export default function Page() {
+  return <LeaderboardClient isAdmin />;
 }
