@@ -434,7 +434,7 @@ function SubmittedScreen({ attemptId }: { attemptId: string }) {
           Your answer has been recorded. Results will be available shortly.
         </p>
       </div>
-      <div>
+      <div className="flex items-center justify-center gap-3 w-auto">
         <Button
           variant="outline"
           size="sm"
