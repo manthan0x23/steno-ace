@@ -15,7 +15,11 @@ function FieldError({ message }: { message: string | undefined }) {
   return <p className="text-destructive mt-1 text-xs">{message}</p>;
 }
 
-export function RegisterForm() {
+type RegisterProps = {
+  token?: string;
+};
+
+export function RegisterForm({ token }: RegisterProps) {
   const router = useRouter();
   const registerMutation = trpc.admin.auth.register.useMutation({
     onSuccess: () => {
@@ -33,7 +37,7 @@ export function RegisterForm() {
       username: "",
       password: "",
       confirmPassword: "",
-      code: "",
+      code: token ?? "",
     },
     onSubmit: async ({ value }) => {
       await registerMutation.mutateAsync({

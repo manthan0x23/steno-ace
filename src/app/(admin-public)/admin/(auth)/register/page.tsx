@@ -1,9 +1,15 @@
-import { RegisterForm } from "~/app/(admin-public)/admin/(auth)/register/_components/register-form";
+import { RegisterForm } from "./_components/register-form";
 
-export default function Page() {
+type PageProps = {
+  searchParams: Promise<{ token?: string }>;
+};
+
+export default async function Page({ searchParams }: PageProps) {
+  const { token } = await searchParams;
+
   return (
     <div className="flex min-h-screen items-center justify-center">
-      <RegisterForm />
+      <RegisterForm token={token} />
     </div>
   );
 }
