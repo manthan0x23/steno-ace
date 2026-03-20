@@ -1,6 +1,11 @@
 import { createTRPCRouter, adminProcedure, publicProcedure } from "../../trpc";
 import { analyticsService } from "./analytics.service";
-import { dateRangeSchema, getGlobalTopPerformersSchema } from "./analytics.schema";
+import {
+  dateRangeSchema,
+  getGlobalTopPerformersSchema,
+  getTestStatsSchema,
+  getUsersSchema,
+} from "./analytics.schema";
 
 export const analyticsRouter = createTRPCRouter({
   // 📊 Overview
@@ -20,6 +25,10 @@ export const analyticsRouter = createTRPCRouter({
     return analyticsService.getEngagementMetrics();
   }),
 
+  getTestStats: publicProcedure.input(getTestStatsSchema).query(({ input }) => {
+    return analyticsService.getTestStats(input.testId);
+  }),
+
   // 📄 Test Performance
   getTestPerformance: adminProcedure.query(() => {
     return analyticsService.getTestPerformance();
@@ -30,7 +39,6 @@ export const analyticsRouter = createTRPCRouter({
     return analyticsService.getLeaderboardAnalytics();
   }),
 
-
   /**
    * 🔥 Global Leaderboard
    */
@@ -39,4 +47,8 @@ export const analyticsRouter = createTRPCRouter({
     .query(({ input }) => {
       return analyticsService.getGlobalTopPerformers(input);
     }),
+
+  getUsers: adminProcedure.input(getUsersSchema).query(async ({ input }) => {
+    return await analyticsService.getUsers(input);
+  }),
 });

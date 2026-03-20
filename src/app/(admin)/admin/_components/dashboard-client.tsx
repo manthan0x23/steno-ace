@@ -293,9 +293,11 @@ function RecentAttempts() {
 const MEDALS = ["🥇", "🥈", "🥉"];
 
 function TopPerformers() {
-  const [data] = trpc.analytics.getGlobalTopPerformers.useSuspenseQuery({
-    limit: 5,
-  });
+  const [{ data, meta }] =
+    trpc.analytics.getGlobalTopPerformers.useSuspenseQuery({
+      pageSize: 5,
+      page: 1,
+    });
 
   return (
     <div className="flex flex-col gap-3">
@@ -337,7 +339,7 @@ function TopPerformers() {
                 )}
               </span>
 
-              <Avatar className="h-7 w-7 shrink-0 ring-1 ring-border">
+              <Avatar className="ring-border h-7 w-7 shrink-0 ring-1">
                 <AvatarImage
                   src={p.user.profilePicUrl ?? ""}
                   alt={p.user.name ?? p.user.email ?? ""}
@@ -639,7 +641,7 @@ export default function DashboardClient() {
   });
   trpc.analytics.getTestPerformance.useQuery(undefined, { staleTime: 60_000 });
   trpc.analytics.getGlobalTopPerformers.useQuery(
-    { limit: 5 },
+    { pageSize: 5, page: 1 },
     { staleTime: 60_000 },
   );
   trpc.result.getResults.useQuery(

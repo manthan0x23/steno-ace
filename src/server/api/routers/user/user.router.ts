@@ -16,9 +16,35 @@ import {
   testWiseInputSchema,
   userIdSchema,
 } from "./user.schema";
+import { db } from "~/server/db";
+import R2Service from "~/server/services/r2.service";
 
 export const userRouter = createTRPCRouter({
   me: protectedProcedure.query(({ ctx }) => ctx.user),
+
+  getUser: adminProcedure
+    .input(
+      z.object({
+        userId: z.string(),
+      }),
+    )
+    .query(async ({ input }) => {
+      const user = await db.query.user.findFirst({
+        columns: {
+          email: true,
+          name: true,
+          image: true,
+          gender: true,
+          phone: true,
+        },
+        where: (u, { eq }) => eq(u.id, input.userId),
+      });
+
+      return {
+        ...user,
+        profilePicUrl: user?.image ? R2Service.getPublicUrl(user.image) : null,
+      };
+    }),
 
   // ── Report ──
   getReport: protectedProcedure
@@ -116,6 +142,7 @@ export const userRouter = createTRPCRouter({
         .object({
           page: z.number().min(0).default(0),
           limit: z.number().min(1).max(100).default(15),
+          testId: z.string().optional(),
           type: z.enum(["assessment", "practice"]).optional(),
         })
         .optional(),
@@ -126,6 +153,7 @@ export const userRouter = createTRPCRouter({
         input?.page,
         input?.limit,
         input?.type,
+        input?.testId,
       ),
     ),
 

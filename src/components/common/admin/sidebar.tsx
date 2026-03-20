@@ -28,6 +28,9 @@ import {
   Keyboard,
   Pen,
   Frame,
+  Users,
+  MessageSquare,
+  BellDot,
 } from "lucide-react";
 
 const MAIN_NAV = [
@@ -35,6 +38,7 @@ const MAIN_NAV = [
   { label: "Tests", href: "/admin/tests", icon: ClipboardList },
   { label: "Leaderboard", href: "/admin/leaderboard", icon: Trophy },
   { label: "Analytics", href: "/admin/analytics", icon: BarChart2 },
+  { label: "Users", href: "/admin/users", icon: Users },
   {
     label: "Hall of Fame",
     href: "/admin/hall-of-fame",
@@ -44,6 +48,7 @@ const MAIN_NAV = [
 ];
 
 const MANAGE_NAV = [
+  { label: "Notifications", href: "/admin/notifications", icon: BellDot  },
   { label: "Invites", href: "/admin/invites", icon: MailPlus },
   { label: "Settings", href: "/admin/settings", icon: Settings },
 ];

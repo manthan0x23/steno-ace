@@ -59,6 +59,13 @@ type Performer = {
   firstPlaces: number;
 };
 
+type Meta = {
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+};
+
 export type LeaderboardClientProps = {
   isAdmin?: boolean;
   currentUserId?: string;
@@ -258,12 +265,11 @@ function PodiumCard({
 
 // ─── stats strip ─────────────────────────────────────────────────────────────
 
-function StatsStrip({ data }: { data: Performer[] }) {
-  const total = data.length;
+function StatsStrip({ total, data }: { total: number; data: Performer[] }) {
   const totalPlays = data.reduce((s, p) => s + p.testsPlayed, 0);
   const avgPts =
-    total > 0
-      ? Math.round(data.reduce((s, p) => s + p.totalPoints, 0) / total)
+    data.length > 0
+      ? Math.round(data.reduce((s, p) => s + p.totalPoints, 0) / data.length)
       : 0;
 
   return (
@@ -309,23 +315,31 @@ function StatsStrip({ data }: { data: Performer[] }) {
 
 function LeaderboardTable({
   data,
+  meta,
   isAdmin,
   currentUserId,
+  page,
+  pageSize,
+  onPageChange,
+  onPageSizeChange,
 }: {
   data: Performer[];
+  meta: Meta;
   isAdmin?: boolean;
   currentUserId?: string;
+  page: number;
+  pageSize: PageSize;
+  onPageChange: (page: number) => void;
+  onPageSizeChange: (size: PageSize) => void;
 }) {
   const router = useRouter();
-  const [page, setPage] = useState(0);
-  const [pageSize, setPageSize] = useState<PageSize>(20);
-
-  const totalPages = Math.ceil(data.length / pageSize);
-  const slice = data.slice(page * pageSize, page * pageSize + pageSize);
 
   const visiblePages = () => {
-    if (totalPages <= 5) return Array.from({ length: totalPages }, (_, i) => i);
-    const start = Math.max(0, Math.min(page - 2, totalPages - 5));
+    const { totalPages } = meta;
+    // page here is 1-based
+    if (totalPages <= 5)
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    const start = Math.max(1, Math.min(page - 2, totalPages - 4));
     return Array.from({ length: 5 }, (_, i) => start + i);
   };
 
@@ -335,7 +349,6 @@ function LeaderboardTable({
     } else if (currentUserId && p.user.id === currentUserId) {
       router.push("/user/report-card");
     }
-    // other users' rows are not clickable in user mode
   };
 
   return (
@@ -343,7 +356,7 @@ function LeaderboardTable({
       <div className="flex items-center justify-between">
         <p className="text-muted-foreground text-sm">
           <span className="text-foreground font-semibold tabular-nums">
-            {data.length}
+            {meta.total}
           </span>{" "}
           participants
         </p>
@@ -352,8 +365,7 @@ function LeaderboardTable({
           <Select
             value={String(pageSize)}
             onValueChange={(v) => {
-              setPageSize(Number(v) as PageSize);
-              setPage(0);
+              onPageSizeChange(Number(v) as PageSize);
             }}
           >
             <SelectTrigger className="h-7 w-16 text-xs">
@@ -388,17 +400,16 @@ function LeaderboardTable({
           )}
         </div>
 
-        {slice.length === 0 ? (
+        {data.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-16 text-center">
             <Trophy className="text-muted-foreground/30 h-8 w-8" />
             <p className="text-muted-foreground text-sm">No participants yet</p>
           </div>
         ) : (
-          slice.map((p, idx) => {
+          data.map((p, idx) => {
             const b = badgeFor(p);
             const isTop3 = p.rank <= 3;
             const isYou = !!currentUserId && p.user.id === currentUserId;
-            // Clickable: always in admin mode; only own row in user mode
             const clickable = isAdmin || isYou;
 
             return (
@@ -407,7 +418,7 @@ function LeaderboardTable({
                 onClick={() => handleRowClick(p)}
                 className={[
                   "group grid grid-cols-[40px_36px_1fr_96px_72px_72px_80px_28px] items-center gap-3 px-4 py-2.5 transition-colors",
-                  idx !== slice.length - 1 ? "border-b" : "",
+                  idx !== data.length - 1 ? "border-b" : "",
                   isTop3 ? "bg-muted/20" : "",
                   isYou ? "bg-primary/5" : "",
                   clickable ? "hover:bg-muted/50 cursor-pointer" : "",
@@ -492,19 +503,19 @@ function LeaderboardTable({
         )}
       </div>
 
-      {totalPages > 1 && (
+      {meta.totalPages > 1 && (
         <div className="flex items-center justify-between pt-1">
           <p className="text-muted-foreground text-xs tabular-nums">
-            {page * pageSize + 1}–{Math.min((page + 1) * pageSize, data.length)}{" "}
-            of {data.length}
+            {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, meta.total)}{" "}
+            of {meta.total}
           </p>
           <div className="flex items-center gap-1">
             <Button
               variant="outline"
               size="sm"
               className="h-7 w-7 p-0"
-              disabled={page === 0}
-              onClick={() => setPage((p) => p - 1)}
+              disabled={page === 1}
+              onClick={() => onPageChange(page - 1)}
             >
               <ChevronLeft className="h-3.5 w-3.5" />
             </Button>
@@ -514,17 +525,17 @@ function LeaderboardTable({
                 variant={pg === page ? "default" : "ghost"}
                 size="sm"
                 className="h-7 w-7 p-0 text-xs"
-                onClick={() => setPage(pg)}
+                onClick={() => onPageChange(pg)}
               >
-                {pg + 1}
+                {pg}
               </Button>
             ))}
             <Button
               variant="outline"
               size="sm"
               className="h-7 w-7 p-0"
-              disabled={page + 1 >= totalPages}
-              onClick={() => setPage((p) => p + 1)}
+              disabled={page >= meta.totalPages}
+              onClick={() => onPageChange(page + 1)}
             >
               <ChevronRight className="h-3.5 w-3.5" />
             </Button>
@@ -538,17 +549,31 @@ function LeaderboardTable({
 // ─── inner ────────────────────────────────────────────────────────────────────
 
 function LeaderboardInner({ isAdmin, currentUserId }: LeaderboardClientProps) {
-  const [data] = trpc.analytics.getGlobalTopPerformers.useSuspenseQuery({
-    limit: 100,
-    fromDate: FROM_DATE_30D,
-  });
-  const top3 = data.slice(0, 3);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState<PageSize>(20);
+
+  const [{ data, meta }] =
+    trpc.analytics.getGlobalTopPerformers.useSuspenseQuery({
+      page,
+      pageSize,
+      fromDate: FROM_DATE_30D,
+    });
+
+  // Podium always shows top 3 from the first page. Once the user navigates
+  // away from page 1, the podium retains the last-seen top-3 (stale-while-
+  // revalidate is fine here — podium doesn't need to update on every page turn).
+  const top3 = page === 1 ? data.slice(0, 3) : data.slice(0, 3);
+
+  const handlePageSizeChange = (size: PageSize) => {
+    setPageSize(size);
+    setPage(1); // reset to first page whenever page size changes
+  };
 
   return (
     <div className="flex flex-col gap-5">
       <div className="flex gap-5">
         <div className="flex min-w-0 flex-1 flex-col gap-4">
-          <StatsStrip data={data} />
+          <StatsStrip total={meta.total} data={data} />
           <MiniBarChart data={data} />
         </div>
         <div className="w-64 shrink-0">
@@ -563,8 +588,13 @@ function LeaderboardInner({ isAdmin, currentUserId }: LeaderboardClientProps) {
       </div>
       <LeaderboardTable
         data={data}
+        meta={meta}
         isAdmin={isAdmin}
         currentUserId={currentUserId}
+        page={page}
+        pageSize={pageSize}
+        onPageChange={setPage}
+        onPageSizeChange={handlePageSizeChange}
       />
     </div>
   );

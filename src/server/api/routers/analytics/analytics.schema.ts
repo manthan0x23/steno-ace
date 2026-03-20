@@ -16,7 +16,22 @@ export type DateRangeInput = z.infer<typeof dateRangeSchema>;
 export type AnalyticsFilterInput = z.infer<typeof analyticsFilterSchema>;
 
 export const getGlobalTopPerformersSchema = z.object({
-  limit: z.number().default(10),
+  page: z.number().int().min(1).default(1),
+  pageSize: z.number().int().optional().default(12),
   fromDate: z.coerce.date().optional(),
   toDate: z.coerce.date().optional(),
+});
+
+export const getUsersSchema = z.object({
+  query: z.string().optional(),
+  page: z.number().int().min(1).default(1),
+  pageSize: z.number().int().min(1).max(100).default(20),
+  sortField: z.enum(["rank", "name", "joined", "points"]).default("rank"),
+  sortOrder: z.enum(["asc", "desc"]).default("asc"),
+});
+
+export type GetUsersInput = z.infer<typeof getUsersSchema>;
+
+export const getTestStatsSchema = z.object({
+  testId: z.string(),
 });

@@ -1,12 +1,5 @@
-import TestDetailClient from "./_components/test-details-client";
+import TestDetailClient from "~/components/common/test-detail-client";
 
-
-export default function TestDetailPage({
-  params,
-}: {
-  params: { testId: string };
-}) {
-  return <TestDetailClient testId={params.testId} />;
+export default function Page({ params }: { params: { testId: string } }) {
+  return <TestDetailClient testId={params.testId} isAdmin />;
 }
- 
- 

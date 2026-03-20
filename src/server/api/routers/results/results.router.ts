@@ -23,7 +23,7 @@ export const resultRouter = createTRPCRouter({
       return await resultService.getResult(input.attemptId, ctx.user.id);
     }),
 
-  getTestResults: adminProcedure
+  getTestResults: publicProcedure
     .input(getTestResultsSchema)
     .query(async ({ input }) => {
       return await resultService.getTestResults(input);

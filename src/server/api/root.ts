@@ -8,6 +8,7 @@ import { attemptRouter } from "./routers/attempt/attempt.router";
 import { resultRouter } from "./routers/results/results.router";
 import { userRouter } from "./routers/user/user.router";
 import { analyticsRouter } from "./routers/analytics/analytics.router";
+import { notificationsRouter } from "./routers/notifications/notification.router";
 
 /**
  * This is the primary router for your server.
@@ -22,6 +23,7 @@ export const appRouter = createTRPCRouter({
   result: resultRouter,
   user: userRouter,
   analytics: analyticsRouter,
+  notification: notificationsRouter,
 });
 
 // export type definition of API

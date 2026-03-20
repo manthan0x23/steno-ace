@@ -961,7 +961,7 @@ function ReportCardInner({
         </Card>
 
         {/* Heatmap — 2/5 */}
-        <Card className="col-span-2">
+        <Card className="col-span-2 bg-transparent">
           <CardHeader className="pb-2">
             <div className="flex items-center gap-1.5">
               <BarChart2 className="text-muted-foreground h-3.5 w-3.5" />

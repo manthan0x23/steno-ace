@@ -797,7 +797,7 @@ function FeaturedTestCard({
       </div>
 
       <Button size="sm" variant={hasAttempted ? "outline" : "default"} asChild>
-        <Link href={`/user/test/${id}`}>
+        <Link href={`/user/tests/${id}`}>
           {hasAttempted ? (
             <>
               <RotateCcw className="mr-1.5 h-3.5 w-3.5" /> Practice

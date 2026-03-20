@@ -22,6 +22,7 @@ import type {
   UpdateTestInput,
 } from "./test.schema";
 import R2Service from "~/server/services/r2.service";
+import { notificationsService } from "../notifications/notification.service";
 
 const PAGE_SIZE = 12;
 
@@ -35,6 +36,14 @@ export const testService = {
         outline: input.outline ?? "",
       })
       .returning();
+
+    await notificationsService.send({
+      title: "New test available",
+      message: `"${test!.title}" has just been published. Attmept now!`,
+      to: "everyone",
+      link: `/user/tests/${test!.id}`,
+      isLinkExternal: false,
+    });
 
     return test;
   },

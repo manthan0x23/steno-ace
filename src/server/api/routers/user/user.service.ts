@@ -116,8 +116,12 @@ export const userService = {
     page = 0,
     limit = 15,
     type?: AttemptType,
+    testId?: string,
   ) {
-    const where = buildWhere(userId, { type });
+    let where = buildWhere(userId, { type });
+
+    if (testId) where = and(where, eq(results.testId, testId));
+
     const data = await db.query.results.findMany({
       where,
       orderBy: [desc(results.submittedAt)],
