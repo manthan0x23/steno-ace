@@ -8,7 +8,7 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Separator } from "~/components/ui/separator";
-import { Avatar, AvatarFallback } from "~/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import {
   Dialog,
   DialogContent,
@@ -71,16 +71,6 @@ type Invite = {
   createdAt: Date;
   status: InviteStatus;
   createdBy: { id: string; name: string; username: string } | null;
-};
-
-type AdminRow = {
-  id: string;
-  name: string;
-  username: string;
-  image: string | null;
-  isSuper: boolean;
-  isSystem: boolean;
-  createdAt: Date;
 };
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
@@ -840,7 +830,7 @@ function AdminsTable({ currentAdminId }: { currentAdminId: string }) {
     );
   }
 
-  const rows = (admins ?? []) as AdminRow[];
+  const rows = admins ?? [];
 
   return (
     <div className="overflow-hidden rounded-xl border">
@@ -865,6 +855,8 @@ function AdminsTable({ currentAdminId }: { currentAdminId: string }) {
               <TableRow key={a.id}>
                 <TableCell className="py-3 pl-4">
                   <Avatar className="h-8 w-8">
+                    <AvatarImage src={a.profilePicUrl ?? undefined} />
+
                     <AvatarFallback className="text-xs font-semibold">
                       {initials(a.name)}
                     </AvatarFallback>

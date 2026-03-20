@@ -40,6 +40,7 @@ import { cn } from "~/lib/utils";
 import type { api } from "~/trpc/server";
 import { trpc } from "~/trpc/react";
 import { ThemeToggle } from "~/components/utils/theme-toggle";
+import { authClient } from "~/server/better-auth/client";
 
 // ─── types ────────────────────────────────────────────────────────────────────
 
@@ -371,6 +372,8 @@ function NotificationCenter() {
 // ─── navbar ───────────────────────────────────────────────────────────────────
 
 export function UserNavbar({ user }: NavbarProps) {
+  const router = useRouter();
+
   return (
     <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
       <SidebarTrigger className="-ml-1" />
@@ -385,19 +388,22 @@ export function UserNavbar({ user }: NavbarProps) {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Avatar className="h-8 w-8 cursor-pointer">
-              <AvatarImage src={user.image ?? ""} alt={user.name} />
-              <AvatarFallback>{user.name[0]}</AvatarFallback>
+              <AvatarImage src={user.profilePicUrl ?? ""} alt={user.name} />
+              <AvatarFallback>
+                {user?.name[0] ?? user?.email[0] ?? "U"}
+              </AvatarFallback>
             </Avatar>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>My Account</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <User className="mr-2 h-4 w-4" />
-              Profile
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive">
+
+            <DropdownMenuItem
+              className="text-destructive"
+              onClick={() => {
+                authClient.signOut();
+                router.push("/user/login");
+              }}
+            >
               <LogOut className="mr-2 h-4 w-4" />
               Logout
             </DropdownMenuItem>

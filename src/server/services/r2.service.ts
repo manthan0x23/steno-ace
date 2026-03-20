@@ -28,7 +28,8 @@ export default class R2Service {
     });
   }
 
-  static getPublicUrl(key: string) {
+  static getPublicUrl(key?: string | null) {
+    if (!key) return null;
     return `${env.R2_PUBLIC_URL}/${key}`;
   }
 

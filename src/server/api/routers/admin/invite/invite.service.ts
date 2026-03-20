@@ -5,6 +5,7 @@ import { db } from "~/server/db";
 import { adminInvite, adminInviteUsage, admin } from "~/server/db/schema";
 import type { InviteStatus } from "~/server/db/schema/admin";
 import type { CreateInviteInput, UpdateInviteInput } from "./invite.schema";
+import R2Service from "~/server/services/r2.service";
 
 // ── status helpers ────────────────────────────────────────────────────────────
 
@@ -174,7 +175,7 @@ export const inviteService = {
   },
 
   async listAdmins() {
-    return db.query.admin.findMany({
+    const rows = await db.query.admin.findMany({
       columns: {
         id: true,
         name: true,
@@ -186,6 +187,11 @@ export const inviteService = {
       },
       orderBy: (a, { asc }) => [asc(a.createdAt)],
     });
+
+    return rows.map((r) => ({
+      ...r,
+      profilePicUrl: R2Service.getPublicUrl(r.image),
+    }));
   },
 
   async promoteToSuper(targetAdminId: string, callerAdminId: string) {

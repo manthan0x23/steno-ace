@@ -32,6 +32,8 @@ import {
   MessageSquare,
   BellDot,
 } from "lucide-react";
+import { trpc } from "~/trpc/react";
+import { useMemo } from "react";
 
 const MAIN_NAV = [
   { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
@@ -48,16 +50,33 @@ const MAIN_NAV = [
 ];
 
 const MANAGE_NAV = [
-  { label: "Notifications", href: "/admin/notifications", icon: BellDot  },
-  { label: "Admins & Invites", href: "/admin/invites", icon: MailPlus },
-  { label: "Settings", href: "/admin/settings", icon: Settings },
+  {
+    label: "Notifications",
+    href: "/admin/notifications",
+    icon: BellDot,
+    super: true,
+  },
+  {
+    label: "Admins & Invites",
+    href: "/admin/invites",
+    icon: MailPlus,
+    super: true,
+  },
+  {
+    label: "Settings",
+    href: "/admin/settings",
+    icon: Settings,
+  },
 ];
 
 export function AdminSidebar() {
   const pathname = usePathname();
+  const admin = trpc.admin.auth.me.useQuery();
 
   const isActive = (href: string) =>
     href === "/admin" ? pathname === "/admin" : pathname.startsWith(href);
+
+  const isSuper = useMemo(() => admin.data?.isSuper, [admin.data]);
 
   return (
     <Sidebar>
@@ -126,7 +145,9 @@ export function AdminSidebar() {
           <SidebarGroupLabel>Manage</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {MANAGE_NAV.map(({ label, href, icon: Icon }) => (
+              {MANAGE_NAV.filter(
+                (item) => !item.super || item.super === isSuper,
+              ).map(({ label, href, icon: Icon }) => (
                 <SidebarMenuItem key={href}>
                   <SidebarMenuButton asChild isActive={isActive(href)}>
                     <Link href={href}>

@@ -761,7 +761,7 @@ function AnalyticsInner() {
   const [leaderboard] =
     trpc.analytics.getLeaderboardAnalytics.useSuspenseQuery();
   const [topPerformers] =
-    trpc.analytics.getGlobalTopPerformers.useSuspenseQuery({ limit: 10 });
+    trpc.analytics.getGlobalTopPerformers.useSuspenseQuery({ pageSize: 10 });
 
   const stickiness =
     engagement.mau > 0

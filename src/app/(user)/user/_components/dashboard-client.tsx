@@ -325,7 +325,7 @@ function ProgressChart() {
 function RecentAttemptsPanel() {
   const [{ data }] = trpc.user.getAttemptsPaginated.useSuspenseQuery({
     page: 0,
-    limit: 4,
+    limit: 3,
   });
 
   return (

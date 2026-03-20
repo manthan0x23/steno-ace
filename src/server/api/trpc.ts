@@ -18,6 +18,7 @@ import { db } from "~/server/db";
 import { subscription } from "~/server/db/schema";
 import type { AdminSession } from "../better-auth/config";
 import { cookies } from "next/headers";
+import R2Service from "../services/r2.service";
 
 /**
  * 1. CONTEXT
@@ -146,7 +147,10 @@ export const protectedProcedure = publicProcedure.use(({ ctx, next }) => {
   return next({
     ctx: {
       ...ctx,
-      user: ctx.user,
+      user: {
+        ...ctx.user,
+        profilePicUrl: R2Service.getPublicUrl(ctx.user.image),
+      },
     },
   });
 });
@@ -163,7 +167,12 @@ export const adminProcedure = publicProcedure.use(({ ctx, next }) => {
   return next({
     ctx: {
       ...ctx,
-      admin: ctx.admin,
+      admin: {
+        ...ctx.admin,
+        profilePicUrl: ctx.admin.image
+          ? R2Service.getPublicUrl(ctx.admin.image)
+          : undefined,
+      },
     },
   });
 });

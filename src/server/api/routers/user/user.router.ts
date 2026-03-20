@@ -18,9 +18,24 @@ import {
 } from "./user.schema";
 import { db } from "~/server/db";
 import R2Service from "~/server/services/r2.service";
+import { user } from "~/server/db/schema";
+import { eq } from "drizzle-orm";
+
+const editUserSchema = z.object({
+  name: z.string().min(1).optional(),
+  phone: z.string().optional(),
+  gender: z.string().optional(),
+  image: z.string().optional(),
+});
 
 export const userRouter = createTRPCRouter({
-  me: protectedProcedure.query(({ ctx }) => ctx.user),
+  me: protectedProcedure.query(async ({ ctx }) => {
+    const user_ = await ctx.db.query.user.findFirst({
+      where: eq(user?.id, ctx.user.id),
+    });
+
+    return { ...user_, profilePicUrl: R2Service.getPublicUrl(user_?.image) };
+  }),
 
   getUser: adminProcedure
     .input(
@@ -44,6 +59,23 @@ export const userRouter = createTRPCRouter({
         ...user,
         profilePicUrl: user?.image ? R2Service.getPublicUrl(user.image) : null,
       };
+    }),
+
+  edit: protectedProcedure
+    .input(editUserSchema)
+    .mutation(async ({ input, ctx }) => {
+      const patch: Partial<typeof user.$inferInsert> = {
+        updatedAt: new Date(),
+      };
+
+      if (input.name !== undefined) patch.name = input.name;
+      if (input.phone !== undefined) patch.phone = input.phone;
+      if (input.gender !== undefined) patch.gender = input.gender;
+      if (input.image !== undefined) patch.image = input.image;
+
+      await ctx.db.update(user).set(patch).where(eq(user.id, ctx.user.id));
+
+      return { ok: true };
     }),
 
   // ── Report ──
