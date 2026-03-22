@@ -17,10 +17,13 @@ import { Toaster } from "~/components/ui/sonner";
 import { cn } from "~/lib/utils";
 import { ThemeProvider } from "~/providers/theme-provider";
 
-const interHeading = Inter({subsets:['latin'],variable:'--font-heading'});
+const interHeading = Inter({ subsets: ["latin"], variable: "--font-heading" });
 
-const oxanium = Oxanium({ subsets: ["latin"], variable: "--font-sans" });
-const robotoSlab = Roboto_Slab({subsets:['latin'],variable:'--font-serif'});
+const montserrat = Montserrat({subsets:['latin'],variable:'--font-sans'});
+const robotoSlab = Roboto_Slab({
+  subsets: ["latin"],
+  variable: "--font-serif",
+});
 const montserrat = Montserrat({
   subsets: ["latin"],
   weight: ["800", "900"],
@@ -45,10 +48,10 @@ export default function RootLayout({
       lang="en"
       suppressHydrationWarning
       className={cn(
-              montserrat.variable,
               jetbrainsMono.variable,
-              oxanium.variable,
-            , "font-serif", robotoSlab.variable, interHeading.variable)}
+              robotoSlab.variable,
+              interHeading.variable,
+            , "font-sans", montserrat.variable)}
     >
       <body suppressHydrationWarning>
         {" "}
