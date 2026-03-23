@@ -23,6 +23,7 @@ import {
   Zap,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { SolutionAudioDialog } from "~/components/common/admin/add-explanation-audio-dialog";
 
 // ─── types ────────────────────────────────────────────────────────────────────
 
@@ -40,96 +41,86 @@ type Test = {
 };
 
 // ─── card (grid view) ─────────────────────────────────────────────────────────
-
 function TestCard({ test }: { test: Test }) {
-  const router = useRouter();
   const isDraft = test.status === "draft";
-  const hasSolutionAudio = !!test.solutionAudioKey;
 
   return (
-    <div
-      onClick={() => router.push(`/admin/test/${test.id}`)}
-      className="bg-card hover:bg-muted/30 flex cursor-pointer flex-col gap-3 rounded-xl border px-4 py-4 transition-all hover:shadow-sm"
-    >
-      {/* Title + badges */}
-      <div className="flex items-start justify-between gap-3">
-        <h3 className="flex-1 text-sm leading-snug font-semibold">
-          {test.title}
-        </h3>
-        <div className="flex shrink-0 items-center gap-1.5">
-          <Badge variant="outline">
-            {test.type.charAt(0).toUpperCase() + test.type.slice(1)}
-          </Badge>
-          <Badge variant={test.status === "active" ? "default" : "secondary"}>
-            {test.status.charAt(0).toUpperCase() + test.status.slice(1)}
-          </Badge>
+    <div className="bg-card hover:bg-muted/30 flex h-full cursor-pointer flex-col gap-3 rounded-xl border px-4 py-4 transition-all hover:shadow-sm">
+      {/* TOP CONTENT */}
+      <div className="flex flex-1 flex-col gap-3">
+        {/* Title */}
+        <div className="flex items-start justify-between gap-3">
+          <h3 className="flex-1 text-sm leading-snug font-semibold">
+            {test.title}
+          </h3>
+          <div className="flex shrink-0 items-center gap-1.5">
+            <Badge variant="outline">
+              {test.type.charAt(0).toUpperCase() + test.type.slice(1)}
+            </Badge>
+            <Badge variant={test.status === "active" ? "default" : "secondary"}>
+              {test.status.charAt(0).toUpperCase() + test.status.slice(1)}
+            </Badge>
+          </div>
+        </div>
+
+        {/* Speeds */}
+        <div className="flex flex-wrap items-center gap-1.5">
+          {test.speeds.length > 0 ? (
+            <>
+              <Zap className="text-muted-foreground/50 h-3 w-3" />
+              {test.speeds.map((s) => (
+                <Badge key={s.id} variant="secondary" className="tabular-nums">
+                  {s.wpm} WPM
+                </Badge>
+              ))}
+            </>
+          ) : (
+            <span className="text-muted-foreground text-xs">No speeds set</span>
+          )}
+        </div>
+
+        {/* Divider */}
+        <Separator />
+
+        {/* Stats */}
+        <div className="text-muted-foreground flex items-center gap-1 text-xs">
+          <Users className="h-3 w-3" />
+          <span className="font-medium tabular-nums">{test.attemptCount}</span>
+          <span>attempts</span>
+          <span className="text-muted-foreground/50 ml-auto">
+            {formatDistanceToNow(new Date(test.createdAt), {
+              addSuffix: true,
+            })}
+          </span>
         </div>
       </div>
 
-      {/* Speeds */}
-      <div className="flex flex-wrap items-center gap-1.5">
-        {test.speeds.length > 0 ? (
-          <>
-            <Zap className="text-muted-foreground/50 h-3 w-3" />
-            {test.speeds.map((s) => (
-              <Badge key={s.id} variant="secondary" className="tabular-nums">
-                {s.wpm} WPM
-              </Badge>
-            ))}
-          </>
-        ) : (
-          <span className="text-muted-foreground text-xs">No speeds set</span>
-        )}
-      </div>
-
-      {/* Stats */}
-      <div className="flex items-center gap-3 pt-1">
-        <Separator />
-      </div>
-      <div className="text-muted-foreground flex items-center gap-1 text-xs">
-        <Users className="h-3 w-3" />
-        <span className="font-medium tabular-nums">{test.attemptCount}</span>
-        <span>attempts</span>
-        <span className="text-muted-foreground/50 ml-auto">
-          {formatDistanceToNow(new Date(test.createdAt), { addSuffix: true })}
-        </span>
-      </div>
-
-      {/* CTAs */}
+      {/* CTA - ALWAYS BOTTOM */}
       <div
-        className="flex flex-wrap items-center gap-2"
+        className="mt-auto flex flex-wrap items-center gap-2"
         onClick={(e) => e.stopPropagation()}
       >
-        <Button asChild variant="outline" size="sm">
-          <Link href={`/admin/test/${test.id}/attempts`}>
-            <Users className="h-3.5 w-3.5" />
-            Attempts
-          </Link>
-        </Button>
-        <Button asChild variant="outline" size="sm">
-          <Link href={`/admin/test/${test.id}/leaderboard`}>
-            <Trophy className="h-3.5 w-3.5" />
-            Leaderboard
-          </Link>
-        </Button>
+        {!isDraft && (
+          <>
+            <Button asChild variant="outline" size="sm">
+              <Link href={`/admin/test/${test.id}/attempts`}>
+                <Users className="h-3.5 w-3.5" />
+                Attempts
+              </Link>
+            </Button>
+            <Button asChild variant="outline" size="sm">
+              <Link href={`/admin/test/${test.id}/leaderboard`}>
+                <Trophy className="h-3.5 w-3.5" />
+                Leaderboard
+              </Link>
+            </Button>
+          </>
+        )}
         {isDraft && (
           <Button asChild variant="outline" size="sm">
-            <Link href={`/admin/tests/${test.id}/edit`}>
+            <Link href={`/admin/test/${test.id}/edit`}>
               <Pencil className="h-3.5 w-3.5" />
               Edit
-            </Link>
-          </Button>
-        )}
-        {!hasSolutionAudio && (
-          <Button
-            asChild
-            variant="outline"
-            size="sm"
-            className="ml-auto border-amber-500/40 text-amber-600 hover:bg-amber-500/10 hover:text-amber-500"
-          >
-            <Link href={`/admin/tests/${test.id}/solution-audio`}>
-              <FileAudio className="h-3.5 w-3.5" />
-              Add solution audio
             </Link>
           </Button>
         )}
@@ -138,18 +129,14 @@ function TestCard({ test }: { test: Test }) {
   );
 }
 
-// ─── row (list view) ──────────────────────────────────────────────────────────
-
 function TestRow({ test }: { test: Test }) {
   const router = useRouter();
   const isDraft = test.status === "draft";
   const hasSolutionAudio = !!test.solutionAudioKey;
+  const utils = trpc.useUtils();
 
   return (
-    <div
-      onClick={() => router.push(`/admin/test/${test.id}`)}
-      className="bg-card hover:bg-muted/30 flex cursor-pointer items-center gap-4 rounded-xl border px-5 py-3.5 transition-all"
-    >
+    <div className="bg-card hover:bg-muted/30 flex cursor-pointer auto-rows-fr items-center gap-4 rounded-xl border px-5 py-3.5 transition-all">
       {/* Title + badges */}
       <div className="flex min-w-0 flex-1 items-center gap-2.5">
         <p className="truncate text-sm font-semibold">{test.title}</p>
@@ -189,38 +176,35 @@ function TestRow({ test }: { test: Test }) {
         className="flex shrink-0 items-center gap-1.5"
         onClick={(e) => e.stopPropagation()}
       >
-        <Button asChild variant="ghost" size="sm">
-          <Link href={`/admin/test/${test.id}/attempts`}>
-            <Users className="h-3.5 w-3.5" />
-            Attempts
-          </Link>
-        </Button>
-        <Button asChild variant="ghost" size="sm">
-          <Link href={`/admin/test/${test.id}/leaderboard`}>
-            <Trophy className="h-3.5 w-3.5" />
-            Leaderboard
-          </Link>
-        </Button>
+        {!isDraft && (
+          <>
+            <Button asChild variant="ghost" size="sm">
+              <Link href={`/admin/test/${test.id}/attempts`}>
+                <Users className="h-3.5 w-3.5" />
+                Attempts
+              </Link>
+            </Button>
+            <Button asChild variant="ghost" size="sm">
+              <Link href={`/admin/test/${test.id}/leaderboard`}>
+                <Trophy className="h-3.5 w-3.5" />
+                Leaderboard
+              </Link>
+            </Button>
+          </>
+        )}
         {isDraft && (
           <Button asChild variant="ghost" size="sm">
-            <Link href={`/admin/tests/${test.id}/edit`}>
+            <Link href={`/admin/test/${test.id}/edit`}>
               <Pencil className="h-3.5 w-3.5" />
               Edit
             </Link>
           </Button>
         )}
-        {!hasSolutionAudio && (
-          <Button
-            asChild
-            variant="ghost"
-            size="sm"
-            className="text-amber-600 hover:bg-amber-500/10 hover:text-amber-500"
-          >
-            <Link href={`/admin/tests/${test.id}/solution-audio`}>
-              <FileAudio className="h-3.5 w-3.5" />
-              Solution audio
-            </Link>
-          </Button>
+        {!isDraft && !hasSolutionAudio && (
+          <SolutionAudioDialog
+            testId={test.id}
+            onSuccess={() => utils.test.list.invalidate()}
+          />
         )}
       </div>
     </div>

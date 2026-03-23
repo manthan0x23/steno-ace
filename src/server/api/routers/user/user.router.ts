@@ -1,10 +1,12 @@
+// ─── server/api/routers/user/user.router.ts ───────────────────────────────────
+
 import z from "zod";
 import {
   adminProcedure,
   createTRPCRouter,
   protectedProcedure,
 } from "../../trpc";
-import { userService } from "./user.service";
+import { createUserService } from "./user.service";
 import {
   adminDateRangeSchema,
   adminTestWiseSchema,
@@ -16,7 +18,6 @@ import {
   testWiseInputSchema,
   userIdSchema,
 } from "./user.schema";
-import { db } from "~/server/db";
 import R2Service from "~/server/services/r2.service";
 import { user } from "~/server/db/schema";
 import { eq } from "drizzle-orm";
@@ -30,21 +31,19 @@ const editUserSchema = z.object({
 
 export const userRouter = createTRPCRouter({
   me: protectedProcedure.query(async ({ ctx }) => {
-    const user_ = await ctx.db.query.user.findFirst({
-      where: eq(user?.id, ctx.user.id),
+    const found = await ctx.db.query.user.findFirst({
+      where: eq(user.id, ctx.user.id),
     });
-
-    return { ...user_, profilePicUrl: R2Service.getPublicUrl(user_?.image) };
+    return {
+      ...found,
+      profilePicUrl: found?.image ? R2Service.getPublicUrl(found.image) : null,
+    };
   }),
 
   getUser: adminProcedure
-    .input(
-      z.object({
-        userId: z.string(),
-      }),
-    )
-    .query(async ({ input }) => {
-      const user = await db.query.user.findFirst({
+    .input(z.object({ userId: z.string() }))
+    .query(async ({ input, ctx }) => {
+      const found = await ctx.db.query.user.findFirst({
         columns: {
           email: true,
           name: true,
@@ -52,12 +51,13 @@ export const userRouter = createTRPCRouter({
           gender: true,
           phone: true,
         },
-        where: (u, { eq }) => eq(u.id, input.userId),
+        where: eq(user.id, input.userId),
       });
-
       return {
-        ...user,
-        profilePicUrl: user?.image ? R2Service.getPublicUrl(user.image) : null,
+        ...found,
+        profilePicUrl: found?.image
+          ? R2Service.getPublicUrl(found.image)
+          : null,
       };
     }),
 
@@ -67,41 +67,49 @@ export const userRouter = createTRPCRouter({
       const patch: Partial<typeof user.$inferInsert> = {
         updatedAt: new Date(),
       };
-
       if (input.name !== undefined) patch.name = input.name;
       if (input.phone !== undefined) patch.phone = input.phone;
       if (input.gender !== undefined) patch.gender = input.gender;
       if (input.image !== undefined) patch.image = input.image;
-
       await ctx.db.update(user).set(patch).where(eq(user.id, ctx.user.id));
-
       return { ok: true };
     }),
 
-  // ── Report ──
+  // ── Report ────────────────────────────────────────────────────────────────
+
   getReport: protectedProcedure
     .input(
       z
         .object({ type: z.enum(["assessment", "practice"]).optional() })
         .optional(),
     )
-    .query(({ ctx, input }) => userService.getReport(ctx.user.id, input?.type)),
+    .query(({ ctx, input }) =>
+      createUserService(ctx.db).getReport(ctx.user.id, input?.type),
+    ),
 
   getReportAdmin: adminProcedure
     .input(userIdSchema)
-    .query(({ input }) => userService.getReport(input.userId, input.type)),
+    .query(({ input, ctx }) =>
+      createUserService(ctx.db).getReport(input.userId, input.type),
+    ),
 
-  // ── Progress ──
+  // ── Progress ──────────────────────────────────────────────────────────────
+
   getProgress: protectedProcedure
     .input(dateRangeSchema.optional())
     .query(({ ctx, input }) =>
-      userService.getProgress(ctx.user.id, input?.from, input?.to, input?.type),
+      createUserService(ctx.db).getProgress(
+        ctx.user.id,
+        input?.from,
+        input?.to,
+        input?.type,
+      ),
     ),
 
   getProgressAdmin: adminProcedure
     .input(adminDateRangeSchema.optional())
-    .query(({ input }) =>
-      userService.getProgress(
+    .query(({ input, ctx }) =>
+      createUserService(ctx.db).getProgress(
         input?.userId!,
         input?.from,
         input?.to,
@@ -109,7 +117,8 @@ export const userRouter = createTRPCRouter({
       ),
     ),
 
-  // ── Personal Bests ──
+  // ── Personal Bests ────────────────────────────────────────────────────────
+
   getPersonalBests: protectedProcedure
     .input(
       z
@@ -117,20 +126,21 @@ export const userRouter = createTRPCRouter({
         .optional(),
     )
     .query(({ ctx, input }) =>
-      userService.getPersonalBests(ctx.user.id, input?.type),
+      createUserService(ctx.db).getPersonalBests(ctx.user.id, input?.type),
     ),
 
   getPersonalBestsAdmin: adminProcedure
     .input(userIdSchema)
-    .query(({ input }) =>
-      userService.getPersonalBests(input.userId, input.type),
+    .query(({ input, ctx }) =>
+      createUserService(ctx.db).getPersonalBests(input.userId, input.type),
     ),
 
-  // ── Test-Wise Performance ──
+  // ── Test-Wise Performance ─────────────────────────────────────────────────
+
   getTestWisePerformance: protectedProcedure
     .input(testWiseInputSchema.optional())
     .query(({ ctx, input }) =>
-      userService.getTestWisePerformance(
+      createUserService(ctx.db).getTestWisePerformance(
         ctx.user.id,
         input?.limit,
         input?.type,
@@ -139,15 +149,16 @@ export const userRouter = createTRPCRouter({
 
   getTestWisePerformanceAdmin: adminProcedure
     .input(adminTestWiseSchema.optional())
-    .query(({ input }) =>
-      userService.getTestWisePerformance(
+    .query(({ input, ctx }) =>
+      createUserService(ctx.db).getTestWisePerformance(
         input?.userId!,
         input?.limit,
         input?.type,
       ),
     ),
 
-  // ── Progress Series (chart) ──
+  // ── Progress Series ───────────────────────────────────────────────────────
+
   getProgressSeries: protectedProcedure
     .input(
       z
@@ -158,16 +169,25 @@ export const userRouter = createTRPCRouter({
         .optional(),
     )
     .query(({ ctx, input }) =>
-      userService.getProgressSeries(ctx.user.id, input?.limit, input?.type),
+      createUserService(ctx.db).getProgressSeries(
+        ctx.user.id,
+        input?.limit,
+        input?.type,
+      ),
     ),
 
   getProgressSeriesAdmin: adminProcedure
     .input(getProgressSeriesSchema)
-    .query(({ input }) =>
-      userService.getProgressSeries(input.userId!, input.limit, input.type),
+    .query(({ input, ctx }) =>
+      createUserService(ctx.db).getProgressSeries(
+        input.userId!,
+        input.limit,
+        input.type,
+      ),
     ),
 
-  // ── Paginated Attempts ──
+  // ── Paginated Attempts ────────────────────────────────────────────────────
+
   getAttemptsPaginated: protectedProcedure
     .input(
       z
@@ -180,7 +200,7 @@ export const userRouter = createTRPCRouter({
         .optional(),
     )
     .query(({ ctx, input }) =>
-      userService.getAttemptsPaginated(
+      createUserService(ctx.db).getAttemptsPaginated(
         ctx.user.id,
         input?.page,
         input?.limit,
@@ -191,19 +211,22 @@ export const userRouter = createTRPCRouter({
 
   getAttemptsPaginatedAdmin: adminProcedure
     .input(getAttemptsAdminSchema)
-    .query(({ input }) =>
-      userService.getAttemptsPaginated(
+    .query(({ input, ctx }) =>
+      createUserService(ctx.db).getAttemptsPaginated(
         input.userId,
         input.page,
         input.limit,
         input.type,
+        input.testId
       ),
     ),
+
+  // ── Heatmap ───────────────────────────────────────────────────────────────
 
   getHeatmap: protectedProcedure
     .input(heatmapSchema)
     .query(({ ctx, input }) =>
-      userService.getHeatmap(
+      createUserService(ctx.db).getHeatmap(
         ctx.user.id,
         input.from,
         input.to,
@@ -213,8 +236,8 @@ export const userRouter = createTRPCRouter({
 
   getHeatmapAdmin: adminProcedure
     .input(heatmapAdminSchema)
-    .query(({ input }) =>
-      userService.getHeatmap(
+    .query(({ input, ctx }) =>
+      createUserService(ctx.db).getHeatmap(
         input.userId,
         input.from,
         input.to,

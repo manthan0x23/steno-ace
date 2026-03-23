@@ -29,6 +29,7 @@ export const getProgressSeriesSchema = z.object({
 
 export const getAttemptsAdminSchema = z.object({
   userId: z.string(),
+  testId: z.string().optional(),
   page: z.number().min(0).default(0),
   limit: z.number().min(1).max(100).default(15),
   type: attemptTypeFilter,

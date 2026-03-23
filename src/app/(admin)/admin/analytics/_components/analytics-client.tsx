@@ -134,60 +134,83 @@ function mergeGrowth(growth: {
   return Array.from(map.values()).sort((a, b) => a.date.localeCompare(b.date));
 }
 
-// ─── KPI Card ─────────────────────────────────────────────────────────────────
+type TrendDir = "up" | "down" | "neutral";
 
-function KpiCard({
-  icon: Icon,
+type Variant = "primary" | "secondary";
+
+export function StatCard({
   label,
   value,
+  story,
   sub,
+  icon: Icon,
   trend,
-  iconClass,
+  trendDir = "neutral",
+  variant = "secondary",
 }: {
-  icon: React.ElementType;
   label: string;
   value: string | number;
+  story?: string;
   sub?: string;
-  trend?: "up" | "down" | "neutral";
-  iconClass?: string;
+  icon: React.ElementType;
+  trend?: string;
+  trendDir?: TrendDir;
+  variant?: Variant;
 }) {
-  const TrendIcon =
-    trend === "up" ? ArrowUpRight : trend === "down" ? ArrowDownRight : Minus;
-  const trendClass =
-    trend === "up"
-      ? "text-emerald-500"
-      : trend === "down"
-        ? "text-destructive"
-        : "text-muted-foreground";
+  const trendStyles =
+    trendDir === "up"
+      ? "bg-emerald-500/15 text-emerald-500"
+      : trendDir === "down"
+        ? "bg-red-500/15 text-red-400"
+        : "bg-muted text-muted-foreground";
+
+  const trendArrow = trendDir === "up" ? "▲" : trendDir === "down" ? "▼" : "•";
 
   return (
-    <Card>
-      <CardContent className="pt-5 pb-4">
-        <div className="flex items-start justify-between">
-          <div className="space-y-1">
-            <p className="text-muted-foreground text-[10px] font-semibold tracking-widest uppercase">
-              {label}
+    <div
+      className={`group relative overflow-hidden rounded-2xl border transition-all hover:-translate-y-0.5 hover:shadow-lg ${variant === "primary" ? "col-span-2 p-6" : "p-4"} `}
+      style={{
+        background:
+          variant === "primary"
+            ? "radial-gradient(ellipse at top right, color-mix(in oklch, var(--chart-1) 10%, var(--card)), var(--card))"
+            : "radial-gradient(ellipse at top right, color-mix(in oklch, var(--chart-1) 5%, var(--card)), var(--card))",
+      }}
+    >
+      {/* Top */}
+      <div className="flex items-start justify-between">
+        <p className="text-muted-foreground text-xs font-medium">{label}</p>
+
+        {trend && (
+          <span
+            className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${trendStyles}`}
+          >
+            {trendArrow} {trend}
+          </span>
+        )}
+      </div>
+
+      {/* Value */}
+      <p
+        className={`mt-2 font-bold tabular-nums ${
+          variant === "primary" ? "text-5xl" : "text-2xl"
+        }`}
+      >
+        {value}
+      </p>
+
+      {/* Bottom */}
+      {(story || sub) && (
+        <div className="mt-3 space-y-1">
+          {story && (
+            <p className="flex items-center gap-1.5 text-sm font-semibold">
+              {story}
+              <Icon className="h-3.5 w-3.5 opacity-70" />
             </p>
-            <p className="text-3xl font-bold tabular-nums">{value}</p>
-            {sub && (
-              <div className="flex items-center gap-1">
-                {trend && <TrendIcon className={`h-3 w-3 ${trendClass}`} />}
-                <p
-                  className={`text-xs ${trend ? trendClass : "text-muted-foreground"}`}
-                >
-                  {sub}
-                </p>
-              </div>
-            )}
-          </div>
-          <div className="bg-muted rounded-md p-2">
-            <Icon
-              className={`h-4 w-4 ${iconClass ?? "text-muted-foreground"}`}
-            />
-          </div>
+          )}
+          {sub && <p className="text-muted-foreground text-xs">{sub}</p>}
         </div>
-      </CardContent>
-    </Card>
+      )}
+    </div>
   );
 }
 
@@ -395,303 +418,6 @@ function GrowthChart({
   );
 }
 
-// ─── Test Performance ─────────────────────────────────────────────────────────
-
-const scoreConfig: ChartConfig = {
-  avgScore: { label: "Avg Score", color: "hsl(var(--chart-1))" },
-  avgAccuracy: { label: "Avg Accuracy", color: "hsl(var(--chart-2))" },
-};
-
-function TestPerformanceSection({
-  testPerformance,
-  testTitles,
-}: {
-  testPerformance: {
-    testId: string;
-    attempts: number;
-    avgScore: number;
-    avgWpm: number;
-    avgAccuracy: number;
-  }[];
-  testTitles: Map<string, string>;
-}) {
-  const sorted = [...testPerformance]
-    .sort((a, b) => b.attempts - a.attempts)
-    .slice(0, 8);
-
-  const chartData = sorted.map((t) => ({
-    name: testTitles.get(t.testId) ?? t.testId.slice(0, 8),
-    avgScore: Math.round(Number(t.avgScore) ?? 0),
-    avgAccuracy: Math.round(Number(t.avgAccuracy) ?? 0),
-    attempts: t.attempts,
-  }));
-
-  return (
-    <div className="space-y-4">
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-semibold">
-            Score &amp; Accuracy by Test
-          </CardTitle>
-          <CardDescription className="text-xs">
-            Top 8 most attempted tests
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ChartContainer config={scoreConfig} className="h-[220px] w-full">
-            <BarChart data={chartData} layout="vertical" barCategoryGap="25%">
-              <CartesianGrid
-                strokeDasharray="3 3"
-                horizontal={false}
-                className="stroke-border"
-              />
-              <XAxis
-                type="number"
-                tickLine={false}
-                axisLine={false}
-                tick={{ fontSize: 11 }}
-                domain={[0, 100]}
-                className="fill-muted-foreground"
-              />
-              <YAxis
-                type="category"
-                dataKey="name"
-                tickLine={false}
-                axisLine={false}
-                tick={{ fontSize: 10 }}
-                width={90}
-                className="fill-muted-foreground"
-              />
-              <ChartTooltip content={<ChartTooltipContent />} />
-              <Bar
-                dataKey="avgScore"
-                fill="var(--color-avgScore)"
-                radius={[0, 3, 3, 0]}
-                maxBarSize={10}
-              />
-              <Bar
-                dataKey="avgAccuracy"
-                fill="var(--color-avgAccuracy)"
-                radius={[0, 3, 3, 0]}
-                maxBarSize={10}
-              />
-            </BarChart>
-          </ChartContainer>
-
-          <div className="mt-3 flex gap-4">
-            {Object.entries(scoreConfig).map(([key, cfg]) => (
-              <span
-                key={key}
-                className="text-muted-foreground flex items-center gap-1.5 text-xs"
-              >
-                <span
-                  className="h-2 w-2 rounded-full"
-                  style={{ background: cfg.color }}
-                />
-                {cfg.label}
-              </span>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="pb-0">
-          <CardTitle className="text-sm font-semibold">All Tests</CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          {testPerformance.length === 0 ? (
-            <div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
-              <BarChart3 className="text-muted-foreground/40 h-8 w-8" />
-              <p className="text-muted-foreground text-sm">No test data yet</p>
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Test</TableHead>
-                  <TableHead className="text-right">Attempts</TableHead>
-                  <TableHead className="text-right">Avg Score</TableHead>
-                  <TableHead className="text-right">Avg WPM</TableHead>
-                  <TableHead className="text-right">Avg Accuracy</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {[...testPerformance]
-                  .sort((a, b) => b.attempts - a.attempts)
-                  .map((t) => {
-                    const acc = Math.round(Number(t.avgAccuracy) ?? 0);
-                    return (
-                      <TableRow key={t.testId}>
-                        <TableCell>
-                          <div>
-                            <p className="text-sm font-medium">
-                              {testTitles.get(t.testId) ?? "Unknown test"}
-                            </p>
-                            <p className="text-muted-foreground font-mono text-[10px]">
-                              {t.testId}
-                            </p>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right tabular-nums">
-                          {t.attempts}
-                        </TableCell>
-                        <TableCell className="text-right font-semibold tabular-nums">
-                          {Math.round(Number(t.avgScore) ?? 0)}
-                        </TableCell>
-                        <TableCell className="text-muted-foreground text-right tabular-nums">
-                          {Math.round(Number(t.avgWpm) ?? 0)}
-                        </TableCell>
-                        <TableCell className="text-right tabular-nums">
-                          <span
-                            className={
-                              acc >= 90
-                                ? "font-semibold text-emerald-500"
-                                : acc >= 70
-                                  ? "font-semibold text-amber-500"
-                                  : "text-destructive font-semibold"
-                            }
-                          >
-                            {acc}%
-                          </span>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-// ─── Top Performers ───────────────────────────────────────────────────────────
-
-const MEDALS = ["🥇", "🥈", "🥉"];
-
-function TopPerformersSection({
-  topPerformers,
-  totalEntries,
-}: {
-  topPerformers: {
-    rank: number;
-    user: {
-      id: string;
-      name: string | null;
-      email: string;
-      profilePicUrl: string | null;
-    };
-    totalPoints: number;
-    testsPlayed: number;
-    firstPlaces: number;
-  }[];
-  totalEntries: number;
-}) {
-  if (topPerformers.length === 0) {
-    return (
-      <Card>
-        <CardContent className="flex flex-col items-center justify-center gap-2 py-12 text-center">
-          <Trophy className="text-muted-foreground/40 h-8 w-8" />
-          <p className="text-muted-foreground text-sm">
-            No leaderboard data yet
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  const max = topPerformers[0]?.totalPoints ?? 1;
-
-  return (
-    <Card>
-      <CardHeader className="pb-0">
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="text-sm font-semibold">
-              Global Leaderboard
-            </CardTitle>
-            <CardDescription className="text-xs">
-              Ranked by normalised points across all tests
-            </CardDescription>
-          </div>
-          <Badge variant="secondary" className="text-xs">
-            {totalEntries} entries
-          </Badge>
-        </div>
-      </CardHeader>
-      <CardContent className="p-0">
-        <div className="divide-y">
-          {topPerformers.map((p) => {
-            const pct = Math.round((p.totalPoints / max) * 100);
-            return (
-              <div
-                key={p.user.id}
-                className="hover:bg-muted/40 flex items-center gap-4 px-5 py-3.5 transition-colors"
-              >
-                <span className="w-6 shrink-0 text-center text-sm">
-                  {p.rank <= 3 ? (
-                    MEDALS[p.rank - 1]
-                  ) : (
-                    <span className="text-muted-foreground font-semibold">
-                      {p.rank}
-                    </span>
-                  )}
-                </span>
-
-                <Avatar className="h-8 w-8 shrink-0">
-                  {p.user.profilePicUrl && (
-                    <AvatarImage
-                      src={p.user.profilePicUrl}
-                      alt={p.user.name ?? ""}
-                    />
-                  )}
-                  <AvatarFallback className="text-xs font-semibold">
-                    {initials(p.user.name, p.user.email)}
-                  </AvatarFallback>
-                </Avatar>
-
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm leading-none font-medium">
-                    {p.user.name ?? p.user.email}
-                  </p>
-                  {p.user.name && (
-                    <p className="text-muted-foreground mt-0.5 truncate text-xs">
-                      {p.user.email}
-                    </p>
-                  )}
-                </div>
-
-                <div className="flex w-32 flex-col items-end gap-1.5">
-                  <span className="text-sm font-bold tabular-nums">
-                    {Math.round(p.totalPoints)} pts
-                  </span>
-                  <div className="bg-muted h-1.5 w-full overflow-hidden rounded-full">
-                    <div
-                      className="bg-primary h-full rounded-full transition-all"
-                      style={{ width: `${pct}%` }}
-                    />
-                  </div>
-                </div>
-
-                <div className="text-muted-foreground shrink-0 text-right text-xs">
-                  <p>{p.testsPlayed} tests</p>
-                  {p.firstPlaces > 0 && (
-                    <p className="font-semibold text-amber-500">
-                      {p.firstPlaces} #1{p.firstPlaces !== 1 ? "s" : ""}
-                    </p>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
 // ─── Skeletons ────────────────────────────────────────────────────────────────
 
 function KpiSkeleton() {
@@ -760,8 +486,6 @@ function AnalyticsInner() {
 
   const [leaderboard] =
     trpc.analytics.getLeaderboardAnalytics.useSuspenseQuery();
-  const [topPerformers] =
-    trpc.analytics.getGlobalTopPerformers.useSuspenseQuery({ pageSize: 10 });
 
   const stickiness =
     engagement.mau > 0
@@ -786,90 +510,77 @@ function AnalyticsInner() {
       </div>
 
       {/* ── Overview KPIs ── */}
-      <section className="space-y-3">
-        <SectionHeader
-          icon={BarChart3}
-          title="Platform Overview"
-          description="Lifetime totals"
+      <div className="grid grid-cols-4 gap-4">
+        {/* BIG CARDS */}
+        <StatCard
+          variant="primary"
+          label="Users"
+          value={overview.totalUsers}
+          story="Active today"
+          sub={`${overview.activeUsers.last1d} users`}
+          icon={Users}
+          trend="+7%"
+          trendDir="up"
         />
-        <div className="grid grid-cols-4 gap-4">
-          <KpiCard
-            icon={Users}
-            label="Total Users"
-            value={overview.totalUsers}
-            sub={`${overview.activeUsers.last1d} active today`}
-            iconClass="text-violet-500"
-          />
-          <KpiCard
-            icon={FileText}
-            label="Total Tests"
-            value={overview.totalTests}
-            iconClass="text-amber-500"
-          />
-          <KpiCard
-            icon={Activity}
-            label="Total Attempts"
-            value={overview.totalAttempts}
-            iconClass="text-blue-500"
-          />
-          <KpiCard
-            icon={Target}
-            label="Completion Rate"
-            value={`${completionRate}%`}
-            sub="Attempts → submitted"
-            trend={
-              completionRate >= 70
-                ? "up"
-                : completionRate >= 40
-                  ? "neutral"
-                  : "down"
-            }
-            iconClass="text-emerald-500"
-          />
-        </div>
-      </section>
+
+        <StatCard
+          variant="primary"
+          label="Attempts"
+          value={overview.totalAttempts}
+          story="User activity"
+          sub={`${overview.activeUsers.last7d} active`}
+          icon={Activity}
+          trend="+12%"
+          trendDir="up"
+        />
+
+        {/* SMALL CARDS */}
+        <StatCard
+          label="Tests"
+          value={overview.totalTests}
+          story="Total created"
+          sub="All time"
+          icon={FileText}
+        />
+
+        <StatCard
+          label="Completion"
+          value={`${completionRate}%`}
+          story="Conversion"
+          sub="Attempts → submissions"
+          icon={Target}
+          trendDir={
+            completionRate >= 70
+              ? "up"
+              : completionRate >= 40
+                ? "neutral"
+                : "down"
+          }
+        />
+      </div>
 
       {/* ── Engagement KPIs ── */}
-      <section className="space-y-3">
-        <SectionHeader
-          icon={Zap}
-          title="Engagement"
-          description="User activity windows"
+      <div className="grid grid-cols-4 gap-4">
+        <StatCard
+          label="DAU"
+          value={engagement.dau}
+          sub="24h"
+          icon={Activity}
         />
-        <div className="grid grid-cols-4 gap-4">
-          <KpiCard
-            icon={Activity}
-            label="DAU"
-            value={engagement.dau}
-            sub="Last 24 hours"
-            iconClass="text-blue-500"
-          />
-          <KpiCard
-            icon={Activity}
-            label="WAU"
-            value={engagement.wau}
-            sub="Last 7 days"
-            iconClass="text-indigo-500"
-          />
-          <KpiCard
-            icon={Activity}
-            label="MAU"
-            value={engagement.mau}
-            sub="Last 30 days"
-            iconClass="text-violet-500"
-          />
-          <KpiCard
-            icon={TrendingUp}
-            label="Stickiness"
-            value={`${stickiness}%`}
-            sub="DAU / MAU ratio"
-            trend={
-              stickiness >= 20 ? "up" : stickiness >= 10 ? "neutral" : "down"
-            }
-            iconClass="text-emerald-500"
-          />
-        </div>
-      </section>
+        <StatCard label="WAU" value={engagement.wau} sub="7d" icon={Activity} />
+        <StatCard
+          label="MAU"
+          value={engagement.mau}
+          sub="30d"
+          icon={Activity}
+        />
+        <StatCard
+          label="Stickiness"
+          value={`${stickiness}%`}
+          sub="DAU / MAU"
+          icon={TrendingUp}
+        />
+      </div>
 
       <Separator />
 

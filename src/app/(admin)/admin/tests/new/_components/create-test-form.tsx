@@ -53,6 +53,7 @@ const formSchema = z.object({
   outlinePdfKey: z.string().optional(),
   correctAnswer: z.string().min(10),
   speeds: z.array(speedSchema).min(1),
+  solutionAudioKey: z.string().optional(),
 });
 
 type SpeedDraft = {
@@ -627,12 +628,11 @@ function SpeedCard({
   );
 }
 
-// ─── main form ────────────────────────────────────────────────────────────────
-
 export function CreateTestForm() {
   const router = useRouter();
   const presign = trpc.store.generatePresignedUrl.useMutation();
   const submitModeRef = useRef<"draft" | "active">("draft");
+  const solutionAudioRef = useRef<HTMLInputElement>(null);
 
   const [speeds, setSpeeds] = useState<SpeedDraft[]>([
     {
@@ -653,6 +653,9 @@ export function CreateTestForm() {
   const [matterUploading, setMatterUploading] = useState(false);
   const [outlineUploading, setOutlineUploading] = useState(false);
 
+  const [solutionAudioFileName, setSolutionAudioFileName] = useState("");
+  const [solutionAudioUploading, setSolutionAudioUploading] = useState(false);
+
   const createTest = trpc.test.create.useMutation({
     onSuccess: () => {
       toast.success(
@@ -660,6 +663,14 @@ export function CreateTestForm() {
           ? "Saved as draft"
           : "Test is now live!",
       );
+      router.push("/admin/tests");
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const saveDraft = trpc.test.saveDraft.useMutation({
+    onSuccess: () => {
+      toast.success("Saved as draft");
       router.push("/admin/tests");
     },
     onError: (e) => toast.error(e.message),
@@ -710,6 +721,7 @@ export function CreateTestForm() {
       matterPdfKey: "",
       outlinePdfKey: "",
       correctAnswer: "",
+      solutionAudioKey: "",
     },
     onSubmit: async ({ value }) => {
       const speedsOk = speeds.every(
@@ -747,7 +759,7 @@ export function CreateTestForm() {
       }
       await createTest.mutateAsync({
         ...parsed.data,
-        status: submitModeRef.current,
+        status: "active",
       });
     },
   });
@@ -812,7 +824,6 @@ export function CreateTestForm() {
           </form.Field>
         </div>
       </Section>
-
       {/* ── 2. Speeds ───────────────────────────────────────────────────────── */}
       <Section
         step="2"
@@ -856,7 +867,6 @@ export function CreateTestForm() {
           Add another speed level
         </button>
       </Section>
-
       {/* ── 3. Materials ────────────────────────────────────────────────────── */}
       <Section
         step="3"
@@ -951,15 +961,144 @@ export function CreateTestForm() {
                 value={field.state.value}
                 onChange={(e) => field.handleChange(e.target.value)}
                 onBlur={field.handleBlur}
-                className="resize-none font-calibri min-h-[200px] text-lg"
+                className="font-calibri min-h-[200px] resize-none text-lg"
               />
               <Err msg={(field.state.meta.errors as string[])[0]} />
             </div>
           )}
         </form.Field>
-      </Section>
 
+        {/* ── Explanation Audio ──────────────────────────────────────────────── */}
+        <form.Field name="solutionAudioKey">
+          {(field) => {
+            const handleSolutionAudio = async (file: File) => {
+              if (!file.type.startsWith("audio/")) {
+                toast.error("Please upload an audio file");
+                return;
+              }
+              setSolutionAudioUploading(true);
+              setSolutionAudioFileName(file.name);
+              try {
+                const { uploadUrl, key } = await presign.mutateAsync({
+                  folder: "solutions",
+                  contentType: file.type,
+                  ext: file.name.split(".").pop() ?? "mp3",
+                });
+                const res = await fetch(uploadUrl, {
+                  method: "PUT",
+                  body: file,
+                  headers: { "Content-Type": file.type },
+                });
+                if (!res.ok) throw new Error();
+                field.handleChange(key);
+                toast.success("Explanation audio uploaded");
+              } catch {
+                toast.error("Audio upload failed");
+                setSolutionAudioFileName("");
+              } finally {
+                setSolutionAudioUploading(false);
+              }
+            };
+
+            return (
+              <div className="mt-5">
+                <Label optional>
+                  <Music2 className="h-3.5 w-3.5 text-violet-500" />
+                  Explanation Audio
+                </Label>
+                <Hint>
+                  An audio walkthrough of the correct answer — played back to
+                  students after they submit. Can be uploaded later.
+                </Hint>
+                <div
+                  onClick={() =>
+                    !solutionAudioUploading && solutionAudioRef.current?.click()
+                  }
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    const f = e.dataTransfer.files[0];
+                    if (f) void handleSolutionAudio(f);
+                  }}
+                  className={cn(
+                    "mt-2 flex cursor-pointer items-center gap-3 rounded-lg border-2 border-dashed px-4 py-3 transition-all",
+                    field.state.value
+                      ? "border-emerald-400/50 bg-emerald-500/5"
+                      : "border-border hover:bg-muted/20 hover:border-violet-400/50",
+                    solutionAudioUploading && "pointer-events-none opacity-50",
+                  )}
+                >
+                  <input
+                    ref={solutionAudioRef}
+                    type="file"
+                    accept="audio/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) void handleSolutionAudio(f);
+                    }}
+                  />
+                  <div
+                    className={cn(
+                      "flex h-9 w-9 shrink-0 items-center justify-center rounded-full",
+                      field.state.value
+                        ? "bg-emerald-500/15 text-emerald-600"
+                        : "bg-violet-500/10 text-violet-500",
+                    )}
+                  >
+                    {solutionAudioUploading ? (
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-violet-500 border-t-transparent" />
+                    ) : field.state.value ? (
+                      <CheckCircle2 className="h-4 w-4" />
+                    ) : (
+                      <Mic className="h-4 w-4" />
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    {field.state.value ? (
+                      <>
+                        <p className="truncate text-sm font-medium text-emerald-700 dark:text-emerald-400">
+                          {solutionAudioFileName}
+                        </p>
+                        <p className="text-muted-foreground text-xs">
+                          Click to replace
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-sm font-medium">
+                          {solutionAudioUploading
+                            ? "Uploading…"
+                            : "Click or drag audio here"}
+                        </p>
+                        <p className="text-muted-foreground text-xs">
+                          MP3, WAV, MP4 · Played back after student submits
+                        </p>
+                      </>
+                    )}
+                  </div>
+                  {field.state.value && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        field.handleChange("");
+                        setSolutionAudioFileName("");
+                      }}
+                      className="text-muted-foreground hover:text-foreground"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          }}
+        </form.Field>
+      </Section>
       {/* ── Actions ─────────────────────────────────────────────────────────── */}
+      // ── Actions
+      ─────────────────────────────────────────────────────────────────
       <div className="flex items-center justify-between border-t px-8 py-5">
         <Button
           type="button"
@@ -968,33 +1107,70 @@ export function CreateTestForm() {
         >
           Cancel
         </Button>
+
         <form.Subscribe selector={(s) => s.isSubmitting}>
-          {(isSubmitting) => (
-            <div className="flex items-center gap-2">
-              <Button
-                type="submit"
-                variant="outline"
-                disabled={isSubmitting}
-                onMouseDown={() => {
-                  submitModeRef.current = "draft";
-                }}
-              >
-                <Save className="mr-2 h-4 w-4" />
-                Save as Draft
-              </Button>
-              <Button
-                type="submit"
-                disabled={isSubmitting}
-                onMouseDown={() => {
-                  submitModeRef.current = "active";
-                }}
-                className="bg-emerald-600 text-white hover:bg-emerald-500"
-              >
-                <Rocket className="mr-2 h-4 w-4" />
-                {isSubmitting ? "Publishing…" : "Publish Test"}
-              </Button>
-            </div>
-          )}
+          {(isSubmitting) => {
+            const isBusy = isSubmitting || saveDraft.isPending;
+
+            return (
+              <div className="flex items-center gap-2">
+                {/* ── Draft: bypass form validation entirely ── */}
+                <Button
+                  type="button" // ← not "submit"
+                  variant="outline"
+                  disabled={isBusy}
+                  onClick={() => {
+                    const value = form.state.values;
+                    void saveDraft.mutateAsync({
+                      title:
+                        value.title ||
+                        `Untitled Draft ${Date.now().toLocaleString()}`,
+                      type: value.type,
+                      matterPdfKey: value.matterPdfKey,
+                      outlinePdfKey: value.outlinePdfKey || undefined,
+                      correctAnswer: value.correctAnswer,
+                      solutionAudioKey: value.solutionAudioKey || undefined,
+                      speeds: speeds.map(
+                        (
+                          {
+                            wpm,
+                            audioKey,
+                            dictationSeconds,
+                            breakSeconds,
+                            writtenDurationSeconds,
+                          },
+                          i,
+                        ) => ({
+                          wpm,
+                          audioKey,
+                          dictationSeconds,
+                          breakSeconds,
+                          writtenDurationSeconds,
+                          sortOrder: i,
+                        }),
+                      ),
+                    });
+                  }}
+                >
+                  <Save className="mr-2 h-4 w-4" />
+                  {saveDraft.isPending ? "Saving…" : "Save as Draft"}
+                </Button>
+
+                {/* ── Publish: normal form submit with full validation ── */}
+                <Button
+                  type="submit"
+                  disabled={isBusy}
+                  onMouseDown={() => {
+                    submitModeRef.current = "active";
+                  }}
+                  className="bg-emerald-600 text-white hover:bg-emerald-500"
+                >
+                  <Rocket className="mr-2 h-4 w-4" />
+                  {isSubmitting ? "Publishing…" : "Publish Test"}
+                </Button>
+              </div>
+            );
+          }}
         </form.Subscribe>
       </div>
     </form>

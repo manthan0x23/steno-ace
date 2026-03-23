@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { Button } from "~/components/ui/button";
 import { Textarea } from "~/components/ui/textarea";
 import { Badge } from "~/components/ui/badge";
+import { useCookie } from "~/hooks/use-cookie";
 import { SkipForward, Send, CheckCircle2, ZoomIn, ZoomOut } from "lucide-react";
 
 // ─── constants ────────────────────────────────────────────────────────────────
@@ -50,34 +51,31 @@ function CircularProgress({
   danger?: boolean;
   size?: number;
 }) {
-  const strokeW = Math.max(4, size * 0.05);
-  const R = (size - strokeW) / 2;
+  const R = size * 0.367;
   const circ = 2 * Math.PI * R;
   const cx = size / 2;
+  const strokeW = Math.max(4, size * 0.05);
 
   return (
     <div
       className="relative flex items-center justify-center"
       style={{ width: size, height: size }}
     >
-      <svg width={size} height={size} className="-rotate-90 transform">
-        {/* background */}
+      <svg width={size} height={size} className="-rotate-90">
         <circle
           cx={cx}
           cy={cx}
           r={R}
           fill="none"
-          stroke="gray" // temp debug
+          stroke="hsl(var(--border))"
           strokeWidth={strokeW}
         />
-
-        {/* progress */}
         <circle
           cx={cx}
           cy={cx}
           r={R}
           fill="none"
-          stroke={danger ? "red" : "green"} // temp debug
+          stroke={danger ? "hsl(var(--destructive))" : "hsl(var(--primary))"}
           strokeWidth={strokeW}
           strokeLinecap="round"
           strokeDasharray={circ}
@@ -85,10 +83,15 @@ function CircularProgress({
           style={{ transition: "stroke-dashoffset 1s linear" }}
         />
       </svg>
-
-      <div className="absolute flex flex-col items-center">
-        <span className="font-bold">{formatTime(timeLeft)}</span>
-        <span className="text-muted-foreground text-xs">
+      <div className="absolute flex flex-col items-center gap-0.5">
+        <span
+          className={`leading-none font-bold tabular-nums ${danger ? "text-destructive" : "text-foreground"} ${size >= 140 ? "text-2xl" : "text-base"}`}
+        >
+          {formatTime(timeLeft)}
+        </span>
+        <span
+          className={`text-muted-foreground ${size >= 140 ? "text-sm" : "text-[10px]"}`}
+        >
           / {formatTime(total)}
         </span>
       </div>
@@ -339,7 +342,19 @@ function WritingStage({
   isSubmitting: boolean;
   isSyncing: boolean;
 }) {
-  const [fontSize, setFontSize] = useState(16); // px
+  const { get: getCookie, set: setCookie } = useCookie();
+
+  const [fontSize, setFontSize] = useState<number>(() => {
+    const stored =
+      typeof document !== "undefined" ? getCookie("attempt_font_size") : null;
+    const parsed = stored ? parseInt(stored, 10) : NaN;
+    return !isNaN(parsed) && parsed >= 12 && parsed <= 28 ? parsed : 16;
+  });
+
+  const updateFontSize = (next: number) => {
+    setFontSize(next);
+    setCookie("attempt_font_size", String(next), { days: 365 });
+  };
   const isLow = secondsLeft < 60;
   const pct = Math.min(
     100,
@@ -414,7 +429,7 @@ function WritingStage({
               variant="ghost"
               size="icon"
               className="h-6 w-6"
-              onClick={() => setFontSize((f) => Math.max(12, f - 2))}
+              onClick={() => updateFontSize(Math.max(12, fontSize - 2))}
               disabled={fontSize <= 12}
             >
               <ZoomOut className="h-3 w-3" />
@@ -426,7 +441,7 @@ function WritingStage({
               variant="ghost"
               size="icon"
               className="h-6 w-6"
-              onClick={() => setFontSize((f) => Math.min(28, f + 2))}
+              onClick={() => updateFontSize(Math.min(28, fontSize + 2))}
               disabled={fontSize >= 28}
             >
               <ZoomIn className="h-3 w-3" />
@@ -481,7 +496,28 @@ function WritingStage({
   );
 }
 
-// ─── Submitted ────────────────────────────────────────────────────────────────
+function LiveClock() {
+  const [now, setNow] = useState(new Date());
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
+  return (
+    <span className="text-muted-foreground hidden text-xs tabular-nums sm:block">
+      {now.toLocaleDateString("en-IN", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      })}
+      {" · "}
+      {now.toLocaleTimeString("en-IN", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      })}
+    </span>
+  );
+}
 
 function SubmittedScreen({ attemptId }: { attemptId: string }) {
   const router = useRouter();
@@ -777,7 +813,8 @@ export default function AttemptPage() {
           <p className="max-w-sm truncate text-sm font-medium">
             {data.test.title}
           </p>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
+            <LiveClock />
             <Badge
               variant={
                 data.attempt.type === "assessment" ? "default" : "secondary"

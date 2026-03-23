@@ -118,6 +118,29 @@ export const reorderSpeedsSchema = z.object({
     .min(1),
 });
 
+export const saveDraftSchema = z.object({
+  title: z.string().min(1).default("Untitled Draft"),
+  type: TestTypeEnum.default("general"),
+  matterPdfKey: z.string().optional().default(""),
+  outlinePdfKey: z.string().optional(),
+  correctAnswer: z.string().optional().default(""),
+  solutionAudioKey: z.string().optional(),
+  speeds: z
+    .array(
+      z.object({
+        wpm: z.number().int().nonnegative().default(0),
+        audioKey: z.string().default(""),
+        dictationSeconds: z.number().int().nonnegative().default(0),
+        breakSeconds: z.number().int().nonnegative().default(0),
+        writtenDurationSeconds: z.number().int().nonnegative().default(0),
+        sortOrder: z.number().int().nonnegative().default(0),
+      }),
+    )
+    .optional()
+    .default([]),
+});
+
+export type SaveDraftInput = z.infer<typeof saveDraftSchema>;
 export type AddSpeedInput = z.infer<typeof addSpeedSchema>;
 export type EditSpeedInput = z.infer<typeof editSpeedSchema>;
 export type DeleteSpeedInput = z.infer<typeof deleteSpeedSchema>;

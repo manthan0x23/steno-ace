@@ -5,7 +5,7 @@ import { UserNavbar } from "~/components/common/user/navbar";
 import { UserSidebar } from "~/components/common/user/sidebar";
 
 export const metadata: Metadata = {
-  title: "StenoDexter",
+  title: "Steno Dexter",
   description: "User panel for StenoDexter",
 };
 

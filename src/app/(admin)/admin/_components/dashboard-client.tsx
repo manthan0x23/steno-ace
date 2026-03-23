@@ -4,11 +4,9 @@
 
 import { Suspense } from "react";
 import { trpc } from "~/trpc/react";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import { Badge } from "~/components/ui/badge";
-import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
-import { Separator } from "~/components/ui/separator";
+import { Button } from "~/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import {
   Users,
   FileText,
@@ -19,135 +17,228 @@ import {
   Layers,
   BookOpen,
   ArrowRight,
-  Trophy,
   ExternalLink,
   TrendingUp,
   Zap,
+  Clock,
+  Target,
+  ClipboardList,
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import Link from "next/link";
-import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
+import { cn } from "~/lib/utils";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function fmtNum(n: number) {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
   if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
   return String(n);
 }
 
-function AccuracyText({ v }: { v: number }) {
+function AccuracyBadge({ v }: { v: number }) {
+  const cls =
+    v >= 90
+      ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+      : v >= 70
+        ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+        : "bg-red-500/10 text-red-600 dark:text-red-400";
   return (
     <span
-      className={
-        v >= 90
-          ? "text-emerald-500"
-          : v >= 70
-            ? "text-amber-500"
-            : "text-destructive"
-      }
+      className={cn(
+        "rounded-md px-1.5 py-0.5 text-xs font-semibold tabular-nums",
+        cls,
+      )}
     >
       {v}%
     </span>
   );
 }
 
-// ─── Compact Section Label ────────────────────────────────────────────────────
+const TYPE_ICON: Record<string, React.ReactNode> = {
+  legal: <Gavel className="h-3 w-3" />,
+  general: <FileText className="h-3 w-3" />,
+  special: <Target className="h-3 w-3" />,
+};
 
-function SectionLabel({
-  icon: Icon,
-  label,
-  action,
-}: {
-  icon: React.ElementType;
+const TYPE_COLOR: Record<string, string> = {
+  legal: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
+  general: "bg-sky-500/10 text-sky-500 dark:text-sky-400",
+  special: "bg-violet-500/10 text-violet-600 dark:text-violet-400",
+};
+
+// ─── Stat Card ────────────────────────────────────────────────────────────────
+// Dark card with a soft radial glow in the corner, matching the screenshot style.
+
+type StatCardConfig = {
   label: string;
-  action?: React.ReactNode;
+  value: string | number;
+  descriptor: string;
+  sub: string;
+  badge?: string;
+  badgeColor?: string;
+  icon: React.ElementType;
+  glowColor: string; // inline CSS color for the glow blob
+};
+
+type TrendDir = "up" | "down" | "neutral";
+
+export function StatCard({
+  label,
+  value,
+  story,
+  sub,
+  icon: Icon,
+  trend,
+  trendDir = "neutral",
+}: {
+  label: string;
+  value: string | number;
+  story?: string;
+  sub?: string;
+  icon: React.ElementType;
+  trend?: string;
+  trendDir?: TrendDir;
 }) {
+  const trendStyles =
+    trendDir === "up"
+      ? "bg-emerald-500/15 text-emerald-500"
+      : trendDir === "down"
+        ? "bg-red-500/15 text-red-400"
+        : "bg-muted text-muted-foreground";
+
+  const trendArrow = trendDir === "up" ? "▲" : trendDir === "down" ? "▼" : "•";
+
   return (
-    <div className="flex items-center justify-between">
-      <div className="flex items-center gap-1.5">
-        <Icon className="text-muted-foreground h-3.5 w-3.5" />
-        <span className="text-muted-foreground text-[11px] font-semibold tracking-widest uppercase">
+    <div
+      className="group relative flex flex-col justify-between gap-4 overflow-hidden rounded-2xl border px-6 py-5 transition-all hover:-translate-y-0.5 hover:shadow-lg"
+      style={{
+        background:
+          "radial-gradient(ellipse at top right, color-mix(in oklch, var(--chart-1) 8%, var(--card)), var(--card))",
+      }}
+    >
+      {/* Top row */}
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-muted-foreground text-xs leading-none font-medium">
           {label}
-        </span>
+        </p>
+
+        {trend && (
+          <span
+            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${trendStyles}`}
+          >
+            {trendArrow} {trend}
+          </span>
+        )}
       </div>
-      {action}
+
+      {/* Value */}
+      <p className="text-4xl leading-none font-bold tracking-tight tabular-nums">
+        {value}
+      </p>
+
+      {/* Divider */}
+      {(story || sub) && (
+        <div className="space-y-1">
+          {story && (
+            <p className="text-foreground/80 flex items-center gap-1.5 text-sm font-semibold">
+              {story}
+              <Icon className="text-muted-foreground h-3.5 w-3.5" />
+            </p>
+          )}
+
+          {sub && <p className="text-muted-foreground text-xs">{sub}</p>}
+        </div>
+      )}
     </div>
   );
 }
 
-// ─── KPI Bar ─────────────────────────────────────────────────────────────────
-// All top-level numbers in one horizontal strip — no giant isolated cards
-
-function KpiBar() {
+function KpiRow() {
   const [overview] = trpc.analytics.getPlatformOverview.useSuspenseQuery();
-  const [engagement] = trpc.analytics.getEngagementMetrics.useSuspenseQuery();
-
-  const dauWau =
-    engagement.wau > 0
-      ? `${((engagement.dau / engagement.wau) * 100).toFixed(0)}%`
-      : "—";
-
-  const kpis = [
-    {
-      label: "Total Users",
-      value: fmtNum(overview.totalUsers),
-      sub: `${overview.activeUsers.last1d} today`,
-      icon: Users,
-      color: "text-violet-500",
-    },
-    {
-      label: "Active (7d)",
-      value: overview.activeUsers.last7d,
-      sub: `${overview.activeUsers.last30d} this month`,
-      icon: Activity,
-      color: "text-blue-500",
-    },
-    {
-      label: "Total Tests",
-      value: fmtNum(overview.totalTests),
-      sub: `${fmtNum(overview.totalAttempts)} attempts`,
-      icon: FileText,
-      color: "text-amber-500",
-    },
-    {
-      label: "Avg / User",
-      value: Number(engagement.avgAttemptsPerUser).toFixed(1),
-      sub: "attempts per user",
-      icon: BarChart3,
-      color: "text-emerald-500",
-    },
-    {
-      label: "Stickiness",
-      value: dauWau,
-      sub: "DAU / WAU",
-      icon: Zap,
-      color: "text-rose-500",
-    },
-    {
-      label: "DAU · WAU · MAU",
-      value: `${engagement.dau} · ${engagement.wau} · ${engagement.mau}`,
-      sub: "daily · weekly · monthly",
-      icon: TrendingUp,
-      color: "text-sky-500",
-    },
-  ];
 
   return (
-    <div className="grid grid-cols-6 divide-x rounded-xl border">
-      {kpis.map(({ label, value, sub, icon: Icon, color }) => (
-        <div key={label} className="flex flex-col gap-1 px-5 py-4">
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground text-[10px] font-semibold tracking-widest uppercase">
-              {label}
+    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <StatCard
+        label="Total Users"
+        value={fmtNum(overview.totalUsers)}
+        story="Registered users"
+        sub="On the platform"
+        icon={Users}
+        trend={`+${overview.activeUsers.last7d}`}
+        trendDir="up"
+      />
+
+      <StatCard
+        label="Total Tests"
+        value={fmtNum(overview.totalTests)}
+        story="Available tests"
+        sub="Across all categories"
+        icon={ClipboardList}
+      />
+
+      <StatCard
+        label="Total Attempts"
+        value={fmtNum(overview.totalAttempts)}
+        story="All attempts"
+        sub="Submitted by users"
+        icon={Activity}
+        trend={`+${overview.activeUsers.last1d}`}
+        trendDir="up"
+      />
+
+      <StatCard
+        label="Active Users"
+        value={fmtNum(overview.activeUsers.last30d)}
+        story="Last 30 days"
+        sub={`1d: ${overview.activeUsers.last1d} • 7d: ${overview.activeUsers.last7d}`}
+        icon={TrendingUp}
+        trend="Engagement"
+        trendDir="neutral"
+      />
+    </div>
+  );
+}
+
+// ─── Section Header ───────────────────────────────────────────────────────────
+
+function SectionHeader({
+  icon: Icon,
+  title,
+  count,
+  href,
+  hrefLabel = "View all",
+}: {
+  icon: React.ElementType;
+  title: string;
+  count?: number;
+  href?: string;
+  hrefLabel?: string;
+}) {
+  return (
+    <div className="mb-3 flex items-center justify-between">
+      <div className="flex items-center gap-2">
+        <span className="bg-muted flex h-6 w-6 items-center justify-center rounded-md">
+          <Icon className="text-muted-foreground h-3.5 w-3.5" />
+        </span>
+        <h2 className="text-sm font-semibold">
+          {title}
+          {count !== undefined && (
+            <span className="text-muted-foreground ml-1.5 font-normal">
+              ({count})
             </span>
-            <Icon className={`h-3.5 w-3.5 ${color}`} />
-          </div>
-          <span className="text-xl leading-none font-bold tabular-nums">
-            {value}
-          </span>
-          <span className="text-muted-foreground text-[11px]">{sub}</span>
-        </div>
-      ))}
+          )}
+        </h2>
+      </div>
+      {href && (
+        <Link
+          href={href}
+          className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs transition-colors"
+        >
+          {hrefLabel}
+          <ArrowRight className="h-3 w-3" />
+        </Link>
+      )}
     </div>
   );
 }
@@ -162,240 +253,134 @@ function RecentAttempts() {
     sortOrder: "desc",
   });
 
+  if (data.length === 0) {
+    return (
+      <div>
+        <SectionHeader
+          icon={TrendingUp}
+          title="Recent Attempts"
+          href="/admin/attempts"
+        />
+        <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border py-14 text-center">
+          <Activity className="text-muted-foreground/20 h-8 w-8" />
+          <p className="text-muted-foreground text-sm">No submissions yet</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex flex-col gap-3">
-      <SectionLabel
+    <div>
+      <SectionHeader
         icon={TrendingUp}
-        label="Recent Attempts"
-        action={
-          <Link
-            href="/admin/attempts"
-            className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs transition-colors"
-          >
-            Explore all <ArrowRight className="h-3 w-3" />
-          </Link>
-        }
+        title="Recent Attempts"
+        href="/admin/attempts"
+        hrefLabel="Explore all"
       />
+      <div className="overflow-hidden rounded-2xl border">
+        {/* Table header */}
+        <div className="bg-muted/30 grid grid-cols-[1fr_1.4fr_80px_52px_52px_64px_80px_28px] items-center gap-3 border-b px-5 py-2.5">
+          {["User", "Test", "Type", "Score", "WPM", "Acc", "When", ""].map(
+            (h, i) => (
+              <span
+                key={i}
+                className={cn(
+                  "text-muted-foreground text-[10px] font-semibold tracking-[0.1em] uppercase",
+                  i >= 3 && i <= 6 && "text-right",
+                )}
+              >
+                {h}
+              </span>
+            ),
+          )}
+        </div>
 
-      {data.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center gap-2 py-12 text-center">
-            <Activity className="text-muted-foreground/30 h-8 w-8" />
-            <p className="text-muted-foreground text-sm">No submissions yet</p>
-            <p className="text-muted-foreground/60 text-xs">
-              Completed attempts will appear here
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="overflow-hidden rounded-xl border">
-          {/* header */}
-          <div className="bg-muted/40 grid grid-cols-[1fr_1.2fr_90px_56px_56px_60px_88px_28px] gap-3 border-b px-4 py-2">
-            {["User", "Test", "Type", "Score", "WPM", "Acc", "When", ""].map(
-              (h, i) => (
-                <span
-                  key={i}
-                  className={[
-                    "text-muted-foreground text-[10px] font-semibold tracking-widest uppercase",
-                    i >= 3 && i <= 6 ? "text-right" : "",
-                  ].join(" ")}
-                >
-                  {h}
-                </span>
-              ),
+        {data.map((row, idx) => (
+          <div
+            key={row.attemptId}
+            className={cn(
+              "group hover:bg-muted/30 grid grid-cols-[1fr_1.4fr_80px_52px_52px_64px_80px_28px] items-center gap-3 px-5 py-3 transition-colors",
+              idx !== data.length - 1 && "border-b",
             )}
-          </div>
-
-          {data.map((row, idx) => (
-            <div
-              key={row.attemptId}
-              className={[
-                "group hover:bg-muted/40 grid grid-cols-[1fr_1.2fr_90px_56px_56px_60px_88px_28px] items-center gap-3 px-4 py-2.5 transition-colors",
-                idx !== data.length - 1 ? "border-b" : "",
-              ].join(" ")}
-            >
-              {/* user */}
+          >
+            {/* User */}
+            <div className="flex min-w-0 items-center gap-2">
+              <Avatar className="h-6 w-6 shrink-0">
+                <AvatarImage src="" />
+                <AvatarFallback className="text-[9px] font-semibold">
+                  {(row.user.name ?? row.user.email ?? "?")[0]?.toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
               <div className="min-w-0">
                 <p className="truncate text-sm leading-none font-medium">
                   {row.user.name ?? row.user.email}
                 </p>
                 {row.user.name && (
-                  <p className="text-muted-foreground mt-0.5 truncate text-xs">
+                  <p className="text-muted-foreground mt-0.5 truncate text-[11px]">
                     {row.user.email}
                   </p>
                 )}
               </div>
+            </div>
 
-              {/* test */}
-              <Link
-                href={`/admin/test/${row.test?.id}`}
-                className="hover:text-primary min-w-0 truncate text-sm transition-colors"
-              >
-                {row.test?.title ?? "—"}
-              </Link>
+            {/* Test */}
+            <Link
+              href={`/admin/test/${row.test?.id}`}
+              className="hover:text-primary min-w-0 truncate text-sm transition-colors"
+            >
+              {row.test?.title ?? "—"}
+            </Link>
 
-              {/* type */}
+            {/* Type */}
+            <div>
               <span
-                className={[
-                  "text-[10px] font-semibold tracking-wide uppercase",
+                className={cn(
+                  "rounded px-1.5 py-0.5 text-[10px] font-semibold tracking-wide uppercase",
                   row.type === "assessment"
-                    ? "text-foreground"
+                    ? "bg-foreground/8 text-foreground"
                     : "text-muted-foreground",
-                ].join(" ")}
+                )}
               >
                 {row.type}
               </span>
-
-              {/* score */}
-              <p className="text-right text-sm font-bold tabular-nums">
-                {row.result.score}
-              </p>
-
-              {/* wpm */}
-              <p className="text-muted-foreground text-right text-sm tabular-nums">
-                {row.result.wpm}
-              </p>
-
-              {/* accuracy */}
-              <p className="text-right text-sm font-semibold tabular-nums">
-                <AccuracyText v={row.result.accuracy} />
-              </p>
-
-              {/* when */}
-              <p className="text-muted-foreground text-right text-xs tabular-nums">
-                {formatDistanceToNow(new Date(row.result.submittedAt), {
-                  addSuffix: true,
-                })}
-              </p>
-
-              {/* link */}
-              <div className="flex justify-end">
-                <Link href={`/user/attempt/${row.attemptId}`}>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-5 w-5 opacity-0 transition-opacity group-hover:opacity-100"
-                  >
-                    <ExternalLink className="h-3 w-3" />
-                  </Button>
-                </Link>
-              </div>
             </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
 
-// ─── Top Performers ───────────────────────────────────────────────────────────
+            {/* Score */}
+            <p className="text-right text-sm font-bold tabular-nums">
+              {row.result.score}
+            </p>
 
-const MEDALS = ["🥇", "🥈", "🥉"];
+            {/* WPM */}
+            <p className="text-muted-foreground text-right text-sm tabular-nums">
+              {row.result.wpm}
+            </p>
 
-function TopPerformers() {
-  const [{ data, meta }] =
-    trpc.analytics.getGlobalTopPerformers.useSuspenseQuery({
-      pageSize: 5,
-      page: 1,
-    });
+            {/* Accuracy */}
+            <div className="flex justify-end">
+              <AccuracyBadge v={row.result.accuracy} />
+            </div>
 
-  return (
-    <div className="flex flex-col gap-3">
-      <SectionLabel
-        icon={Trophy}
-        label="Top Performers"
-        action={
-          <Link
-            href="/admin/leaderboard"
-            className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs transition-colors"
-          >
-            Leaderboard <ArrowRight className="h-3 w-3" />
-          </Link>
-        }
-      />
+            {/* When */}
+            <p className="text-muted-foreground text-right text-[11px] tabular-nums">
+              {formatDistanceToNow(new Date(row.result.submittedAt), {
+                addSuffix: true,
+              })}
+            </p>
 
-      <div className="overflow-hidden rounded-xl border">
-        {data.length === 0 ? (
-          <div className="flex flex-col items-center gap-2 py-10 text-center">
-            <Trophy className="text-muted-foreground/30 h-7 w-7" />
-            <p className="text-muted-foreground text-sm">No data yet</p>
+            {/* Link */}
+            <div className="flex justify-end">
+              <Link href={`/user/attempt/${row.attemptId}`}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-5 w-5 opacity-0 transition-opacity group-hover:opacity-100"
+                >
+                  <ExternalLink className="h-3 w-3" />
+                </Button>
+              </Link>
+            </div>
           </div>
-        ) : (
-          data.map((p, idx) => (
-            <div
-              key={p.user.id}
-              className={[
-                "hover:bg-muted/40 flex items-center gap-3 px-4 py-2.5 transition-colors",
-                idx !== data.length - 1 ? "border-b" : "",
-              ].join(" ")}
-            >
-              <span className="w-5 shrink-0 text-center text-sm">
-                {p.rank <= 3 ? (
-                  MEDALS[p.rank - 1]
-                ) : (
-                  <span className="text-muted-foreground text-sm tabular-nums">
-                    {p.rank}
-                  </span>
-                )}
-              </span>
-
-              <Avatar className="ring-border h-7 w-7 shrink-0 ring-1">
-                <AvatarImage
-                  src={p.user.profilePicUrl ?? ""}
-                  alt={p.user.name ?? p.user.email ?? ""}
-                />
-                <AvatarFallback className="text-xs font-semibold">
-                  {(p.user.name ?? p.user.email ?? "?")[0]?.toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm leading-none font-medium">
-                  {p.user.name ?? p.user.email}
-                </p>
-                {p.user.name && (
-                  <p className="text-muted-foreground mt-0.5 truncate text-xs">
-                    {p.user.email}
-                  </p>
-                )}
-              </div>
-
-              <div className="flex shrink-0 gap-4 text-right">
-                <div>
-                  <p className="text-muted-foreground text-[9px] tracking-widest uppercase">
-                    Pts
-                  </p>
-                  <p className="text-sm font-bold tabular-nums">
-                    {Math.round(p.totalPoints)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground text-[9px] tracking-widest uppercase">
-                    Tests
-                  </p>
-                  <p className="text-muted-foreground text-sm tabular-nums">
-                    {p.testsPlayed}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground text-[9px] tracking-widest uppercase">
-                    #1s
-                  </p>
-                  <p
-                    className={[
-                      "text-sm font-semibold tabular-nums",
-                      p.firstPlaces > 0
-                        ? "text-amber-500"
-                        : "text-muted-foreground",
-                    ].join(" ")}
-                  >
-                    {p.firstPlaces}
-                  </p>
-                </div>
-              </div>
-            </div>
-          ))
-        )}
+        ))}
       </div>
     </div>
   );
@@ -414,23 +399,17 @@ function ActiveTests() {
   const perfMap = new Map(perf.map((p) => [p.testId, p]));
 
   return (
-    <div className="flex flex-col gap-3">
-      <SectionLabel
+    <div className="flex flex-col">
+      <SectionHeader
         icon={Layers}
-        label={`Active Tests (${tests.total})`}
-        action={
-          <Link
-            href="/admin/tests?status=active"
-            className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs transition-colors"
-          >
-            All <ArrowRight className="h-3 w-3" />
-          </Link>
-        }
+        title="Active Tests"
+        count={tests.total}
+        href="/admin/tests?status=active"
+        hrefLabel="All"
       />
-
-      <div className="overflow-hidden rounded-xl border">
+      <div className="overflow-hidden rounded-2xl border">
         {tests.data.length === 0 ? (
-          <div className="flex flex-col items-center gap-2 py-10 text-center">
+          <div className="flex flex-col items-center gap-3 py-10 text-center">
             <p className="text-muted-foreground text-sm">No active tests</p>
             <Button size="sm" variant="outline" asChild>
               <Link href="/admin/tests">Launch a draft</Link>
@@ -438,20 +417,18 @@ function ActiveTests() {
           </div>
         ) : (
           <>
-            <div className="bg-muted/40 grid grid-cols-[1fr_72px_76px_72px_68px] gap-3 border-b px-4 py-2">
-              {["Test", "Attempts", "Avg Score", "Avg Acc", "Avg WPM"].map(
-                (h, i) => (
-                  <span
-                    key={h}
-                    className={[
-                      "text-muted-foreground text-[10px] font-semibold tracking-widest uppercase",
-                      i > 0 ? "text-right" : "",
-                    ].join(" ")}
-                  >
-                    {h}
-                  </span>
-                ),
-              )}
+            <div className="bg-muted/30 grid grid-cols-[1fr_60px_68px_60px_56px] items-center gap-2 border-b px-4 py-2.5">
+              {["Test", "Attempts", "Avg Score", "Acc", "WPM"].map((h, i) => (
+                <span
+                  key={h}
+                  className={cn(
+                    "text-muted-foreground text-[10px] font-semibold tracking-[0.1em] uppercase",
+                    i > 0 && "text-right",
+                  )}
+                >
+                  {h}
+                </span>
+              ))}
             </div>
 
             {tests.data.map((t, idx) => {
@@ -460,25 +437,19 @@ function ActiveTests() {
                 <Link
                   key={t.id}
                   href={`/admin/test/${t.id}`}
-                  className={[
-                    "group hover:bg-muted/40 grid grid-cols-[1fr_72px_76px_72px_68px] items-center gap-3 px-4 py-2.5 transition-colors",
-                    idx !== tests.data.length - 1 ? "border-b" : "",
-                  ].join(" ")}
+                  className={cn(
+                    "group hover:bg-muted/30 grid grid-cols-[1fr_60px_68px_60px_56px] items-center gap-2 px-4 py-3 transition-colors",
+                    idx !== tests.data.length - 1 && "border-b",
+                  )}
                 >
                   <div className="flex min-w-0 items-center gap-2">
                     <span
-                      className={[
-                        "shrink-0 rounded p-0.5",
-                        t.type === "legal"
-                          ? "bg-amber-500/10 text-amber-400"
-                          : "bg-sky-500/10 text-sky-400",
-                      ].join(" ")}
-                    >
-                      {t.type === "legal" ? (
-                        <Gavel className="h-2.5 w-2.5" />
-                      ) : (
-                        <FileText className="h-2.5 w-2.5" />
+                      className={cn(
+                        "flex shrink-0 items-center justify-center rounded p-1",
+                        TYPE_COLOR[t.type] ?? "bg-muted text-muted-foreground",
                       )}
+                    >
+                      {TYPE_ICON[t.type] ?? <FileText className="h-3 w-3" />}
                     </span>
                     <span className="truncate text-sm">{t.title}</span>
                   </div>
@@ -491,16 +462,16 @@ function ActiveTests() {
                       <span className="text-right text-sm font-semibold tabular-nums">
                         {Math.round(Number(p.avgScore))}
                       </span>
-                      <span className="text-right text-sm font-semibold tabular-nums">
-                        <AccuracyText v={Math.round(Number(p.avgAccuracy))} />
-                      </span>
+                      <div className="flex justify-end">
+                        <AccuracyBadge v={Math.round(Number(p.avgAccuracy))} />
+                      </div>
                       <span className="text-muted-foreground text-right text-sm tabular-nums">
                         {Math.round(Number(p.avgWpm))}
                       </span>
                     </>
                   ) : (
                     <span className="text-muted-foreground/40 col-span-4 text-right text-xs">
-                      No attempts
+                      No attempts yet
                     </span>
                   )}
                 </Link>
@@ -524,27 +495,21 @@ function DraftTests() {
   });
 
   return (
-    <div className="flex flex-col gap-3">
-      <SectionLabel
+    <div className="flex flex-col">
+      <SectionHeader
         icon={BookOpen}
-        label="Drafts"
-        action={
-          <Link
-            href="/admin/tests/new"
-            className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs transition-colors"
-          >
-            <Plus className="h-3 w-3" /> New
-          </Link>
-        }
+        title="Drafts"
+        href="/admin/tests/new"
+        hrefLabel="New"
       />
-
-      <div className="overflow-hidden rounded-xl border">
+      <div className="overflow-hidden rounded-2xl border">
         {drafts.data.length === 0 ? (
-          <div className="flex flex-col items-center gap-2 py-10 text-center">
+          <div className="flex flex-col items-center gap-3 py-10 text-center">
             <p className="text-muted-foreground text-sm">No drafts</p>
             <Button size="sm" asChild>
               <Link href="/admin/tests/new">
-                <Plus className="mr-1.5 h-3.5 w-3.5" /> Create Test
+                <Plus className="mr-1.5 h-3.5 w-3.5" />
+                Create Test
               </Link>
             </Button>
           </div>
@@ -554,25 +519,27 @@ function DraftTests() {
               <Link
                 key={t.id}
                 href={`/admin/test/${t.id}`}
-                className={[
-                  "hover:bg-muted/40 flex items-center justify-between gap-3 px-4 py-2.5 transition-colors",
-                  idx !== drafts.data.length - 1 ? "border-b" : "",
-                ].join(" ")}
+                className={cn(
+                  "hover:bg-muted/30 flex items-center justify-between gap-3 px-4 py-3 transition-colors",
+                  idx !== drafts.data.length - 1 && "border-b",
+                )}
               >
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm">{t.title}</p>
-                  <p className="text-muted-foreground text-xs">
+                  <p className="truncate text-sm font-medium">{t.title}</p>
+                  <p className="text-muted-foreground mt-0.5 flex items-center gap-1 text-[11px]">
+                    <Clock className="h-3 w-3" />
                     {formatDistanceToNow(new Date(t.createdAt), {
                       addSuffix: true,
                     })}
                   </p>
                 </div>
                 <span
-                  className={[
-                    "shrink-0 text-[9px] font-bold tracking-widest uppercase",
-                    t.type === "legal" ? "text-amber-400" : "text-sky-400",
-                  ].join(" ")}
+                  className={cn(
+                    "flex shrink-0 items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-semibold tracking-wide uppercase",
+                    TYPE_COLOR[t.type] ?? "bg-muted text-muted-foreground",
+                  )}
                 >
+                  {TYPE_ICON[t.type]}
                   {t.type}
                 </span>
               </Link>
@@ -583,7 +550,7 @@ function DraftTests() {
                 href="/admin/tests?status=draft"
                 className="text-muted-foreground hover:text-foreground flex items-center justify-center gap-1 border-t px-4 py-2.5 text-xs transition-colors"
               >
-                View all {drafts.total} drafts{" "}
+                View all {drafts.total} drafts
                 <ArrowRight className="h-3 w-3" />
               </Link>
             )}
@@ -598,31 +565,73 @@ function DraftTests() {
 
 function KpiSkeleton() {
   return (
-    <div className="grid grid-cols-6 divide-x rounded-xl border">
-      {Array.from({ length: 6 }).map((_, i) => (
-        <div key={i} className="flex flex-col gap-2 px-5 py-4">
-          <Skeleton className="h-2.5 w-16" />
-          <Skeleton className="h-6 w-12" />
-          <Skeleton className="h-2.5 w-20" />
+    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div
+          key={i}
+          className="rounded-2xl p-5"
+          style={{
+            background: "#1c1c1f",
+            border: "1px solid rgba(255,255,255,0.07)",
+          }}
+        >
+          <Skeleton className="mb-4 h-2.5 w-20 bg-white/10" />
+          <Skeleton className="h-10 w-16 bg-white/10" />
+          <div className="mt-3 space-y-1.5">
+            <Skeleton className="h-3.5 w-28 bg-white/10" />
+            <Skeleton className="h-2.5 w-20 bg-white/10" />
+          </div>
         </div>
       ))}
     </div>
   );
 }
 
-function ListSkeleton({ rows = 5 }: { rows?: number }) {
+function TableSkeleton({ rows = 5 }: { rows?: number }) {
   return (
-    <div className="divide-y overflow-hidden rounded-xl border">
+    <div className="overflow-hidden rounded-2xl border">
+      <div className="bg-muted/30 border-b px-5 py-2.5">
+        <Skeleton className="h-2.5 w-40" />
+      </div>
       {Array.from({ length: rows }).map((_, i) => (
-        <div key={i} className="flex items-center gap-3 px-4 py-2.5">
-          <div className="flex-1 space-y-1">
-            <Skeleton className="h-3.5 w-36" />
-            <Skeleton className="h-3 w-24" />
+        <div
+          key={i}
+          className={cn(
+            "flex items-center gap-3 px-5 py-3",
+            i !== rows - 1 && "border-b",
+          )}
+        >
+          <Skeleton className="h-6 w-6 rounded-full" />
+          <div className="flex-1 space-y-1.5">
+            <Skeleton className="h-3.5 w-32" />
+            <Skeleton className="h-2.5 w-20" />
           </div>
-          <Skeleton className="h-3.5 w-24" />
+          <Skeleton className="h-3.5 w-16" />
           <Skeleton className="h-3.5 w-10" />
           <Skeleton className="h-3.5 w-10" />
-          <Skeleton className="h-3.5 w-10" />
+          <Skeleton className="h-5 w-12 rounded-md" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ColSkeleton({ rows = 5 }: { rows?: number }) {
+  return (
+    <div className="overflow-hidden rounded-2xl border">
+      {Array.from({ length: rows }).map((_, i) => (
+        <div
+          key={i}
+          className={cn(
+            "flex items-center gap-3 px-4 py-3",
+            i !== rows - 1 && "border-b",
+          )}
+        >
+          <div className="flex-1 space-y-1.5">
+            <Skeleton className="h-3.5 w-36" />
+            <Skeleton className="h-2.5 w-20" />
+          </div>
+          <Skeleton className="h-3.5 w-14" />
         </div>
       ))}
     </div>
@@ -636,14 +645,7 @@ export default function DashboardClient() {
 
   // Preload before Suspense boundaries
   trpc.analytics.getPlatformOverview.useQuery(undefined, { staleTime: 60_000 });
-  trpc.analytics.getEngagementMetrics.useQuery(undefined, {
-    staleTime: 60_000,
-  });
   trpc.analytics.getTestPerformance.useQuery(undefined, { staleTime: 60_000 });
-  trpc.analytics.getGlobalTopPerformers.useQuery(
-    { pageSize: 5, page: 1 },
-    { staleTime: 60_000 },
-  );
   trpc.result.getResults.useQuery(
     { page: 0, limit: 8, sortBy: "time", sortOrder: "desc" },
     { staleTime: 30_000 },
@@ -658,12 +660,12 @@ export default function DashboardClient() {
   );
 
   return (
-    <div className="w-full space-y-7 px-6 py-7">
+    <div className="w-full space-y-6 px-6 py-7">
       {/* ── Header ── */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-start justify-between">
         <div>
           <h1 className="text-xl font-semibold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground text-sm">{today}</p>
+          <p className="text-muted-foreground mt-0.5 text-sm">{today}</p>
         </div>
         <Button size="sm" asChild>
           <Link href="/admin/tests/new">
@@ -673,41 +675,36 @@ export default function DashboardClient() {
         </Button>
       </div>
 
-      {/* ── KPI bar ── */}
+      {/* ── KPI cards ── */}
       <Suspense fallback={<KpiSkeleton />}>
-        <KpiBar />
+        <KpiRow />
       </Suspense>
 
       {/* ── Recent attempts ── */}
       <Suspense
         fallback={
           <div className="space-y-3">
-            <Skeleton className="h-4 w-32" />
-            <ListSkeleton rows={6} />
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-6 w-6 rounded-md" />
+              <Skeleton className="h-4 w-32" />
+            </div>
+            <TableSkeleton rows={6} />
           </div>
         }
       >
         <RecentAttempts />
       </Suspense>
 
-      {/* ── Bottom 3-col grid ── */}
-      <div className="grid grid-cols-3 gap-6">
+      {/* ── Bottom 2-col grid ── */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Suspense
           fallback={
             <div className="space-y-3">
-              <Skeleton className="h-4 w-28" />
-              <ListSkeleton rows={5} />
-            </div>
-          }
-        >
-          <TopPerformers />
-        </Suspense>
-
-        <Suspense
-          fallback={
-            <div className="space-y-3">
-              <Skeleton className="h-4 w-28" />
-              <ListSkeleton rows={5} />
+              <div className="flex items-center gap-2">
+                <Skeleton className="h-6 w-6 rounded-md" />
+                <Skeleton className="h-4 w-28" />
+              </div>
+              <ColSkeleton rows={6} />
             </div>
           }
         >
@@ -717,8 +714,11 @@ export default function DashboardClient() {
         <Suspense
           fallback={
             <div className="space-y-3">
-              <Skeleton className="h-4 w-28" />
-              <ListSkeleton rows={5} />
+              <div className="flex items-center gap-2">
+                <Skeleton className="h-6 w-6 rounded-md" />
+                <Skeleton className="h-4 w-28" />
+              </div>
+              <ColSkeleton rows={6} />
             </div>
           }
         >

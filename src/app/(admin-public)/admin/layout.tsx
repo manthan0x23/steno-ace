@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { ThemeToggle } from "~/components/utils/theme-toggle";
 
 export const metadata: Metadata = {
-  title: "StenoDexter Admin",
+  title: "Steno Dexter Admin",
   description: "Admin panel for StenoDexter",
 };
 

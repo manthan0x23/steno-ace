@@ -12,7 +12,7 @@ import {
 } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { db as globalDb } from "~/server/db";
-import { notifications } from "~/server/db/schema";
+import { notifications, user } from "~/server/db/schema";
 import type {
   DeleteManyNotificationsInput,
   DeleteNotificationInput,
@@ -77,8 +77,25 @@ export function createNotificationsService(db: Db) {
 
       const [rows, [countRow]] = await Promise.all([
         db
-          .select()
+          .select({
+            id: notifications.id,
+            title: notifications.title,
+            message: notifications.message,
+            to: notifications.to,
+            seenBy: notifications.seenBy,
+            link: notifications.link,
+            isLinkExternal: notifications.isLinkExternal,
+            createdAt: notifications.createdAt,
+            userEmail: user.email,
+          })
           .from(notifications)
+          .leftJoin(
+            user,
+            and(
+              eq(notifications.to, user.id),
+              not(eq(notifications.to, "everyone")),
+            ),
+          )
           .where(where)
           .orderBy(desc(notifications.createdAt))
           .limit(pageSize)

@@ -1,0 +1,36 @@
+
+
+/// admin space
+
+
+/admin/test/[testId]/attempts 
+displays users who attmepted that test 
+
+/admin/test/[testId]/user/[userId]/results
+each user's result
+
+
+/admin/admissions
+user admission's page
+
+
+
+
+/// user space
+
+/user/test/[testId]/
+
+CTA nothing else
+leaderboard, my results , attmept the test (from notif too)
+
+pricing UPI, section 
+
+/// cron jobs 
+notifying, emailing , users for expiring accounts
+UPI jobs maybe 
+cleaning crons finalizing leaderboards etc etc maybe 
+
+
+some UI changes in login - register pages USER specially 
+
+323834897308

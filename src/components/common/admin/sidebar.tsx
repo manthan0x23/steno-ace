@@ -45,7 +45,6 @@ import { useMemo } from "react";
 import Image from "next/image";
 
 const MAIN_NAV = [
-  { label: "Leaderboard", href: "/admin/leaderboard", icon: Trophy },
   { label: "Analytics", href: "/admin/analytics", icon: BarChart2 },
   { label: "Users", href: "/admin/users", icon: Users },
   {

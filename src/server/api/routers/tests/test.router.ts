@@ -20,8 +20,10 @@ import {
   editSpeedSchema,
   deleteSpeedSchema,
   reorderSpeedsSchema,
+  saveDraftSchema,
 } from "./test.schema";
 import { testService } from "./test.service";
+import z from "zod";
 
 export const testRouter = createTRPCRouter({
   // ── test CRUD ──────────────────────────────────────────────────────────────
@@ -37,6 +39,24 @@ export const testRouter = createTRPCRouter({
   delete: adminProcedure
     .input(getTestSchema)
     .mutation(({ input }) => testService.delete(input)),
+
+  uploadExplanationAudioForTest: adminProcedure
+    .input(
+      z.object({
+        audioKey: z.string(),
+        testId: z.string(),
+      }),
+    )
+    .mutation(async ({ input }) => {
+      return testService.uploadExplanationAudioForTest(
+        input.testId,
+        input.audioKey,
+      );
+    }),
+
+  saveDraft: adminProcedure
+    .input(saveDraftSchema)
+    .mutation(({ input, ctx }) => testService.saveDraft(input, ctx.admin.id)),
 
   // ── speed management ───────────────────────────────────────────────────────
   // Standalone routes — admin manages speeds independently after test creation.

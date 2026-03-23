@@ -1,4 +1,10 @@
-import { testAttempts, tests, testSpeeds, results } from "~/server/db/schema";
+import {
+  testAttempts,
+  tests,
+  testSpeeds,
+  results,
+  notifications,
+} from "~/server/db/schema";
 import {
   eq,
   desc,
@@ -25,6 +31,7 @@ import type {
   EditSpeedInput,
   DeleteSpeedInput,
   ReorderSpeedsInput,
+  SaveDraftInput,
 } from "./test.schema";
 import R2Service from "~/server/services/r2.service";
 import { notificationsService } from "../notifications/notification.service";
@@ -192,6 +199,53 @@ export function createTestService(db: Db) {
       return { success: true };
     },
 
+    async uploadExplanationAudioForTest(testId: string, audioKey: string) {
+      return db.transaction(async (tx) => {
+        // 1. Get existing test
+        const test = await tx.query.tests.findFirst({
+          where: eq(tests.id, testId),
+        });
+
+        if (!test) throw new Error("Test not found");
+
+        const isFirstUpload = !test.solutionAudioKey;
+
+        await tx
+          .update(tests)
+          .set({ solutionAudioKey: audioKey })
+          .where(eq(tests.id, testId));
+
+        const attemptedUsers = await tx
+          .selectDistinct({ userId: testAttempts.userId })
+          .from(testAttempts)
+          .where(eq(testAttempts.testId, testId));
+
+        if (attemptedUsers.length === 0) return { ok: true };
+
+        const userIds = attemptedUsers.map((u) => u.userId);
+
+        const notifs = userIds.map((userId) => ({
+          id: nanoid(),
+          title: isFirstUpload
+            ? "Solution audio available 🎧"
+            : "Solution audio updated 🔄",
+          message: isFirstUpload
+            ? `Solution audio for "${test.title}" is now available.`
+            : `Solution audio for "${test.title}" has been updated.`,
+          to: userId,
+          seenBy: [],
+          link: `/user/tests/${testId}`,
+          isLinkExternal: false,
+        }));
+
+        notifs.map(async (n) => {
+          await notificationsService.send({ ...n });
+        });
+
+        return { ok: true };
+      });
+    },
+
     // ── list (admin) ──────────────────────────────────────────────────────────
 
     async list(input: ListTestsInput) {
@@ -238,6 +292,34 @@ export function createTestService(db: Db) {
         total,
         totalPages: Math.ceil(total / PAGE_SIZE),
       };
+    },
+
+    async saveDraft(input: SaveDraftInput, adminId: string) {
+      const { speeds, ...testFields } = input;
+
+      return db.transaction(async (tx) => {
+        const [test] = await tx
+          .insert(tests)
+          .values({
+            ...testFields,
+            adminId,
+            status: "draft",
+          })
+          .returning();
+
+        if (speeds.length > 0) {
+          await tx.insert(testSpeeds).values(
+            speeds.map((s, i) => ({
+              id: nanoid(8),
+              testId: test!.id,
+              ...s,
+              sortOrder: s.sortOrder ?? i,
+            })),
+          );
+        }
+
+        return test!;
+      });
     },
 
     // ── listForUserFeed ───────────────────────────────────────────────────────

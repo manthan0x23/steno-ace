@@ -1,5 +1,5 @@
-import UserDashboard from "./_components/dashboard-client";
+import { redirect } from "next/navigation";
 
-export default function UserDashboardPage() {
-  return <UserDashboard />;
+export default function HomeUserPage() {
+  redirect("/user/tests");
 }

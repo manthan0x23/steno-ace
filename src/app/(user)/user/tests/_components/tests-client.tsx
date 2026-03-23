@@ -40,6 +40,12 @@ import { isAfter, subHours, formatDistanceToNow } from "date-fns";
 import { useView } from "~/hooks/use-view";
 import { TestStartDialog } from "~/components/common/user/test-start-dialog";
 import Link from "next/link";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "~/components/ui/tooltip";
 
 // ─── types ────────────────────────────────────────────────────────────────────
 
@@ -94,7 +100,7 @@ const TYPE_LABEL = { legal: "Legal", general: "General", special: "Special" };
 function TypeBadge({ type }: { type: TestItem["type"] }) {
   const Icon = TYPE_ICON[type];
   return (
-    <Badge variant="outline" className="gap-1 text-[10px]">
+    <Badge variant={"outline"} className="gap-1 text-[10px]">
       <Icon className="h-2.5 w-2.5" />
       {TYPE_LABEL[type]}
     </Badge>
@@ -121,7 +127,7 @@ function ActionButton({
   const eligible = canAssess(test);
   return (
     <Button
-      size="sm"
+      size="xs"
       variant={eligible ? "default" : "outline"}
       onClick={(e) => {
         e.stopPropagation();
@@ -129,10 +135,7 @@ function ActionButton({
       }}
     >
       {eligible ? (
-        <>
-          <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />
-          Assess
-        </>
+        <>Start Assessment</>
       ) : (
         <>
           <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
@@ -184,8 +187,8 @@ function TodayCard({
           className="flex items-center gap-2"
           onClick={(e) => e.stopPropagation()}
         >
-          <Button asChild variant="secondary" size="sm">
-            <Link href={`/user/test/${test.id}/leaderboard`}>Leaderboard</Link>
+          <Button asChild variant="secondary" size="xs">
+            <Link href={`/user/tests/${test.id}/leaderboard`}>Leaderboard</Link>
           </Button>
           <ActionButton test={test} onSelect={onSelect} />
         </div>
@@ -237,18 +240,30 @@ function GridCard({
           className="flex items-center gap-1.5"
           onClick={(e) => e.stopPropagation()}
         >
-          <Button asChild variant="ghost" size="sm">
-            <Link href={`/user/test/${test.id}/leaderboard`}>
-              <Trophy className="h-3.5 w-3.5" />
-            </Link>
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button asChild variant="ghost" size="icon-xs">
+                <Link href={`/user/tests/${test.id}/leaderboard`}>
+                  <Trophy className="h-4 w-4" />
+                </Link>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Leaderboard</TooltipContent>
+          </Tooltip>
+
           {test.hasAttempted && (
-            <Button asChild variant="ghost" size="sm">
-              <Link href={`/user/test/${test.id}/results`}>
-                <BarChart2 className="h-3.5 w-3.5" />
-              </Link>
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button asChild variant="ghost" size="icon-xs">
+                  <Link href={`/user/tests/${test.id}/results`}>
+                    <BarChart2 className="h-4 w-4" />
+                  </Link>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>My Results</TooltipContent>
+            </Tooltip>
           )}
+
           <ActionButton test={test} onSelect={onSelect} />
         </div>
       </div>
@@ -299,18 +314,30 @@ function TestRow({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-end gap-1.5">
-          <Button asChild variant="ghost" size="sm">
-            <Link href={`/user/test/${test.id}/leaderboard`}>
-              <Trophy className="h-3.5 w-3.5" />
-            </Link>
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button asChild variant="ghost" size="icon-sm">
+                <Link href={`/user/tests/${test.id}/leaderboard`}>
+                  <Trophy className="h-4 w-4" />
+                </Link>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Leaderboard</TooltipContent>
+          </Tooltip>
+
           {test.hasAttempted && (
-            <Button asChild variant="ghost" size="sm">
-              <Link href={`/user/test/${test.id}/results`}>
-                <BarChart2 className="h-3.5 w-3.5" />
-              </Link>
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button asChild variant="ghost" size="icon-sm">
+                  <Link href={`/user/tests/${test.id}/results`}>
+                    <BarChart2 className="h-4 w-4" />
+                  </Link>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>My Results</TooltipContent>
+            </Tooltip>
           )}
+
           <ActionButton test={test} onSelect={onSelect} />
         </div>
       </TableCell>
@@ -465,11 +492,25 @@ export default function UserHomePage() {
   return (
     <div className="w-full space-y-8 px-6 py-8">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Tests</h1>
-        <p className="text-muted-foreground mt-0.5 text-sm">
-          Assess once per speed · practice anytime
-        </p>
+      <div className="flex items-end justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Tests</h1>
+          <p className="text-muted-foreground mt-0.5 text-sm">
+            Assess once per speed · practice anytime
+          </p>
+        </div>
+        <div className="hidden text-right sm:block">
+          <p className="text-lg font-semibold">
+            {new Date().toLocaleDateString("en-IN", { weekday: "long" })}
+          </p>
+          <p className="text-muted-foreground text-sm tabular-nums">
+            {new Date().toLocaleDateString("en-IN", {
+              day: "numeric",
+              month: "long",
+              year: "numeric",
+            })}
+          </p>
+        </div>
       </div>
 
       {/* Today's tests */}

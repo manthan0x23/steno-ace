@@ -11,27 +11,42 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
+  SidebarMenuSub,
+  SidebarMenuSubItem,
+  SidebarMenuSubButton,
   SidebarHeader,
   SidebarFooter,
 } from "~/components/ui/sidebar";
 import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "~/components/ui/collapsible";
+import {
   Trophy,
   Star,
   Settings,
-  Pen,
   Frame,
   LayoutDashboard,
   ClipboardList,
   ChartSpline,
+  ChevronRight,
+  Gavel,
+  FileText,
+  Sparkles,
 } from "lucide-react";
 import Image from "next/image";
 
-const MAIN_NAV = [
-  { label: "Dashboard", href: "/user/", icon: LayoutDashboard },
-  { label: "Tests", href: "/user/tests", icon: ClipboardList },
-  { label: "Attempts", href: "/user/attempts", icon: Star },
-  { label: "Leaderboard", href: "/user/leaderboard", icon: Trophy },
+const TEST_TYPES = [
+  { label: "All Tests", href: "/user/tests", icon: ClipboardList },
+  { label: "Legal", href: "/user/tests?type=legal", icon: Gavel },
+  { label: "General", href: "/user/tests?type=general", icon: FileText },
+  { label: "Special", href: "/user/tests?type=special", icon: Sparkles },
+];
 
+const MAIN_NAV = [
+  { label: "Dashboard", href: "/user/dashboard", icon: LayoutDashboard },
+  { label: "Attempts", href: "/user/attempts", icon: Star },
   { label: "My Report", href: "/user/report-card", icon: ChartSpline },
   { label: "Hall of Fame", href: "/user/hall-of-fame", icon: Frame },
 ];
@@ -42,20 +57,27 @@ const SETTINGS_NAV = [
 
 export function UserSidebar() {
   const pathname = usePathname();
-  const isActive = (href: string) => pathname.startsWith(href);
+
+  const isActive = (href: string) =>
+    href === "/user"
+      ? pathname === "/user"
+      : pathname.startsWith(href.split("?")[0]!);
+
+  const isTestsSection =
+    pathname === "/user" || pathname.startsWith("/user/test");
 
   return (
     <Sidebar>
-      {/* ── Brand header ── */}
+      {/* ── Brand ── */}
       <SidebarHeader className="px-4 py-4">
         <div className="flex items-center gap-2.5">
-          <div className="bg-white text-primary-foreground flex h-8 w-8 items-center justify-center rounded-sm shadow-sm">
+          <div className="flex h-8 w-8 items-center justify-center rounded-sm bg-white shadow-sm">
             <Image
-              src={"/icon.png"}
-              alt={"Logo"}
+              src="/icon.png"
+              alt="Logo"
               width={200}
               height={200}
-              className="m-0 h-full w-full"
+              className="h-full w-full"
             />
           </div>
           <div className="flex flex-col leading-none">
@@ -70,11 +92,58 @@ export function UserSidebar() {
       </SidebarHeader>
 
       <SidebarContent className="px-2">
-        {/* ── Main navigation ── */}
-        <SidebarGroup className="mb-3">
+        <SidebarGroup className="mb-2">
           <SidebarGroupLabel>General</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
+              {/* Tests — collapsible with type sub-items */}
+              <Collapsible
+                defaultOpen={isTestsSection}
+                className="group/collapsible"
+              >
+                <SidebarMenuItem>
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton isActive={isTestsSection}>
+                      <ClipboardList className="h-4 w-4" />
+                      <span>Tests</span>
+                      <ChevronRight className="ml-auto h-4 w-4 transition-transform group-data-[state=open]/collapsible:rotate-90" />
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+
+                  <CollapsibleContent>
+                    <SidebarMenuSub>
+                      {TEST_TYPES.map(({ label, href, icon: Icon }) => {
+                        const active = href.includes("?type=")
+                          ? typeof window !== "undefined" &&
+                            pathname === "/user" &&
+                            new URLSearchParams(window.location.search).get(
+                              "type",
+                            ) ===
+                              new URLSearchParams(href.split("?")[1]).get(
+                                "type",
+                              )
+                          : pathname === "/user" &&
+                            (typeof window === "undefined" ||
+                              !new URLSearchParams(window.location.search).get(
+                                "type",
+                              ));
+                        return (
+                          <SidebarMenuSubItem key={href}>
+                            <SidebarMenuSubButton asChild isActive={active}>
+                              <Link href={href}>
+                                <Icon className="h-3.5 w-3.5" />
+                                {label}
+                              </Link>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        );
+                      })}
+                    </SidebarMenuSub>
+                  </CollapsibleContent>
+                </SidebarMenuItem>
+              </Collapsible>
+
+              {/* Rest of nav */}
               {MAIN_NAV.map(({ label, href, icon: Icon }) => (
                 <SidebarMenuItem key={href}>
                   <SidebarMenuButton asChild isActive={isActive(href)}>
@@ -89,7 +158,6 @@ export function UserSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* ── Settings navigation ── */}
         <SidebarGroup>
           <SidebarGroupLabel>Account</SidebarGroupLabel>
           <SidebarGroupContent>
@@ -109,7 +177,6 @@ export function UserSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      {/* ── Footer ── */}
       <SidebarFooter className="px-4 py-3">
         <p className="text-muted-foreground text-[11px]">
           StenoDexter &middot; User Dashboard

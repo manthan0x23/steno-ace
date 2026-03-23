@@ -35,7 +35,6 @@ import { Textarea } from "~/components/ui/textarea";
 import { Label } from "~/components/ui/label";
 import { Switch } from "~/components/ui/switch";
 import {
-  Bell,
   Search,
   Plus,
   MoreHorizontal,
@@ -53,6 +52,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
+import { _nullable } from "better-auth";
 
 // ─── types ────────────────────────────────────────────────────────────────────
 
@@ -65,6 +65,7 @@ type Notification = {
   link: string | null;
   isLinkExternal: boolean | null;
   createdAt: Date;
+  userEmail: string | null;
 };
 
 type DialogMode = "create" | "edit" | "view" | "delete" | "deleteMany" | null;
@@ -74,7 +75,13 @@ type PageSize = (typeof PAGE_SIZE_OPTIONS)[number];
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
-function RecipientBadge({ to }: { to: string }) {
+function RecipientBadge({
+  to,
+  userEmail,
+}: {
+  to: string;
+  userEmail: string | null;
+}) {
   const isEveryone = to === "everyone";
   return (
     <Badge
@@ -90,7 +97,7 @@ function RecipientBadge({ to }: { to: string }) {
       ) : (
         <User className="h-2.5 w-2.5" />
       )}
-      {isEveryone ? "Everyone" : to}
+      {isEveryone ? "Everyone" : userEmail}
     </Badge>
   );
 }
@@ -253,7 +260,6 @@ function ViewDialog({
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Bell className="h-4 w-4 text-amber-500" />
             Notification details
           </DialogTitle>
         </DialogHeader>
@@ -274,7 +280,10 @@ function ViewDialog({
             <p className="text-muted-foreground text-xs font-semibold tracking-widest uppercase">
               Recipient
             </p>
-            <RecipientBadge to={notification.to} />
+            <RecipientBadge
+              to={notification.to}
+              userEmail={notification.userEmail ?? null}
+            />
           </div>
           {notification.link && (
             <div className="space-y-1">
@@ -343,7 +352,6 @@ function DeleteDialog({
       <DialogContent className="max-w-sm">
         <DialogHeader>
           <DialogTitle className="text-destructive flex items-center gap-2">
-            <TriangleAlert className="h-4 w-4" />
             {isBulk
               ? `Delete ${ids.length} notifications?`
               : "Delete notification?"}
@@ -539,7 +547,6 @@ export default function AdminNotificationsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Bell className="h-5 w-5 text-amber-500" />
           <div>
             <h1 className="text-xl font-semibold tracking-tight">
               Notifications
@@ -641,7 +648,6 @@ export default function AdminNotificationsPage() {
           ))
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-16 text-center">
-            <Bell className="text-muted-foreground/30 h-8 w-8" />
             <p className="text-muted-foreground text-sm">
               {debouncedSearch
                 ? "No notifications match your search"
@@ -676,7 +682,7 @@ export default function AdminNotificationsPage() {
               </div>
 
               {/* Recipient */}
-              <RecipientBadge to={n.to} />
+              <RecipientBadge to={n.to} userEmail={n.userEmail} />
 
               {/* Seen by count */}
               <p className="text-muted-foreground text-sm tabular-nums">
@@ -702,15 +708,15 @@ export default function AdminNotificationsPage() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-36">
-                  <DropdownMenuItem onClick={() => openView(n ?? [])}>
+                  <DropdownMenuItem onClick={() => openView(n ?? undefined)}>
                     <Eye className="mr-2 h-3.5 w-3.5" /> View
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => openEdit(n ?? [])}>
+                  <DropdownMenuItem onClick={() => openEdit(n ?? undefined)}>
                     <Pencil className="mr-2 h-3.5 w-3.5" /> Edit
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
-                    onClick={() => openDelete(n ?? [])}
+                    onClick={() => openDelete(n ?? undefined)}
                     className="text-destructive focus:text-destructive"
                   >
                     <Trash2 className="mr-2 h-3.5 w-3.5" /> Delete
@@ -770,15 +776,9 @@ export default function AdminNotificationsPage() {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 {mode === "create" ? (
-                  <>
-                    <Send className="h-4 w-4 text-amber-500" /> Send
-                    notification
-                  </>
+                  <>Send notification</>
                 ) : (
-                  <>
-                    <Pencil className="h-4 w-4 text-blue-400" /> Edit
-                    notification
-                  </>
+                  <>Edit notification</>
                 )}
               </DialogTitle>
             </DialogHeader>
