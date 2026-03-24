@@ -43,6 +43,8 @@ type Test = {
 // ─── card (grid view) ─────────────────────────────────────────────────────────
 function TestCard({ test }: { test: Test }) {
   const isDraft = test.status === "draft";
+  const hasSolutionAudio = !!test.solutionAudioKey;
+  const utils = trpc.useUtils();
 
   return (
     <div className="bg-card hover:bg-muted/30 flex h-full cursor-pointer flex-col gap-3 rounded-xl border px-4 py-4 transition-all hover:shadow-sm">
@@ -123,6 +125,12 @@ function TestCard({ test }: { test: Test }) {
               Edit
             </Link>
           </Button>
+        )}
+        {!isDraft && !hasSolutionAudio && (
+          <SolutionAudioDialog
+            testId={test.id}
+            onSuccess={() => utils.test.list.invalidate()}
+          />
         )}
       </div>
     </div>

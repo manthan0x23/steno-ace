@@ -1,14 +1,10 @@
-
-
 /// admin space
-
 
 /admin/test/[testId]/attempts 
 displays users who attmepted that test 
 
 /admin/test/[testId]/user/[userId]/results
 each user's result
-
 
 /admin/admissions
 user admission's page
@@ -18,10 +14,13 @@ user admission's page
 
 /// user space
 
-/user/test/[testId]/
-
+/user/test/[testId]/ 
 CTA nothing else
-leaderboard, my results , attmept the test (from notif too)
+leaderboard, my results , attmept the test (from notif too)   DONE
+
+
+
+wiring routes
 
 pricing UPI, section 
 
@@ -32,5 +31,3 @@ cleaning crons finalizing leaderboards etc etc maybe
 
 
 some UI changes in login - register pages USER specially 
-
-323834897308

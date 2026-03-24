@@ -5,15 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1774198991815,
-      "tag": "0000_unusual_the_hand",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1774269177673,
-      "tag": "0001_low_quicksilver",
+      "when": 1774352289305,
+      "tag": "0000_tidy_sabretooth",
       "breakpoints": true
     }
   ]

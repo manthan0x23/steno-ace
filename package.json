@@ -11,12 +11,13 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "dev": "next dev --turbo",
+    "cron": "tsx ./src/crons.ts",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,mdx}\" --cache",
     "format:write": "prettier --write \"**/*.{ts,tsx,js,jsx,mdx}\" --cache",
     "lint": "next lint",
     "lint:fix": "next lint --fix",
     "preview": "next build && next start",
-    "start": "next start",
+    "start": "next start && pnpm cron",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -44,6 +45,7 @@
     "cookie": "^1.1.1",
     "date-fns": "^4.1.0",
     "diff": "^8.0.3",
+    "dotenv": "^17.3.1",
     "drizzle-orm": "^0.41.0",
     "embla-carousel-react": "^8.6.0",
     "input-otp": "^1.4.2",
@@ -59,6 +61,7 @@
     "react-dom": "^19.0.0",
     "react-resizable-panels": "^4.7.3",
     "recharts": "2.15.4",
+    "resend": "^6.9.4",
     "server-only": "^0.0.1",
     "shadcn": "^4.1.0",
     "sonner": "^2.0.7",
@@ -82,6 +85,7 @@
     "prettier": "^3.5.3",
     "prettier-plugin-tailwindcss": "^0.6.11",
     "tailwindcss": "^4.0.15",
+    "tsx": "^4.21.0",
     "typescript": "^5.8.2",
     "typescript-eslint": "^8.27.0"
   },

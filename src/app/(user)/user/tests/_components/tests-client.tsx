@@ -207,30 +207,33 @@ function GridCard({
   onSelect: (s: Selected) => void;
 }) {
   const within24h = isWithin24h(test.createdAt);
+  const router = useRouter();
   return (
-    <div
-      onClick={() => onSelect({ test })}
-      className="bg-card hover:bg-muted/30 flex cursor-pointer flex-col gap-3 rounded-xl border p-4 transition-all hover:shadow-sm"
-    >
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-          <p className="text-sm leading-snug font-semibold">{test.title}</p>
-          {within24h && !test.hasAttempted && <NewBadge />}
+    <div className="bg-card hover:bg-muted/30 flex cursor-pointer flex-col gap-3 rounded-xl border p-4 transition-all hover:shadow-sm">
+      <span
+        className="flex flex-col gap-3"
+        onClick={() => router.push(`/user/tests/${test.id}`)}
+      >
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+            <p className="text-sm leading-snug font-semibold">{test.title}</p>
+            {within24h && !test.hasAttempted && <NewBadge />}
+          </div>
+          <TypeBadge type={test.type} />
         </div>
-        <TypeBadge type={test.type} />
-      </div>
-      <div className="flex flex-wrap items-center gap-1.5">
-        <Zap className="text-muted-foreground/50 h-3 w-3" />
-        {test.speeds.map((s) => (
-          <Badge
-            key={s.id}
-            variant={s.hasAssessed ? "secondary" : "outline"}
-            className="text-[10px] tabular-nums"
-          >
-            {s.wpm} WPM{s.hasAssessed ? " ✓" : ""}
-          </Badge>
-        ))}
-      </div>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <Zap className="text-muted-foreground/50 h-3 w-3" />
+          {test.speeds.map((s) => (
+            <Badge
+              key={s.id}
+              variant={s.hasAssessed ? "secondary" : "outline"}
+              className="text-[10px] tabular-nums"
+            >
+              {s.wpm} WPM{s.hasAssessed ? " ✓" : ""}
+            </Badge>
+          ))}
+        </div>
+      </span>
       <Separator />
       <div className="flex items-center justify-between">
         <p className="text-muted-foreground text-xs">
@@ -279,8 +282,10 @@ function TestRow({
   onSelect: (s: Selected) => void;
 }) {
   const within24h = isWithin24h(test.createdAt);
+  const router = useRouter();
+
   return (
-    <TableRow onClick={() => onSelect({ test })} className="cursor-pointer">
+    <TableRow className="cursor-pointer">
       <TableCell className="py-3.5">
         <div className="flex items-center gap-2">
           <p className="text-sm font-semibold">{test.title}</p>
@@ -393,7 +398,7 @@ function TodaySkeleton() {
 
 // ─── main page ────────────────────────────────────────────────────────────────
 
-export default function UserHomePage() {
+export default function UserTestsPage() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();

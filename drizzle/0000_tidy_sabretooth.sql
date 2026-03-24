@@ -53,14 +53,28 @@ CREATE TABLE "verification" (
 	"updated_at" timestamp
 );
 --> statement-breakpoint
+CREATE TABLE "payment_proof" (
+	"id" text PRIMARY KEY NOT NULL,
+	"user_id" text NOT NULL,
+	"amount" integer NOT NULL,
+	"screenshot_key" text NOT NULL,
+	"status" text NOT NULL,
+	"transaction_id" text,
+	"verified_by" text,
+	"verified_at" timestamp with time zone,
+	"rejection_reason" text,
+	"created_at" timestamp with time zone NOT NULL,
+	"updated_at" timestamp with time zone NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE "subscription" (
 	"id" text PRIMARY KEY NOT NULL,
 	"user_id" text NOT NULL,
+	"payment_proof_id" text,
 	"status" text NOT NULL,
 	"current_period_start" timestamp with time zone NOT NULL,
 	"current_period_end" timestamp with time zone NOT NULL,
-	"razorpay_order_id" text,
-	"razorpay_payment_id" text,
+	"last_reminder_sent_at" timestamp with time zone,
 	"created_at" timestamp with time zone NOT NULL,
 	"updated_at" timestamp with time zone NOT NULL
 );
@@ -196,9 +210,24 @@ CREATE TABLE "notifications" (
 	"created_at" timestamp NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE "hall_of_fame" (
+	"id" text PRIMARY KEY NOT NULL,
+	"name" text NOT NULL,
+	"photo_key" text,
+	"department" text NOT NULL,
+	"batch" text,
+	"note" text,
+	"added_by_id" text DEFAULT 'system' NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
 ALTER TABLE "account" ADD CONSTRAINT "account_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "session" ADD CONSTRAINT "session_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "payment_proof" ADD CONSTRAINT "payment_proof_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "payment_proof" ADD CONSTRAINT "payment_proof_verified_by_admin_id_fk" FOREIGN KEY ("verified_by") REFERENCES "public"."admin"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "subscription" ADD CONSTRAINT "subscription_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "subscription" ADD CONSTRAINT "subscription_payment_proof_id_payment_proof_id_fk" FOREIGN KEY ("payment_proof_id") REFERENCES "public"."payment_proof"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "admin" ADD CONSTRAINT "admin_invited_by_admin_id_admin_id_fk" FOREIGN KEY ("invited_by_admin_id") REFERENCES "public"."admin"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "admin_invite" ADD CONSTRAINT "admin_invite_created_by_admin_id_admin_id_fk" FOREIGN KEY ("created_by_admin_id") REFERENCES "public"."admin"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "admin_invite_usage" ADD CONSTRAINT "admin_invite_usage_invite_id_admin_invite_id_fk" FOREIGN KEY ("invite_id") REFERENCES "public"."admin_invite"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -215,6 +244,7 @@ ALTER TABLE "leaderboard" ADD CONSTRAINT "leaderboard_speed_id_test_speeds_id_fk
 ALTER TABLE "leaderboard" ADD CONSTRAINT "leaderboard_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "results" ADD CONSTRAINT "results_attempt_id_test_attempts_id_fk" FOREIGN KEY ("attempt_id") REFERENCES "public"."test_attempts"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "results" ADD CONSTRAINT "results_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "hall_of_fame" ADD CONSTRAINT "hall_of_fame_added_by_id_admin_id_fk" FOREIGN KEY ("added_by_id") REFERENCES "public"."admin"("id") ON DELETE set default ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "account_provider_account_idx" ON "account" USING btree ("provider_id","account_id");--> statement-breakpoint
 CREATE INDEX "account_user_id_idx" ON "account" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX "session_token_expires_idx" ON "session" USING btree ("token","expires_at");--> statement-breakpoint
@@ -222,6 +252,7 @@ CREATE INDEX "session_user_id_idx" ON "session" USING btree ("user_id");--> stat
 CREATE INDEX "session_expires_at_idx" ON "session" USING btree ("expires_at");--> statement-breakpoint
 CREATE INDEX "verification_identifier_expires_idx" ON "verification" USING btree ("identifier","expires_at");--> statement-breakpoint
 CREATE INDEX "verification_expires_at_idx" ON "verification" USING btree ("expires_at");--> statement-breakpoint
+CREATE UNIQUE INDEX "unique_pending_payment_per_user" ON "payment_proof" USING btree ("user_id") WHERE status = 'pending';--> statement-breakpoint
 CREATE INDEX "admin_invited_by_idx" ON "admin" USING btree ("invited_by_admin_id");--> statement-breakpoint
 CREATE INDEX "admin_is_super_idx" ON "admin" USING btree ("is_super");--> statement-breakpoint
 CREATE INDEX "admin_is_system_idx" ON "admin" USING btree ("is_system");--> statement-breakpoint
@@ -250,4 +281,6 @@ CREATE INDEX "idx_leaderboard_speed_id" ON "leaderboard" USING btree ("speed_id"
 CREATE INDEX "idx_results_user_id" ON "results" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX "idx_results_user_type" ON "results" USING btree ("user_id","type");--> statement-breakpoint
 CREATE INDEX "notif_to_idx" ON "notifications" USING btree ("to");--> statement-breakpoint
-CREATE INDEX "notif_created_at_idx" ON "notifications" USING btree ("created_at");
+CREATE INDEX "notif_created_at_idx" ON "notifications" USING btree ("created_at");--> statement-breakpoint
+CREATE INDEX "hof_department_idx" ON "hall_of_fame" USING btree ("department");--> statement-breakpoint
+CREATE INDEX "hof_created_at_idx" ON "hall_of_fame" USING btree ("created_at");
