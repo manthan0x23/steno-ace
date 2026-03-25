@@ -513,7 +513,6 @@ function LiveClock() {
       {now.toLocaleTimeString("en-IN", {
         hour: "2-digit",
         minute: "2-digit",
-        second: "2-digit",
       })}
     </span>
   );

@@ -108,18 +108,25 @@ function TestCard({ test }: { test: Test }) {
       >
         {!isDraft && (
           <>
-            <Button asChild variant="outline" size="sm">
+            <Button asChild variant="outline" size="xs">
               <Link href={`/admin/test/${test.id}/attempts`}>
                 <Users className="h-3.5 w-3.5" />
                 Attempts
               </Link>
             </Button>
-            <Button asChild variant="outline" size="sm">
+            <Button asChild variant="outline" size="xs">
               <Link href={`/admin/test/${test.id}/leaderboard`}>
                 <Trophy className="h-3.5 w-3.5" />
                 Leaderboard
               </Link>
             </Button>
+            {!hasSolutionAudio && (
+              <SolutionAudioDialog
+                buttonSize="xs"
+                testId={test.id}
+                onSuccess={() => utils.test.list.invalidate()}
+              />
+            )}
           </>
         )}
         {isDraft && (
@@ -129,12 +136,6 @@ function TestCard({ test }: { test: Test }) {
               Edit
             </Link>
           </Button>
-        )}
-        {!isDraft && !hasSolutionAudio && (
-          <SolutionAudioDialog
-            testId={test.id}
-            onSuccess={() => utils.test.list.invalidate()}
-          />
         )}
       </div>
     </div>
@@ -218,6 +219,7 @@ function TestRow({ test }: { test: Test }) {
         {!isDraft && !hasSolutionAudio && (
           <SolutionAudioDialog
             testId={test.id}
+            buttonSize="xs"
             onSuccess={() => utils.test.list.invalidate()}
           />
         )}

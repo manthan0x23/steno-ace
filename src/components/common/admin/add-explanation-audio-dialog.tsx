@@ -22,6 +22,7 @@ interface SolutionAudioDialogProps {
   testId: string;
   onSuccess?: () => void;
   existingAudioUrl?: string | null;
+  buttonSize?: "xs" | "lg" | "default" | "sm";
 }
 
 type UploadState = "idle" | "uploading" | "saving" | "error";
@@ -30,6 +31,7 @@ export function SolutionAudioDialog({
   testId,
   onSuccess,
   existingAudioUrl,
+  buttonSize = "sm",
 }: SolutionAudioDialogProps) {
   const [open, setOpen] = useState(false);
   const [file, setFile] = useState<File | null>(null);
@@ -118,7 +120,7 @@ export function SolutionAudioDialog({
       <DialogTrigger asChild>
         <Button
           variant="outline"
-          size="sm"
+          size={buttonSize}
           className="ml-auto border-amber-500/40 text-amber-600 hover:bg-amber-500/10 hover:text-amber-500"
         >
           <FileAudio className="h-3.5 w-3.5" />
