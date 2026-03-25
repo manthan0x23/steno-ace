@@ -4,12 +4,6 @@ export async function GET(req: Request) {
   console.log("Starting Daily Cron Service.");
 
   try {
-    const isCron = req.headers.get("x-vercel-cron");
-
-    if (!isCron) {
-      return new Response("Unauthorized", { status: 401 });
-    }
-
     await Promise.all([
       api.crons.expireSubscription(),
       api.crons.sendExpiryReminders(),

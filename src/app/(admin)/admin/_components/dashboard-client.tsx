@@ -708,7 +708,7 @@ function DraftTests() {
             {drafts.data.map((t, idx) => (
               <Link
                 key={t.id}
-                href={`/admin/test/${t.id}`}
+                href={`/admin/test/${t.id}/edit`}
                 className={cn(
                   "hover:bg-muted/30 flex items-center justify-between gap-3 px-4 py-3 transition-colors",
                   idx !== drafts.data.length - 1 && "border-b",
