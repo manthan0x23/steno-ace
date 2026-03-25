@@ -4,5 +4,10 @@
       "path": "/api/crons/daily",
       "schedule": "50 7 * * *"
     }
-  ]
+  ],
+  "functions": {
+    "app/api/**": {
+      "regions": ["bom1"]
+    }
+  }
 }

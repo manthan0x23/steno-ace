@@ -1,5 +1,5 @@
 {
-  "id": "f227f37a-c0b0-4034-867b-cfb7b75b7529",
+  "id": "89f47c0b-5058-407f-b013-a4e6f16552a4",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -487,6 +487,12 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
+        },
+        "from_upi_id": {
+          "name": "from_upi_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
         },
         "verified_at": {
           "name": "verified_at",

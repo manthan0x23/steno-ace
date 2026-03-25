@@ -1,1 +1,0 @@
-ALTER TABLE "payment_proof" ADD COLUMN "from_upi_id" text;

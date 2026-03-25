@@ -7,8 +7,8 @@ displays users who attmepted that test
 
 wiring routes
 
-
 verify email (user)
 
-
 view result after test - user
+
+verify email - forget password  :: left

@@ -22,8 +22,8 @@ import R2Service from "../services/r2.service";
 // Admin session cache
 // ---------------------------------------------------------------------------
 
-const ADMIN_SESSION_CACHE_TTL_MS = 5 * 60_000; // 5 minute
-const SUBSCRIPTION_CACHE_TTL_MS = 10 * 60_000; // 10 minutes
+const ADMIN_SESSION_CACHE_TTL_MS = 10 * 60_000; // 5 minute
+const SUBSCRIPTION_CACHE_TTL_MS = 20 * 60_000; // 10 minutes
 
 interface CachedAdminSession {
   value: AdminSession;

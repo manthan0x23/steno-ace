@@ -61,6 +61,7 @@ CREATE TABLE "payment_proof" (
 	"status" text NOT NULL,
 	"transaction_id" text,
 	"verified_by" text,
+	"from_upi_id" text NOT NULL,
 	"verified_at" timestamp with time zone,
 	"rejection_reason" text,
 	"created_at" timestamp with time zone NOT NULL,
