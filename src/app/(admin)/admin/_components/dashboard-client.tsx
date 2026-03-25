@@ -579,7 +579,9 @@ function RecentAttempts() {
 
             {/* Link */}
             <div className="flex justify-end">
-              <Link href={`/user/attempt/${row.attemptId}`}>
+              <Link
+                href={`/admin/test/${row.test.id}/user/${row.user.id}/results?attemptId=${row.attemptId}`}
+              >
                 <Button
                   variant="ghost"
                   size="icon"

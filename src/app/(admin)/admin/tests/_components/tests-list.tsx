@@ -45,9 +45,13 @@ function TestCard({ test }: { test: Test }) {
   const isDraft = test.status === "draft";
   const hasSolutionAudio = !!test.solutionAudioKey;
   const utils = trpc.useUtils();
+  const router = useRouter(); // 👈 add
 
   return (
-    <div className="bg-card hover:bg-muted/30 flex h-full cursor-pointer flex-col gap-3 rounded-xl border px-4 py-4 transition-all hover:shadow-sm">
+    <div
+      onClick={() => router.push(`/admin/test/${test.id}`)}
+      className="bg-card hover:bg-muted/30 flex h-full cursor-pointer flex-col gap-3 rounded-xl border px-4 py-4 transition-all hover:shadow-sm"
+    >
       {/* TOP CONTENT */}
       <div className="flex flex-1 flex-col gap-3">
         {/* Title */}
@@ -138,13 +142,16 @@ function TestCard({ test }: { test: Test }) {
 }
 
 function TestRow({ test }: { test: Test }) {
-  const router = useRouter();
   const isDraft = test.status === "draft";
   const hasSolutionAudio = !!test.solutionAudioKey;
   const utils = trpc.useUtils();
+  const router = useRouter(); // 👈 add
 
   return (
-    <div className="bg-card hover:bg-muted/30 flex cursor-pointer auto-rows-fr items-center gap-4 rounded-xl border px-5 py-3.5 transition-all">
+    <div
+      onClick={() => router.push(`/admin/test/${test.id}`)} // 👈 add
+      className="bg-card hover:bg-muted/30 flex cursor-pointer auto-rows-fr items-center gap-4 rounded-xl border px-5 py-3.5 transition-all"
+    >
       {/* Title + badges */}
       <div className="flex min-w-0 flex-1 items-center gap-2.5">
         <p className="truncate text-sm font-semibold">{test.title}</p>

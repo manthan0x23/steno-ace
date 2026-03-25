@@ -148,6 +148,48 @@ export function createResultService(db: Db) {
       };
     },
 
+    async getResultAdmin(attemptId: string) {
+      const attempt = await db.query.testAttempts.findFirst({
+        where: eq(testAttempts.id, attemptId),
+        with: { test: true, speed: true },
+      });
+
+      if (!attempt) throw new Error("Attempt not found");
+      if (!attempt.isSubmitted) throw new Error("Attempt not yet submitted");
+
+      const result = await db.query.results.findFirst({
+        where: eq(results.attemptId, attempt.id),
+      });
+
+      if (!result) throw new Error("Result not found");
+
+      const diff = scoringEngine.compare(
+        attempt.test.correctAnswer,
+        attempt.answerFinal ?? "",
+      );
+
+      return {
+        attempt: {
+          id: attempt.id,
+          type: attempt.type,
+          submittedAt: attempt.submittedAt,
+          answerFinal: attempt.answerFinal,
+        },
+        speed: {
+          id: attempt.speed.id,
+          wpm: attempt.speed.wpm,
+          audioUrl: R2Service.getPublicUrl(attempt.speed.audioKey),
+        },
+        result: {
+          score: result.score,
+          wpm: result.wpm,
+          accuracy: result.accuracy,
+          mistakes: result.mistakes ?? 0,
+        },
+        diff,
+      };
+    },
+
     async getResultsAdmin(input: GetResultsAdminInput) {
       const {
         testId,
@@ -358,9 +400,6 @@ export function createResultService(db: Db) {
         page,
       };
     },
-
-
-    
   };
 }
 

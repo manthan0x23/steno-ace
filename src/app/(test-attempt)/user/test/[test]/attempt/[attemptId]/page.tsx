@@ -519,7 +519,13 @@ function LiveClock() {
   );
 }
 
-function SubmittedScreen({ testId }: { testId: string }) {
+function SubmittedScreen({
+  testId,
+  attemptId,
+}: {
+  testId: string;
+  attemptId: string;
+}) {
   const router = useRouter();
   useEffect(() => {
     if (document.fullscreenElement) void document.exitFullscreen();
@@ -547,7 +553,9 @@ function SubmittedScreen({ testId }: { testId: string }) {
 
         <Button
           size="sm"
-          onClick={() => router.push(`/user/tests/${testId}/results`)}
+          onClick={() =>
+            router.push(`/user/tests/${testId}/results?attemptId=${attemptId}`)
+          }
         >
           View result
         </Button>
@@ -879,7 +887,9 @@ export default function AttemptPage() {
           />
         )}
 
-        {stage === "submitted" && <SubmittedScreen testId={data.test.id} />}
+        {stage === "submitted" && (
+          <SubmittedScreen testId={data.test.id} attemptId={data.attempt.id} />
+        )}
       </div>
     </div>
   );

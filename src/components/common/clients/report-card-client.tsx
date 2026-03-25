@@ -448,9 +448,11 @@ export function ActivityHeatmap({
 function TestBreakdown({
   userId,
   includePractice,
+  isAdmin = false,
 }: {
   userId?: string;
   includePractice: boolean;
+  isAdmin?: boolean;
 }) {
   const [rows] = userId
     ? trpc.user.getTestWisePerformanceAdmin.useSuspenseQuery({
@@ -515,7 +517,13 @@ function TestBreakdown({
               </div>
             </div>
             <Button asChild variant="ghost" size="sm">
-              <Link href={`/user/test/${r.testId}/results`}>
+              <Link
+                href={
+                  isAdmin
+                    ? `/admin/test/${r.testId}/user/${userId}/results`
+                    : `/user/test/${r.testId}/results`
+                }
+              >
                 <ExternalLink className="h-3.5 w-3.5" />
               </Link>
             </Button>
@@ -592,7 +600,11 @@ function RecentAttempts({
               </div>
               <Button asChild variant="ghost" size="sm">
                 <Link
-                  href={`/user/test/${row.testId}/results?attemptId=${row.attemptId}`}
+                  href={
+                    isAdmin
+                      ? `/admin/test/${row.testId}/user/${userId}/results?attemptId=${row.attemptId}`
+                      : `/user/test/${row.testId}/results?attemptId=${row.attemptId}`
+                  }
                 >
                   <ExternalLink className="h-3.5 w-3.5" />
                 </Link>
@@ -601,13 +613,6 @@ function RecentAttempts({
           </div>
         );
       })}
-      <div className="flex justify-end">
-        <Button asChild variant="ghost" size="sm">
-          <Link href={isAdmin ? "#" : "/user/attempts"}>
-            View all attempts →
-          </Link>
-        </Button>
-      </div>
     </div>
   );
 }
@@ -849,7 +854,11 @@ function ReportCardInner({
           <h2 className="text-sm font-semibold">Per-Test Performance</h2>
         </div>
         <Suspense fallback={<Skeleton className="h-40 w-full rounded-xl" />}>
-          <TestBreakdown userId={userId} includePractice={includePractice} />
+          <TestBreakdown
+            userId={userId}
+            includePractice={includePractice}
+            isAdmin={isAdmin}
+          />
         </Suspense>
       </div>
 

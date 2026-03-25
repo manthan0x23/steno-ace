@@ -1,7 +1,5 @@
 "use client";
 
-// ─── app/(user)/test/[testId]/results/page.tsx ───────────────────────────────
-
 import { useRef, useState, useEffect } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -20,15 +18,12 @@ import {
   Pause,
   RotateCcw,
   FastForward,
-  CheckCircle2,
-  XCircle,
   AlignLeft,
 } from "lucide-react";
 import { format } from "date-fns";
 
 // ─── types ────────────────────────────────────────────────────────────────────
 
-// Matches ScoringEngine.DiffToken exactly
 type DiffToken = {
   original?: string;
   typed?: string;
@@ -73,28 +68,20 @@ function SolutionAudio({ url }: { url: string }) {
   const toggle = () => {
     const el = audioRef.current;
     if (!el) return;
-    if (el.paused) {
-      void el.play();
-    } else {
-      el.pause();
-    }
+    el.paused ? void el.play() : el.pause();
   };
-
   const seek = (val: number[]) => {
     const el = audioRef.current;
     if (!el) return;
     el.currentTime = val[0] ?? 0;
     setCurrent(val[0] ?? 0);
   };
-
   const cycleSpeed = () => {
     const el = audioRef.current;
-    const idx = SPEEDS.indexOf(speed);
-    const next = SPEEDS[(idx + 1) % SPEEDS.length] ?? 1;
+    const next = SPEEDS[(SPEEDS.indexOf(speed) + 1) % SPEEDS.length] ?? 1;
     setSpeed(next);
     if (el) el.playbackRate = next;
   };
-
   const replay = () => {
     const el = audioRef.current;
     if (!el) return;
@@ -111,8 +98,6 @@ function SolutionAudio({ url }: { url: string }) {
           {fmtTime(current)} / {fmtTime(duration)}
         </Badge>
       </div>
-
-      {/* Waveform-style progress slider */}
       <Slider
         min={0}
         max={duration || 1}
@@ -121,8 +106,6 @@ function SolutionAudio({ url }: { url: string }) {
         onValueChange={seek}
         className="w-full"
       />
-
-      {/* Controls */}
       <div className="flex items-center gap-2">
         <Button
           variant="ghost"
@@ -154,7 +137,6 @@ function SolutionAudio({ url }: { url: string }) {
           {speed}×
         </Button>
       </div>
-
       <audio
         ref={audioRef}
         src={url}
@@ -185,7 +167,6 @@ function PdfCard({
     accent === "violet"
       ? "border-violet-400/40 hover:bg-violet-500/5 text-violet-600 dark:text-violet-400"
       : "border-blue-400/40 hover:bg-blue-500/5 text-blue-600 dark:text-blue-400";
-
   return (
     <a
       href={url}
@@ -201,12 +182,7 @@ function PdfCard({
 }
 
 // ─── Diff renderer ────────────────────────────────────────────────────────────
-// correct  → plain text
-// wrong    → <span strikethrough (written)> <sup correct> — like the image shows
-// missing  → underlined in red (word that should have been there)
-// extra    → light strikethrough (written but shouldn't be)
 
-// Punctuation that should attach to the previous word with no space before it
 const ATTACH_LEFT = new Set([
   ",",
   ".",
@@ -222,10 +198,7 @@ const ATTACH_LEFT = new Set([
 ]);
 const ATTACH_RIGHT = new Set(["(", "[", "{"]);
 
-function needsSpaceBefore(
-  token: DiffToken,
-  prev: DiffToken | undefined,
-): boolean {
+function needsSpaceBefore(token: DiffToken, prev: DiffToken | undefined) {
   const text = token.type === "insert" ? token.typed : token.original;
   if (!text) return false;
   if (ATTACH_LEFT.has(text)) return false;
@@ -236,7 +209,7 @@ function needsSpaceBefore(
 }
 
 function DiffView({ diff }: { diff: DiffToken[] }) {
-  if (!diff || diff.length === 0)
+  if (!diff?.length)
     return (
       <p className="text-muted-foreground text-sm italic">
         No content submitted.
@@ -252,19 +225,15 @@ function DiffView({ diff }: { diff: DiffToken[] }) {
       }}
     >
       {diff.map((token, i) => {
-        const prev = diff[i - 1];
-        const space = needsSpaceBefore(token, prev) ? " " : "";
-
-        if (token.type === "correct") {
+        const space = needsSpaceBefore(token, diff[i - 1]) ? " " : "";
+        if (token.type === "correct")
           return (
             <span key={i}>
               {space}
               {token.original}
             </span>
           );
-        }
-
-        if (token.type === "replace") {
+        if (token.type === "replace")
           return (
             <span key={i}>
               {space}
@@ -276,9 +245,7 @@ function DiffView({ diff }: { diff: DiffToken[] }) {
               </span>
             </span>
           );
-        }
-
-        if (token.type === "delete") {
+        if (token.type === "delete")
           return (
             <span
               key={i}
@@ -288,9 +255,7 @@ function DiffView({ diff }: { diff: DiffToken[] }) {
               {token.original}
             </span>
           );
-        }
-
-        if (token.type === "insert") {
+        if (token.type === "insert")
           return (
             <span
               key={i}
@@ -300,8 +265,6 @@ function DiffView({ diff }: { diff: DiffToken[] }) {
               {token.typed}
             </span>
           );
-        }
-
         return null;
       })}
     </p>
@@ -313,13 +276,13 @@ function DiffView({ diff }: { diff: DiffToken[] }) {
 function AttemptCard({
   entry,
   index,
-  correctAnswer,
   highlight = false,
+  isAdmin = false,
 }: {
   entry: AttemptResult;
   index: number;
-  correctAnswer: string;
   highlight?: boolean;
+  isAdmin?: boolean;
 }) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [expanded, setExpanded] = useState(index === 0);
@@ -354,12 +317,10 @@ function AttemptCard({
         flashing ? "ring-primary bg-primary/5 ring-2 ring-offset-2" : ""
       }`}
     >
-      {/* Header — always visible */}
       <div
         className="hover:bg-muted/20 flex cursor-pointer items-center gap-4 px-5 py-4 transition-colors"
         onClick={() => setExpanded((v) => !v)}
       >
-        {/* Date & time */}
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold">
             {format(
@@ -385,8 +346,21 @@ function AttemptCard({
           </div>
         </div>
 
-        {/* Stats pills */}
         <div className="flex shrink-0 items-center gap-4">
+          {/* Score — admin only */}
+          {isAdmin && (
+            <>
+              <div className="text-center">
+                <p className="text-lg font-bold tabular-nums">
+                  {entry.result.score}
+                </p>
+                <p className="text-muted-foreground text-[10px] tracking-widest uppercase">
+                  Score
+                </p>
+              </div>
+              <Separator orientation="vertical" className="h-8" />
+            </>
+          )}
           <div className="text-center">
             <p className={`text-lg font-bold tabular-nums ${accuracyColor}`}>
               {entry.result.accuracy}%
@@ -407,9 +381,7 @@ function AttemptCard({
           <Separator orientation="vertical" className="h-8" />
           <div className="text-center">
             <p className="text-lg font-bold tabular-nums">
-              {wordCount - entry.result.mistakes > 0
-                ? wordCount - entry.result.mistakes
-                : 0}
+              {Math.max(0, wordCount - entry.result.mistakes)}
             </p>
             <p className="text-muted-foreground text-[10px] tracking-widest uppercase">
               Correct
@@ -422,10 +394,8 @@ function AttemptCard({
         </span>
       </div>
 
-      {/* Expanded: diff view */}
       {expanded && (
         <div className="space-y-4 border-t px-5 py-5">
-          {/* Legend */}
           <div className="text-muted-foreground flex flex-wrap items-center gap-x-5 gap-y-1.5 text-xs">
             <span className="flex items-center gap-1.5">
               <span className="bg-foreground/70 h-2 w-2 rounded-full" />
@@ -449,9 +419,7 @@ function AttemptCard({
               Extra
             </span>
           </div>
-
           <Separator />
-
           <DiffView diff={entry.diff} />
         </div>
       )}
@@ -477,51 +445,26 @@ function PageSkeleton() {
   );
 }
 
-// ─── main component (shared between user + admin) ─────────────────────────────
+// ─── inner component that fires per-attempt queries ───────────────────────────
+// Separated so hooks are always called in the same order regardless of isAdmin
 
-interface TestResultsPageProps {
-  /** The user whose results to show. For user view = ctx.user.id (passed from server). For admin = from URL param. */
-  userId: string;
-  isAdmin?: boolean;
-}
-
-export function TestResultsPage({
+function UserResultsInner({
+  testId,
   userId,
-  isAdmin = false,
-}: TestResultsPageProps) {
-  const params = useParams<{ testId: string }>();
-  const searchParams = useSearchParams();
-  const { testId } = params;
-  const router = useRouter();
+  highlightId,
+  testData,
+}: {
+  testId: string;
+  userId: string;
+  highlightId: string | null;
+  testData: any;
+}) {
+  const { data: attemptsData, isLoading: attemptsLoading } =
+    trpc.user.getAttemptsPaginated.useQuery(
+      { page: 0, limit: 50, testId },
+      { staleTime: 30_000 },
+    );
 
-  // ?attemptId=xxx — scroll to and highlight that attempt
-  const highlightId = searchParams.get("attemptId");
-
-  const { data: testData, isLoading: testLoading } = trpc.test.get.useQuery(
-    { id: testId },
-    { staleTime: 60_000 },
-  );
-
-  // Admin uses getAttemptsPaginatedAdmin, user uses getAttemptsPaginated
-  const userAttemptsQuery = trpc.user.getAttemptsPaginated.useQuery(
-    { page: 0, limit: 50, testId },
-    { enabled: !isAdmin, staleTime: 30_000 },
-  );
-  const adminAttemptsQuery = trpc.user.getAttemptsPaginatedAdmin.useQuery(
-    { page: 0, limit: 50, userId, testId },
-    { enabled: isAdmin, staleTime: 30_000 },
-  );
-
-  const attemptsData = isAdmin
-    ? adminAttemptsQuery.data
-    : userAttemptsQuery.data;
-  const attemptsLoading = isAdmin
-    ? adminAttemptsQuery.isLoading
-    : userAttemptsQuery.isLoading;
-
-  const isLoading = testLoading || attemptsLoading;
-
-  // Only extract IDs once attempts have loaded — prevents useQueries firing with undefined
   const attemptIds: string[] = attemptsLoading
     ? []
     : (attemptsData?.data ?? [])
@@ -543,14 +486,193 @@ export function TestResultsPage({
         new Date(a.attempt.submittedAt).getTime(),
     );
 
+  return (
+    <ResultsBody
+      results={results}
+      isLoading={attemptsLoading}
+      testData={testData}
+      highlightId={highlightId}
+      isAdmin={false}
+    />
+  );
+}
+
+function AdminResultsInner({
+  testId,
+  userId,
+  highlightId,
+  testData,
+}: {
+  testId: string;
+  userId: string;
+  highlightId: string | null;
+  testData: any;
+}) {
+  const { data: attemptsData, isLoading: attemptsLoading } =
+    trpc.user.getAttemptsPaginatedAdmin.useQuery(
+      { page: 0, limit: 50, userId, testId },
+      { staleTime: 30_000 },
+    );
+
+  const attemptIds: string[] = attemptsLoading
+    ? []
+    : (attemptsData?.data ?? [])
+        .map((a: any) => a.attemptId as string)
+        .filter((id): id is string => typeof id === "string" && id.length > 0);
+
+  const resultQueries = trpc.useQueries((t) =>
+    // ✅ uses getResultAdmin — no userId requirement
+    attemptIds.map((id) =>
+      t.result.getResultAdmin({ attemptId: id }, { enabled: !!id }),
+    ),
+  );
+
+  const results: AttemptResult[] = resultQueries
+    .filter((q) => q.data != null)
+    .map((q) => q.data as unknown as AttemptResult)
+    .sort(
+      (a, b) =>
+        new Date(b.attempt.submittedAt).getTime() -
+        new Date(a.attempt.submittedAt).getTime(),
+    );
+
+  return (
+    <ResultsBody
+      results={results}
+      isLoading={attemptsLoading}
+      testData={testData}
+      highlightId={highlightId}
+      isAdmin={true}
+    />
+  );
+}
+
+// ─── shared results body ──────────────────────────────────────────────────────
+
+function ResultsBody({
+  results,
+  isLoading,
+  testData,
+  highlightId,
+  isAdmin,
+}: {
+  results: AttemptResult[];
+  isLoading: boolean;
+  testData: any;
+  highlightId: string | null;
+  isAdmin: boolean;
+}) {
   const hasSolutionAudio = !!testData?.solutionAudioUrl;
   const hasMatter = !!testData?.matterPdfUrl;
   const hasOutline = !!testData?.outlinePdfUrl;
   const hasResources = hasSolutionAudio || hasMatter || hasOutline;
 
+  if (isLoading) return <PageSkeleton />;
+
+  return (
+    <>
+      {hasResources && (
+        <section className="space-y-3">
+          {hasSolutionAudio && (
+            <SolutionAudio url={testData.solutionAudioUrl!} />
+          )}
+          {(hasMatter || hasOutline) && (
+            <div
+              className={`grid gap-3 ${hasMatter && hasOutline ? "grid-cols-2" : "grid-cols-1"}`}
+            >
+              {hasMatter && (
+                <PdfCard
+                  label="Matter PDF"
+                  url={testData.matterPdfUrl!}
+                  icon={FileText}
+                  accent="violet"
+                />
+              )}
+              {hasOutline && (
+                <PdfCard
+                  label="Outline PDF"
+                  url={testData.outlinePdfUrl!}
+                  icon={FilePlus}
+                  accent="blue"
+                />
+              )}
+            </div>
+          )}
+          <Separator />
+        </section>
+      )}
+
+      <section className="space-y-3">
+        <div className="flex items-center gap-2">
+          <AlignLeft className="text-muted-foreground h-4 w-4" />
+          <h2 className="text-sm font-semibold">
+            {isAdmin ? "Student's Attempts" : "Your Attempts"}
+            <span className="text-muted-foreground ml-2 font-normal">
+              ({results.length})
+            </span>
+          </h2>
+        </div>
+
+        {results.length === 0 ? (
+          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed py-16 text-center">
+            <AlignLeft className="text-muted-foreground/30 mb-3 h-7 w-7" />
+            <p className="text-muted-foreground text-sm font-medium">
+              No attempts yet
+            </p>
+            {!isAdmin && (
+              <>
+                <p className="text-muted-foreground/60 mt-1 text-xs">
+                  Complete the test to see your results here.
+                </p>
+                <Button asChild variant="outline" size="sm" className="mt-4">
+                  <Link href="/user">Find a test</Link>
+                </Button>
+              </>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {results.map((entry, i) => (
+              <AttemptCard
+                key={entry.attempt.id}
+                entry={entry}
+                index={i}
+                highlight={entry.attempt.id === highlightId}
+                isAdmin={isAdmin}
+              />
+            ))}
+          </div>
+        )}
+      </section>
+    </>
+  );
+}
+
+// ─── main export ──────────────────────────────────────────────────────────────
+
+interface TestResultsPageProps {
+  userId: string;
+  isAdmin?: boolean;
+}
+
+export function TestResultsPage({
+  userId,
+  isAdmin = false,
+}: TestResultsPageProps) {
+  const params = useParams<{ testId: string }>();
+  const searchParams = useSearchParams();
+  const { testId } = params;
+  const router = useRouter();
+
+  const highlightId = searchParams.get("attemptId");
+
+  const { data: testData, isLoading: testLoading } = trpc.test.get.useQuery(
+    { id: testId },
+    { staleTime: 60_000 },
+  );
+
   return (
     <div className="mx-auto w-full max-w-4xl space-y-6 px-6 py-8">
-      {/* Header */}
       <div>
         <Button
           variant="ghost"
@@ -569,90 +691,32 @@ export function TestResultsPage({
               {testData?.title}
             </h1>
             <p className="text-muted-foreground mt-0.5 text-sm">
-              {isAdmin ? "Student attempt history" : "Your attempt history"}
+              {isAdmin
+                ? "Viewing student attempt history"
+                : "Your attempt history"}
             </p>
           </>
         )}
       </div>
 
-      {isLoading ? (
-        <PageSkeleton />
+      {/* 
+        Split into two separate components so hooks (useQueries) are always
+        called unconditionally within each branch's own component tree.
+      */}
+      {isAdmin ? (
+        <AdminResultsInner
+          testId={testId}
+          userId={userId}
+          highlightId={highlightId}
+          testData={testData}
+        />
       ) : (
-        <>
-          {/* ── Resources ── */}
-          {hasResources && (
-            <section className="space-y-3">
-              {hasSolutionAudio && (
-                <SolutionAudio url={testData!.solutionAudioUrl!} />
-              )}
-
-              {(hasMatter || hasOutline) && (
-                <div
-                  className={`grid gap-3 ${hasMatter && hasOutline ? "grid-cols-2" : "grid-cols-1"}`}
-                >
-                  {hasMatter && (
-                    <PdfCard
-                      label="Matter PDF"
-                      url={testData!.matterPdfUrl!}
-                      icon={FileText}
-                      accent="violet"
-                    />
-                  )}
-                  {hasOutline && (
-                    <PdfCard
-                      label="Outline PDF"
-                      url={testData!.outlinePdfUrl!}
-                      icon={FilePlus}
-                      accent="blue"
-                    />
-                  )}
-                </div>
-              )}
-
-              <Separator />
-            </section>
-          )}
-
-          {/* ── Attempts ── */}
-          <section className="space-y-3">
-            <div className="flex items-center gap-2">
-              <AlignLeft className="text-muted-foreground h-4 w-4" />
-              <h2 className="text-sm font-semibold">
-                Your Attempts
-                <span className="text-muted-foreground ml-2 font-normal">
-                  ({results.length})
-                </span>
-              </h2>
-            </div>
-
-            {results.length === 0 ? (
-              <div className="flex flex-col items-center justify-center rounded-xl border border-dashed py-16 text-center">
-                <AlignLeft className="text-muted-foreground/30 mb-3 h-7 w-7" />
-                <p className="text-muted-foreground text-sm font-medium">
-                  No attempts yet
-                </p>
-                <p className="text-muted-foreground/60 mt-1 text-xs">
-                  Complete the test to see your results here.
-                </p>
-                <Button asChild variant="outline" size="sm" className="mt-4">
-                  <Link href="/user">Find a test</Link>
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {results.map((entry, i) => (
-                  <AttemptCard
-                    key={entry.attempt.id}
-                    entry={entry}
-                    index={i}
-                    correctAnswer={testData?.correctAnswer ?? ""}
-                    highlight={entry.attempt.id === highlightId}
-                  />
-                ))}
-              </div>
-            )}
-          </section>
-        </>
+        <UserResultsInner
+          testId={testId}
+          userId={userId}
+          highlightId={highlightId}
+          testData={testData}
+        />
       )}
     </div>
   );

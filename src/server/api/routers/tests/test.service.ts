@@ -427,12 +427,21 @@ export function createTestService(db: Db) {
     async getById(input: GetTestInput) {
       const test = await db.query.tests.findFirst({
         where: eq(tests.id, input.id),
-        with: { speeds: { orderBy: asc(testSpeeds.sortOrder) } },
+        with: {
+          speeds: { orderBy: asc(testSpeeds.sortOrder) },
+          attempts: {
+            columns: { id: true },
+          },
+        },
       });
 
       if (!test) throw new Error("Test not found");
 
-      return { ...resolveTest(test), speeds: test.speeds.map(resolveSpeed) };
+      return {
+        ...resolveTest(test),
+        speeds: test.speeds.map(resolveSpeed),
+        attemptsCount: test.attempts.length,
+      };
     },
 
     // ── getLast24HourTests ────────────────────────────────────────────────────

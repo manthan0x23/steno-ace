@@ -25,6 +25,10 @@ export const resultRouter = createTRPCRouter({
     .input(getTestResultsSchema)
     .query(({ input }) => resultService.getTestResults(input)),
 
+  getResultAdmin: adminProcedure
+    .input(z.object({ attemptId: z.string() }))
+    .query(({ input }) => resultService.getResultAdmin(input.attemptId)),
+
   // Admin: global results feed with rich filters
   getResults: adminProcedure
     .input(getResultsAdminSchema)
