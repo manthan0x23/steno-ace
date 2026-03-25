@@ -1,4 +1,5 @@
 import { and, eq, gt, isNull, lt, lte, or } from "drizzle-orm";
+import { env } from "~/env";
 import { db } from "~/server/db";
 import { subscription, user } from "~/server/db/schema";
 import { emailService } from "~/server/services/mail.service";
@@ -64,29 +65,33 @@ export const cronService = {
           to: sub.email,
           subject: "⚠️ Subscription Expiring Soon",
           html: `
-              <h2>Hello ${sub.name || "User"},</h2>
-    
-              <p>Your subscription is about to expire in less than <b>3 days</b>.</p>
-    
+            <div style="font-family: Arial, sans-serif; line-height:1.6; max-width:600px; margin:auto;">
+              <h2>Hello ${sub.name || "there"}, 👋</h2>
+
+              <p>Your subscription is about to expire soon.</p>
+
+              <div style="margin:16px 0; padding:12px; background:#fff7ed; border-radius:8px;">
+                ⏳ <strong>Expires on:</strong> ${new Date(sub.currentPeriodEnd).toDateString()}
+              </div>
+
               <p>
-                ⚠️ If your subscription expires:
-                <ul>
-                  <li>Your account may be removed</li>
-                  <li>You may lose all your progress</li>
-                </ul>
+                To avoid interruption, please renew your subscription.
               </p>
-    
-              <p>
-                To continue uninterrupted, kindly renew your subscription by paying 
-                <b>₹1500</b>.
+
+              <a href="${env.APP_URL}" 
+                style="display:inline-block; margin-top:16px; padding:12px 18px; background:#f59e0b; color:#fff; text-decoration:none; border-radius:6px;">
+                Renew Subscription
+              </a>
+
+              <p style="margin-top:20px;">
+                You won’t lose your remaining days — they’ll be preserved.
               </p>
-    
-              <p>
-                ✅ Don’t worry — your remaining subscription days will still be valid.
-              </p>
-    
-              <p>Thank you 🙏</p>
-            `,
+
+              <p>Thanks for being with us 🙏</p>
+
+              <p>— Team</p>
+            </div>
+        `,
         });
 
         await db

@@ -16,8 +16,6 @@ export const env = createEnv({
     JWT_SECRET: z.string(),
     BETTER_AUTH_BASE_URL: z.string(),
     DATABASE_URL: z.string().url(),
-    RAZORPAY_KEY_ID: z.string(),
-    RAZORPAY_KEY_SECRET: z.string(),
     ADMIN_INVITE_CODE: z.string(),
     NODE_ENV: z
       .enum(["development", "test", "production"])
@@ -29,6 +27,10 @@ export const env = createEnv({
     R2_PUBLIC_URL: z.string().url(),
     RESEND_API_KEY: z.string(),
     APP_SUBSCRIPTION_PRICE: z.coerce.number().nonnegative(),
+    APP_URL: z.string().url(),
+  },
+  client: {
+    NEXT_PUBLIC_APP_URL: z.string().url(),
   },
 
   /**
@@ -50,8 +52,6 @@ export const env = createEnv({
     DATABASE_URL: process.env.DATABASE_URL,
     ADMIN_INVITE_CODE: process.env.ADMIN_INVITE_CODE,
     JWT_SECRET: process.env.JWT_SECRET,
-    RAZORPAY_KEY_ID: process.env.RAZORPAY_KEY_ID,
-    RAZORPAY_KEY_SECRET: process.env.RAZORPAY_KEY_SECRET,
     NODE_ENV: process.env.NODE_ENV,
     R2_ACCOUNT_ID: process.env.R2_ACCOUNT_ID,
     R2_ACCESS_KEY_ID: process.env.R2_ACCESS_KEY_ID,
@@ -60,6 +60,8 @@ export const env = createEnv({
     R2_PUBLIC_URL: process.env.R2_PUBLIC_URL,
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     APP_SUBSCRIPTION_PRICE: process.env.APP_SUBSCRIPTION_PRICE,
+    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+    APP_URL: process.env.NEXT_PUBLIC_APP_URL,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially

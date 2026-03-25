@@ -1,14 +1,5 @@
-/// admin space
-
-/admin/test/[testId]/attempts 
-displays users who attmepted that test 
-
 /// user space
 
-wiring routes
-
 verify email (user)
-
-view result after test - user
 
 verify email - forget password  :: left
