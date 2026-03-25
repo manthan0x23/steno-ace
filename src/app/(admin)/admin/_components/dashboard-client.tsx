@@ -490,19 +490,17 @@ function RecentAttempts() {
       <div className="overflow-hidden rounded-2xl border">
         {/* Table header */}
         <div className="bg-muted/30 grid grid-cols-[1fr_1.4fr_80px_52px_52px_64px_80px_28px] items-center gap-3 border-b px-5 py-2.5">
-          {["User", "Test", "Type", "Score", "WPM", "Acc", "When", ""].map(
-            (h, i) => (
-              <span
-                key={i}
-                className={cn(
-                  "text-muted-foreground text-[10px] font-semibold tracking-[0.1em] uppercase",
-                  i >= 3 && i <= 6 && "text-right",
-                )}
-              >
-                {h}
-              </span>
-            ),
-          )}
+          {["User", "Test", "Type", "WPM", "Acc", "When", ""].map((h, i) => (
+            <span
+              key={i}
+              className={cn(
+                "text-muted-foreground text-[10px] font-semibold tracking-[0.1em] uppercase",
+                i >= 3 && i <= 6 && "text-right",
+              )}
+            >
+              {h}
+            </span>
+          ))}
         </div>
 
         {data.map((row, idx) => (
@@ -555,14 +553,9 @@ function RecentAttempts() {
               </span>
             </div>
 
-            {/* Score */}
-            <p className="text-right text-sm font-bold tabular-nums">
-              {row.result.score}
-            </p>
-
             {/* WPM */}
             <p className="text-muted-foreground text-right text-sm tabular-nums">
-              {row.result.wpm}
+              {row.speed.wpm}
             </p>
 
             {/* Accuracy */}
