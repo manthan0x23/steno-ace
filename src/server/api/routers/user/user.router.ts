@@ -20,8 +20,9 @@ import {
   userIdSchema,
 } from "./user.schema";
 import R2Service from "~/server/services/r2.service";
-import { user } from "~/server/db/schema";
+import { account, user } from "~/server/db/schema";
 import { eq } from "drizzle-orm";
+import { accountSchema } from "better-auth";
 
 const editUserSchema = z.object({
   name: z.string().min(1).optional(),
@@ -39,6 +40,17 @@ export const userRouter = createTRPCRouter({
       ...found,
       profilePicUrl: found?.image ? R2Service.getPublicUrl(found.image) : null,
     };
+  }),
+
+  getMyAccounts: protectedProcedure.query(async ({ ctx }) => {
+    const accounts = await ctx.db.query.account.findMany({
+      where: eq(account.userId, ctx.user.id),
+      columns: {
+        providerId: true,
+      },
+    });
+
+    return { accounts, user: ctx.user };
   }),
 
   paidMe: paidUserProcedure.query(async ({ ctx }) => {

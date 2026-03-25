@@ -81,7 +81,7 @@ export default function UserSubscriptionPage() {
   const now = new Date();
   const expiry = subscription ? new Date(subscription.currentPeriodEnd) : null;
   const isExpired = expiry ? isPast(expiry) : true;
-  const daysLeft = expiry && !isExpired ? differenceInDays(expiry, now) : 0;
+  const daysLeft = expiry && !isExpired ? differenceInDays(expiry, now) + 1 : 0;
   const isExpiringSoon = daysLeft > 0 && daysLeft <= 7;
 
   const handleRenewSubmitted = () => {
@@ -216,7 +216,7 @@ export default function UserSubscriptionPage() {
                 ) : (
                   <>
                     <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
-                    {isExpired ? "Reactivate" : "Renew — ₹1,500"}
+                    {isExpired ? "Reactivate" : "Renew"}
                   </>
                 )}
               </Button>

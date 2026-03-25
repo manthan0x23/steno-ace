@@ -271,7 +271,7 @@ export function RegisterForm() {
                     className="w-full"
                     disabled={!canSubmit || isSubmitting}
                   >
-                    {isSubmitting ? "Creating account…" : "Create account →"}
+                    {isSubmitting ? "Sending Link" : "Verify Email →"}
                   </Button>
                 )}
               </form.Subscribe>

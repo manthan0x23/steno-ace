@@ -14,9 +14,14 @@ export async function requireAdmin() {
 }
 
 export async function requireUser() {
-  return guard(() => api.user.me(), "/user/login");
-}
+  const user = await guard(() => api.user.me(), "/user/login");
 
+  if (!user.emailVerified) {
+    redirect("/user/verify-email?from=gate");
+  }
+
+  return user;
+}
 
 export async function requireSuperAdmin() {
   const admin = await requireAdmin();
@@ -26,15 +31,4 @@ export async function requireSuperAdmin() {
   }
 
   return admin;
-}
-
-export async function requirePaidUser() {
-  const user = await requireUser();
-
-  // @TODO: check if user has an active subscription
-  if (!user) {
-    redirect("/pricing");
-  }
-
-  return user;
 }

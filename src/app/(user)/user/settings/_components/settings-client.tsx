@@ -29,6 +29,7 @@ import {
   Lock,
   AlertCircle,
   Phone,
+  CheckCircle2,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { authClient } from "~/server/better-auth/client";
@@ -335,7 +336,7 @@ function ProfileSection() {
 
       <div className="space-y-1.5">
         <label className="text-muted-foreground text-xs font-semibold tracking-widest uppercase">
-          <span className="flex items-center gap-1.5 mb-1">
+          <span className="mb-1 flex items-center gap-1.5">
             <Phone className="h-3 w-3" />
             Phone
           </span>
@@ -377,196 +378,82 @@ function ProfileSection() {
 
 // ─── password section — uses better-auth authClient.changePassword ────────────
 
-function PasswordSection() {
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPass, setConfirmPass] = useState("");
-  const [showCurrent, setShowCurrent] = useState(false);
-  const [showNew, setShowNew] = useState(false);
-  const [saveState, setSaveState] = useState<
-    "idle" | "saving" | "saved" | "error"
-  >("idle");
-  const [saveError, setSaveError] = useState<string | undefined>();
+export function PasswordSection({ email }: { email: string }) {
+  const [loading, setLoading] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const mismatch = confirmPass.length > 0 && newPassword !== confirmPass;
-  const tooShort = newPassword.length > 0 && newPassword.length < 8;
-  const canSubmit =
-    currentPassword && newPassword && confirmPass && !mismatch && !tooShort;
+  const sendReset = async () => {
+    setLoading(true);
+    setError(null);
 
-  const handleSave = async () => {
-    if (!canSubmit) return;
-    setSaveState("saving");
     try {
-      // better-auth client method — no custom tRPC endpoint needed
-      const { error } = await authClient.changePassword({
-        currentPassword,
-        newPassword,
-        revokeOtherSessions: true, // optional — logs out other devices
+      await authClient.requestPasswordReset({
+        email,
+        redirectTo: "/user/reset-password",
       });
-      if (error) throw new Error(error.message ?? "Password change failed");
-      setSaveState("saved");
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPass("");
-      setTimeout(() => setSaveState("idle"), 3000);
-    } catch (e) {
-      setSaveState("error");
-      setSaveError(
-        e instanceof Error ? e.message : "Failed to change password",
-      );
+
+      setSent(true);
+    } catch {
+      setError("Failed to send reset link. Try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Strength meter
-  const strength =
-    newPassword.length === 0
-      ? 0
-      : newPassword.length < 6
-        ? 1
-        : newPassword.length < 10
-          ? 2
-          : /[A-Z]/.test(newPassword) && /[0-9]/.test(newPassword)
-            ? 4
-            : 3;
-
-  const strengthMeta = [
-    null,
-    { label: "Weak", color: "bg-red-500", text: "text-red-500" },
-    { label: "Fair", color: "bg-amber-500", text: "text-amber-500" },
-    { label: "Good", color: "bg-blue-500", text: "text-blue-500" },
-    { label: "Strong", color: "bg-emerald-500", text: "text-emerald-500" },
-  ][strength];
-
-  function PwInput({
-    value,
-    onChange,
-    show,
-    onToggle,
-    placeholder,
-  }: {
-    value: string;
-    onChange: (v: string) => void;
-    show: boolean;
-    onToggle: () => void;
-    placeholder: string;
-  }) {
-    return (
-      <div className="relative">
-        <Input
-          type={show ? "text" : "password"}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
-          className="pr-9 text-sm"
-        />
-        <button
-          type="button"
-          onClick={onToggle}
-          className="text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2 transition-colors"
-        >
-          {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-        </button>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-4">
-      <div className="space-y-1.5">
-        <label className="text-muted-foreground text-xs font-semibold tracking-widest uppercase">
-          Current password
-        </label>
-        <PwInput
-          value={currentPassword}
-          onChange={setCurrentPassword}
-          show={showCurrent}
-          onToggle={() => setShowCurrent((v) => !v)}
-          placeholder="Enter current password"
-        />
+      {/* Header */}
+      <div>
+        <h2 className="text-base font-semibold">Password</h2>
+        <p className="text-muted-foreground text-sm">
+          Send yourself a secure link to reset your password.
+        </p>
       </div>
 
-      <div className="space-y-1.5">
-        <label className="text-muted-foreground text-xs font-semibold tracking-widest uppercase">
-          New password
-        </label>
-        <PwInput
-          value={newPassword}
-          onChange={setNewPassword}
-          show={showNew}
-          onToggle={() => setShowNew((v) => !v)}
-          placeholder="At least 8 characters"
-        />
-        {newPassword.length > 0 && (
-          <div className="space-y-1">
-            <div className="flex gap-1">
-              {[1, 2, 3, 4].map((i) => (
-                <div
-                  key={i}
-                  className={cn(
-                    "h-1 flex-1 rounded-full transition-colors",
-                    i <= strength ? strengthMeta?.color : "bg-muted",
-                  )}
-                />
-              ))}
-            </div>
-            <p
-              className={cn(
-                "text-[10px] font-semibold tracking-widest uppercase",
-                strengthMeta?.text,
-              )}
-            >
-              {strengthMeta?.label}
-            </p>
+      {/* Email display */}
+      <div className="bg-muted/50 rounded-md px-3 py-2 text-sm">{email}</div>
+
+      {/* Error */}
+      {error && <p className="text-sm text-red-500">{error}</p>}
+
+      {/* Success state */}
+      {sent ? (
+        <div className="flex flex-col items-start gap-3">
+          <div className="flex items-center gap-2 text-sm text-emerald-600">
+            <CheckCircle2 className="h-4 w-4" />
+            Reset link sent to your email
           </div>
-        )}
-        {tooShort && (
-          <p className="text-destructive text-xs">Minimum 8 characters</p>
-        )}
-      </div>
 
-      <div className="space-y-1.5">
-        <label className="text-muted-foreground text-xs font-semibold tracking-widest uppercase">
-          Confirm new password
-        </label>
-        <Input
-          type={showNew ? "text" : "password"}
-          value={confirmPass}
-          onChange={(e) => setConfirmPass(e.target.value)}
-          placeholder="Repeat new password"
-          className={cn(
-            "text-sm",
-            mismatch && "border-destructive focus-visible:ring-destructive",
-          )}
-        />
-        {mismatch && (
-          <p className="text-destructive text-xs">Passwords don't match</p>
-        )}
-      </div>
-
-      <div className="flex items-center justify-between pt-1">
-        <SaveStatus state={saveState} error={saveError} />
-        <Button
-          size="sm"
-          onClick={handleSave}
-          disabled={!canSubmit || saveState === "saving"}
-        >
-          {saveState === "saving" ? (
-            <>
-              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-              Saving…
-            </>
-          ) : (
-            "Update password"
-          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={sendReset}
+            disabled={loading}
+          >
+            {loading && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />}
+            Resend link
+          </Button>
+        </div>
+      ) : (
+        <Button onClick={sendReset} disabled={loading}>
+          {loading && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />}
+          Send reset link
         </Button>
-      </div>
+      )}
     </div>
   );
 }
 
-// ─── page ─────────────────────────────────────────────────────────────────────
+export default function UserSettingsPage({
+  providers,
+  email,
+}: {
+  providers: string[];
+  email: string;
+}) {
+  console.log("PROVIDERS", providers);
 
-export default function UserSettingsPage() {
   return (
     <div className="mx-auto w-full max-w-2xl px-6 py-8">
       <div className="mb-8">
@@ -587,13 +474,15 @@ export default function UserSettingsPage() {
 
         <Separator />
 
-        <Section
-          icon={Lock}
-          title="Password"
-          description="Change your password. Other active sessions will be signed out."
-        >
-          <PasswordSection />
-        </Section>
+        {providers.includes("credential") && (
+          <Section
+            icon={Lock}
+            title="Password"
+            description="Change your password. Other active sessions will be signed out."
+          >
+            <PasswordSection email={email} />
+          </Section>
+        )}
       </div>
     </div>
   );
