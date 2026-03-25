@@ -63,7 +63,7 @@ export const cronService = {
       try {
         await emailService.sendEmail({
           to: sub.email,
-          subject: "⚠️ Subscription Expiring Soon",
+          subject: "Steno Dexter Subscription Expiring Soon",
           html: `
             <div style="font-family: Arial, sans-serif; line-height:1.6; max-width:600px; margin:auto;">
               <h2>Hello ${sub.name || "there"}, 👋</h2>
