@@ -7,8 +7,7 @@ import {
   Inter,
   Montserrat,
   JetBrains_Mono,
-  Oxanium,
-} from "next/font/google";
+  Oxanium, Outfit } from "next/font/google";
 import Script from "next/script"; // 👈 add this
 
 import { TRPCReactProvider } from "~/trpc/react";
@@ -17,6 +16,8 @@ import { Toaster } from "~/components/ui/sonner";
 import { cn } from "~/lib/utils";
 import { ThemeProvider } from "~/providers/theme-provider";
 import localFont from "next/font/local";
+
+const outfit = Outfit({subsets:['latin'],variable:'--font-sans'});
 
 const calibri = localFont({
   src: [
@@ -45,7 +46,7 @@ const calibri = localFont({
   display: "swap",
 });
 
-const interHeading = Inter({ subsets: ["latin"], variable: "--font-heading" });
+const robotoSlabHeading = Roboto_Slab({subsets:['latin'],variable:'--font-heading'});
 
 const robotoSlab = Roboto_Slab({
   subsets: ["latin"],
@@ -75,13 +76,11 @@ export default function RootLayout({
       lang="en"
       suppressHydrationWarning
       className={cn(
-        calibri.variable,
-        jetbrainsMono.variable,
-        robotoSlab.variable,
-        interHeading.variable,
-        "font-sans",
-        montserrat.variable,
-      )}
+              calibri.variable,
+              jetbrainsMono.variable,
+              robotoSlab.variable,
+              montserrat.variable,
+            , "font-sans", outfit.variable, robotoSlabHeading.variable)}
     >
       <body suppressHydrationWarning>
         {" "}
