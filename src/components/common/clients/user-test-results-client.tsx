@@ -93,7 +93,7 @@ function SolutionAudio({ url }: { url: string }) {
     <div className="bg-card space-y-3 rounded-xl border px-5 py-4">
       <div className="flex items-center gap-2">
         <Volume2 className="text-primary h-4 w-4" />
-        <p className="text-sm font-semibold">Solution Audio</p>
+        <p className="text-sm font-semibold">Explanation Audio</p>
         <Badge variant="secondary" className="ml-auto text-[10px]">
           {fmtTime(current)} / {fmtTime(duration)}
         </Badge>
@@ -318,10 +318,11 @@ function AttemptCard({
       }`}
     >
       <div
-        className="hover:bg-muted/20 flex cursor-pointer items-center gap-4 px-5 py-4 transition-colors"
+        className="hover:bg-muted/20 relative flex cursor-pointer items-center px-5 py-4 transition-colors"
         onClick={() => setExpanded((v) => !v)}
       >
-        <div className="min-w-0 flex-1">
+        {/* LEFT */}
+        <div className="min-w-0">
           <p className="text-sm font-semibold">
             {format(
               new Date(entry.attempt.submittedAt),
@@ -340,58 +341,47 @@ function AttemptCard({
             <Badge variant="outline" className="text-[10px] tabular-nums">
               {entry.speed.wpm} WPM
             </Badge>
-            <span className="text-muted-foreground text-xs">
-              {wordCount} words
-            </span>
           </div>
         </div>
 
-        <div className="flex shrink-0 items-center gap-4">
-          {/* Score — admin only */}
-          {isAdmin && (
-            <>
-              <div className="text-center">
-                <p className="text-lg font-bold tabular-nums">
-                  {entry.result.score}
-                </p>
-                <p className="text-muted-foreground text-[10px] tracking-widest uppercase">
-                  Score
-                </p>
-              </div>
-              <Separator orientation="vertical" className="h-8" />
-            </>
-          )}
+        {/* CENTER (ABSOLUTE) */}
+        <div className="absolute left-1/2 flex -translate-x-1/2 items-center gap-4">
           <div className="text-center">
-            <p className={`text-lg font-bold tabular-nums ${accuracyColor}`}>
-              {entry.result.accuracy}%
-            </p>
-            <p className="text-muted-foreground text-[10px] tracking-widest uppercase">
-              Accuracy
+            <p className="text-lg font-bold tabular-nums">{wordCount}</p>
+            <p className="text-muted-foreground text-[10px] uppercase">
+              Total Words
             </p>
           </div>
+
           <Separator orientation="vertical" className="h-8" />
+
           <div className="text-center">
             <p className="text-lg font-bold text-red-500 tabular-nums">
               {entry.result.mistakes}
             </p>
-            <p className="text-muted-foreground text-[10px] tracking-widest uppercase">
+            <p className="text-muted-foreground text-[10px] uppercase">
               Mistakes
             </p>
           </div>
+
           <Separator orientation="vertical" className="h-8" />
+
           <div className="text-center">
-            <p className="text-lg font-bold tabular-nums">
+            <p className={`text-lg font-bold tabular-nums ${accuracyColor}`}>
               {Math.max(0, wordCount - entry.result.mistakes)}
             </p>
-            <p className="text-muted-foreground text-[10px] tracking-widest uppercase">
+            <p className="text-muted-foreground text-[10px] uppercase">
               Correct
             </p>
           </div>
         </div>
 
-        <span className="text-muted-foreground ml-2 text-xs">
-          {expanded ? "▲" : "▼"}
-        </span>
+        {/* RIGHT */}
+        <div className="ml-auto">
+          <span className="text-muted-foreground text-xs">
+            {expanded ? "▲" : "▼"}
+          </span>
+        </div>
       </div>
 
       {expanded && (

@@ -520,8 +520,8 @@ function TestBreakdown({
               <Link
                 href={
                   isAdmin
-                    ? `/admin/test/${r.testId}/user/${userId}/results`
-                    : `/user/test/${r.testId}/results`
+                    ? `/admin/tests/${r.testId}/user/${userId}/results`
+                    : `/user/tests/${r.testId}/results`
                 }
               >
                 <ExternalLink className="h-3.5 w-3.5" />
@@ -602,8 +602,8 @@ function RecentAttempts({
                 <Link
                   href={
                     isAdmin
-                      ? `/admin/test/${row.testId}/user/${userId}/results?attemptId=${row.attemptId}`
-                      : `/user/test/${row.testId}/results?attemptId=${row.attemptId}`
+                      ? `/admin/tests/${row.testId}/user/${userId}/results?attemptId=${row.attemptId}`
+                      : `/user/tests/${row.testId}/results?attemptId=${row.attemptId}`
                   }
                 >
                   <ExternalLink className="h-3.5 w-3.5" />
