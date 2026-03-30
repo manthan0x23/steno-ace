@@ -35,25 +35,25 @@ import {
   FileText,
   Sparkles,
   CreditCard,
+  Scale,
 } from "lucide-react";
 import Image from "next/image";
 
 const TEST_TYPES = [
   { label: "All Tests", href: "/user/tests", icon: ClipboardList },
-  { label: "Legal", href: "/user/tests?type=legal", icon: Gavel },
+  { label: "Legal", href: "/user/tests?type=legal", icon: Scale  },
   { label: "General", href: "/user/tests?type=general", icon: FileText },
   { label: "Special", href: "/user/tests?type=special", icon: Sparkles },
 ];
 
 const MAIN_NAV = [
-  { label: "Dashboard", href: "/user/dashboard", icon: LayoutDashboard },
-  { label: "Attempts", href: "/user/attempts", icon: Star },
   { label: "My Report", href: "/user/report-card", icon: ChartSpline },
+  { label: "Attempts", href: "/user/attempts", icon: Star },
   { label: "Hall of Fame", href: "/user/hall-of-fame", icon: Frame },
 ];
 
 const SETTINGS_NAV = [
-  { label: "Payments ", href: "/user/payments", icon: CreditCard  },
+  { label: "Payments ", href: "/user/payments", icon: CreditCard },
   { label: "Settings", href: "/user/settings", icon: Settings },
 ];
 

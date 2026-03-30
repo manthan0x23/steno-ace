@@ -99,6 +99,7 @@ export function createUserService(db: Db) {
 
     async getProgressSeries(userId: string, limit = 60, type?: AttemptType) {
       const where = buildWhere(userId, { type });
+
       const data = await db
         .select({
           submittedAt: results.submittedAt,
@@ -107,8 +108,12 @@ export function createUserService(db: Db) {
           wpm: results.wpm,
           score: results.score,
           type: results.type,
+          testSpeedWpm: testSpeeds.wpm,
+          speedId: testSpeeds.id,
         })
         .from(results)
+        .innerJoin(testAttempts, eq(results.attemptId, testAttempts.id))
+        .innerJoin(testSpeeds, eq(testAttempts.speedId, testSpeeds.id))
         .where(where)
         .orderBy(asc(results.submittedAt))
         .limit(limit);
@@ -119,8 +124,10 @@ export function createUserService(db: Db) {
         accuracy: r.accuracy,
         mistakes: r.mistakes ?? 0,
         wpm: r.wpm,
+        testSpeedWpm: r.testSpeedWpm,
         score: r.score,
         type: r.type,
+        speedId: r.speedId,
       }));
     },
 

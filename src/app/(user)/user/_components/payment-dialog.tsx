@@ -206,8 +206,8 @@ export function PaymentDialog({
                 <li>
                   Your{" "}
                   {isRenewal
-                    ? "subscription extends by 30 days"
-                    : "account gets activated for 30 days"}
+                    ? "subscription extends by 31 days"
+                    : "account gets activated for 31 days"}
                 </li>
                 <li>
                   You'll{" "}
@@ -242,8 +242,8 @@ export function PaymentDialog({
                 </DialogTitle>
                 <DialogDescription>
                   {isRenewal
-                    ? "Pay ₹1,500 to add 30 more days to your current subscription."
-                    : "Make a payment to activate your account for 30 days."}
+                    ? "Pay ₹1,500 to add 31 more days to your current subscription."
+                    : "Make a payment to activate your account for 31 days."}
                 </DialogDescription>
               </DialogHeader>
 
@@ -251,7 +251,6 @@ export function PaymentDialog({
                 <span className="text-primary text-3xl font-bold tabular-nums">
                   ₹1,500
                 </span>
-                <span className="text-muted-foreground text-xs">/ 30 days</span>
               </div>
 
               <div className="flex flex-col items-center gap-2">

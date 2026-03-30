@@ -18,12 +18,15 @@ import {
   TableHeader,
   TableRow,
 } from "~/components/ui/table";
-import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "~/components/ui/popover";
+import { Calendar } from "~/components/ui/calendar";
 import {
   Search,
   X,
-  LayoutGrid,
-  List,
   ChevronLeft,
   ChevronRight,
   Gavel,
@@ -33,11 +36,10 @@ import {
   BarChart2,
   Zap,
   Flame,
-  CheckCircle2,
   RotateCcw,
+  CalendarIcon,
 } from "lucide-react";
-import { isAfter, subHours, formatDistanceToNow } from "date-fns";
-import { useView } from "~/hooks/use-view";
+import { isAfter, subHours, isSameDay, format } from "date-fns";
 import { TestStartDialog } from "~/components/common/user/test-start-dialog";
 import Link from "next/link";
 import {
@@ -70,10 +72,17 @@ type TestItem = {
 
 type Selected = { test: TestItem };
 
-type TypeFilter = "all" | "legal" | "general" | "special";
-type SortFilter = "newest" | "oldest";
-
 // ─── helpers ──────────────────────────────────────────────────────────────────
+
+function ordinal(n: number) {
+  const s = ["th", "st", "nd", "rd"];
+  const v = n % 100;
+  return n + (s[(v - 20) % 10] ?? s[v] ?? s[0])!;
+}
+
+function formatDate(d: Date) {
+  return `${ordinal(d.getDate())} ${format(d, "MMMM yyyy")}`;
+}
 
 function isWithin24h(d: Date) {
   return isAfter(new Date(d), subHours(new Date(), 24));
@@ -92,6 +101,15 @@ function useDebounce<T>(val: T, ms = 350) {
   return v;
 }
 
+function formatWrittenDuration(seconds: number): string {
+  if (!seconds) return "—";
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  if (m === 0) return `${s}s`;
+  if (s === 0) return `${m}m`;
+  return `${m}m ${s}s`;
+}
+
 // ─── badges ───────────────────────────────────────────────────────────────────
 
 const TYPE_ICON = { legal: Gavel, general: FileText, special: Star };
@@ -100,7 +118,7 @@ const TYPE_LABEL = { legal: "Legal", general: "General", special: "Special" };
 function TypeBadge({ type }: { type: TestItem["type"] }) {
   const Icon = TYPE_ICON[type];
   return (
-    <Badge variant={"outline"} className="gap-1 text-[10px]">
+    <Badge variant={"default"} className="gap-1 text-[10px]">
       <Icon className="h-2.5 w-2.5" />
       {TYPE_LABEL[type]}
     </Badge>
@@ -128,14 +146,14 @@ function ActionButton({
   return (
     <Button
       size="xs"
-      variant={eligible ? "default" : "outline"}
+      variant={"default"}
       onClick={(e) => {
         e.stopPropagation();
         onSelect({ test });
       }}
     >
       {eligible ? (
-        <>Start Assessment</>
+        <>Give Test</>
       ) : (
         <>
           <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
@@ -146,133 +164,7 @@ function ActionButton({
   );
 }
 
-// ─── today card ───────────────────────────────────────────────────────────────
-
-function TodayCard({
-  test,
-  onSelect,
-}: {
-  test: TestItem;
-  onSelect: (s: Selected) => void;
-}) {
-  return (
-    <div
-      onClick={() => onSelect({ test })}
-      className="bg-card hover:bg-muted/30 flex cursor-pointer flex-col gap-3 overflow-hidden rounded-xl border p-5 transition-all hover:shadow-sm"
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <p className="text-sm leading-snug font-semibold">{test.title}</p>
-          <NewBadge />
-        </div>
-        <TypeBadge type={test.type} />
-      </div>
-      <div className="flex flex-wrap items-center gap-1.5">
-        <Zap className="text-muted-foreground/50 h-3 w-3" />
-        {test.speeds.map((s) => (
-          <Badge
-            key={s.id}
-            variant="secondary"
-            className="text-[10px] tabular-nums"
-          >
-            {s.wpm} WPM
-          </Badge>
-        ))}
-      </div>
-      <div className="flex items-center justify-between pt-1">
-        <p className="text-muted-foreground text-xs">
-          {formatDistanceToNow(new Date(test.createdAt), { addSuffix: true })}
-        </p>
-        <div
-          className="flex items-center gap-2"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <Button asChild variant="secondary" size="xs">
-            <Link href={`/user/tests/${test.id}/leaderboard`}>Leaderboard</Link>
-          </Button>
-          <ActionButton test={test} onSelect={onSelect} />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── grid card ────────────────────────────────────────────────────────────────
-
-function GridCard({
-  test,
-  onSelect,
-}: {
-  test: TestItem;
-  onSelect: (s: Selected) => void;
-}) {
-  const within24h = isWithin24h(test.createdAt);
-  const router = useRouter();
-  return (
-    <div className="bg-card hover:bg-muted/30 flex cursor-pointer flex-col gap-3 rounded-xl border p-4 transition-all hover:shadow-sm">
-      <span
-        className="flex flex-col gap-3"
-        onClick={() => router.push(`/user/tests/${test.id}`)}
-      >
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-            <p className="text-sm leading-snug font-semibold">{test.title}</p>
-            {within24h && !test.hasAttempted && <NewBadge />}
-          </div>
-          <TypeBadge type={test.type} />
-        </div>
-        <div className="flex flex-wrap items-center gap-1.5">
-          <Zap className="text-muted-foreground/50 h-3 w-3" />
-          {test.speeds.map((s) => (
-            <Badge
-              key={s.id}
-              variant={s.hasAssessed ? "secondary" : "outline"}
-              className="text-[10px] tabular-nums"
-            >
-              {s.wpm} WPM{s.hasAssessed ? " ✓" : ""}
-            </Badge>
-          ))}
-        </div>
-      </span>
-      <Separator />
-      <div className="flex items-center justify-between">
-        <p className="text-muted-foreground text-xs">
-          {formatDistanceToNow(new Date(test.createdAt), { addSuffix: true })}
-        </p>
-        <div
-          className="flex items-center gap-1.5"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button asChild variant="ghost" size="icon-xs">
-                <Link href={`/user/tests/${test.id}/leaderboard`}>
-                  <Trophy className="h-4 w-4" />
-                </Link>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Leaderboard</TooltipContent>
-          </Tooltip>
-
-          {test.hasAttempted && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button asChild variant="ghost" size="icon-xs">
-                  <Link href={`/user/tests/${test.id}/results`}>
-                    <BarChart2 className="h-4 w-4" />
-                  </Link>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>My Results</TooltipContent>
-            </Tooltip>
-          )}
-
-          <ActionButton test={test} onSelect={onSelect} />
-        </div>
-      </div>
-    </div>
-  );
-}
+// ─── table row ────────────────────────────────────────────────────────────────
 
 function TestRow({
   test,
@@ -284,6 +176,10 @@ function TestRow({
   const within24h = isWithin24h(test.createdAt);
   const router = useRouter();
 
+  // Aggregate transcription time across speeds (show all unique values)
+  const writtenTimes = test.speeds.map((s) => s.writtenDurationSeconds);
+  const uniqueTimes = [...new Set(writtenTimes)];
+
   return (
     <TableRow className="cursor-pointer">
       <TableCell className="py-3.5">
@@ -293,7 +189,7 @@ function TestRow({
           <TypeBadge type={test.type} />
         </div>
         <p className="text-muted-foreground mt-1 text-xs">
-          {formatDistanceToNow(new Date(test.createdAt), { addSuffix: true })}
+          {formatDate(new Date(test.createdAt))}
         </p>
       </TableCell>
       <TableCell className="py-3.5">
@@ -311,8 +207,17 @@ function TestRow({
           <span className="text-muted-foreground ml-0.5 text-[10px]">WPM</span>
         </div>
       </TableCell>
-      <TableCell className="text-muted-foreground py-3.5 text-right text-xs tabular-nums">
-        {test.attemptCount}
+      <TableCell className="py-3.5">
+        <div className="flex flex-wrap items-center gap-1">
+          {uniqueTimes.map((t, i) => (
+            <span
+              key={i}
+              className="text-muted-foreground text-xs tabular-nums"
+            >
+              {formatWrittenDuration(t)}
+            </span>
+          ))}
+        </div>
       </TableCell>
       <TableCell
         className="py-3.5 text-right"
@@ -352,30 +257,6 @@ function TestRow({
 
 // ─── skeletons ────────────────────────────────────────────────────────────────
 
-function GridSkeleton() {
-  return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {Array.from({ length: 6 }).map((_, i) => (
-        <div key={i} className="bg-card space-y-3 rounded-xl border p-4">
-          <div className="flex justify-between gap-2">
-            <Skeleton className="h-4 w-36" />
-            <Skeleton className="h-5 w-14" />
-          </div>
-          <div className="flex gap-1.5">
-            <Skeleton className="h-5 w-14" />
-            <Skeleton className="h-5 w-14" />
-          </div>
-          <Skeleton className="h-px w-full" />
-          <div className="flex items-center justify-between">
-            <Skeleton className="h-3 w-20" />
-            <Skeleton className="h-8 w-24" />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 function TodaySkeleton() {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -403,38 +284,30 @@ export default function UserTestsPage() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  // All filters live in the URL
   const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10) || 1);
-  const typeFilter = (
-    ["all", "legal", "general", "special"].includes(
-      searchParams.get("type") ?? "",
-    )
-      ? searchParams.get("type")!
-      : "all"
-  ) as TypeFilter;
-  const sort = (
-    searchParams.get("sort") === "oldest" ? "oldest" : "newest"
-  ) as SortFilter;
 
-  // Query in URL too — but debounced locally before updating URL
+  const dateParam = searchParams.get("date");
+  const selectedDate = dateParam ? new Date(dateParam) : null;
+  const isToday = !selectedDate || isSameDay(selectedDate, new Date());
+
   const [queryInput, setQueryInput] = useState(searchParams.get("q") ?? "");
   const debouncedQuery = useDebounce(queryInput);
   const isSearching = debouncedQuery.trim().length > 0;
 
-  // View from cookie (not URL)
-  const [view, setView] = useView("user_tests");
-
   const [selected, setSelected] = useState<Selected | null>(null);
+  const [calendarOpen, setCalendarOpen] = useState(false);
 
-  // Push URL params helper
-  const setParam = (key: string, value: string) => {
+  const setParam = (key: string, value: string | null) => {
     const p = new URLSearchParams(searchParams.toString());
-    p.set(key, value);
+    if (value === null) {
+      p.delete(key);
+    } else {
+      p.set(key, value);
+    }
     if (key !== "page") p.set("page", "1");
     router.push(`${pathname}?${p.toString()}`);
   };
 
-  // Sync debounced query to URL
   useEffect(() => {
     const p = new URLSearchParams(searchParams.toString());
     if (debouncedQuery) {
@@ -444,47 +317,30 @@ export default function UserTestsPage() {
     }
     p.set("page", "1");
     router.push(`${pathname}?${p.toString()}`);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedQuery]);
 
-  // Clear local input when URL q is cleared externally
   useEffect(() => {
     const urlQ = searchParams.get("q") ?? "";
     if (urlQ !== queryInput) setQueryInput(urlQ);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams.get("q")]);
 
-  // Today's tests query
-  const { data: todayData, isLoading: todayLoading } =
-    trpc.test.listForUser.useQuery(
-      { page: 1, pageSize: 6 },
-      { staleTime: 60_000 },
-    );
-
-  const todayTests: TestItem[] = (
-    (todayData?.data ?? []) as unknown as TestItem[]
-  ).filter((t) => isWithin24h(new Date(t.createdAt)));
-
-  // Paginated all-tests query
   const { data, isLoading } = trpc.test.listForUser.useQuery(
     { page, pageSize: 12 },
     { staleTime: 30_000 },
   );
 
-  // Client-side filter (type + search — server returns all active sorted by newest)
   const allTests = (data?.data ?? []) as unknown as TestItem[];
   const filtered = allTests.filter((t) => {
-    const matchType = typeFilter === "all" || t.type === typeFilter;
     const matchQuery =
       !isSearching ||
       t.title.toLowerCase().includes(debouncedQuery.toLowerCase());
-    return matchType && matchQuery;
+
+    const matchDate =
+      isToday ||
+      (selectedDate && isSameDay(new Date(t.createdAt), selectedDate));
+
+    return matchQuery && matchDate;
   });
-
-  // Sort client-side (server always returns newest — for "oldest" we reverse)
-  const sorted = sort === "oldest" ? [...filtered].reverse() : filtered;
-
-  const hasTodayTests = !todayLoading && todayTests.length > 0;
 
   const clearSearch = () => {
     setQueryInput("");
@@ -494,144 +350,116 @@ export default function UserTestsPage() {
     router.push(`${pathname}?${p.toString()}`);
   };
 
+  const clearDate = () => {
+    setParam("date", null);
+  };
+
+  const handleDateSelect = (date: Date | undefined) => {
+    if (!date) return;
+    if (isSameDay(date, new Date())) {
+      setParam("date", null); // today = no filter
+    } else {
+      setParam("date", format(date, "yyyy-MM-dd"));
+    }
+    setCalendarOpen(false);
+  };
+
+  const today = new Date();
+  const headerDay = format(today, "EEEE");
+  const headerDate = formatDate(today);
+
   return (
-    <div className="w-full space-y-8 px-6 py-8">
-      {/* Header */}
-      <div className="flex items-end justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Tests</h1>
-          <p className="text-muted-foreground mt-0.5 text-sm">
-            Assess once per speed · practice anytime
-          </p>
-        </div>
-        <div className="hidden text-right sm:block">
-          <p className="text-lg font-semibold">
-            {new Date().toLocaleDateString("en-IN", { weekday: "long" })}
-          </p>
-          <p className="text-muted-foreground text-sm tabular-nums">
-            {new Date().toLocaleDateString("en-IN", {
-              day: "numeric",
-              month: "long",
-              year: "numeric",
-            })}
-          </p>
-        </div>
-      </div>
-
-      {/* Today's tests */}
-      {(todayLoading || hasTodayTests) && (
-        <section>
-          <div className="mb-3 flex items-center gap-2">
-            <Flame className="h-4 w-4 text-orange-500" />
-            <h2 className="text-sm font-semibold">Today's Tests</h2>
-            <Badge variant="secondary" className="text-[10px]">
-              New
-            </Badge>
+    <TooltipProvider>
+      <div className="w-full space-y-8 px-6 py-8">
+        {/* Header */}
+        <div className="flex items-end justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">Tests</h1>
           </div>
-          {todayLoading ? (
-            <TodaySkeleton />
-          ) : (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {todayTests.map((t) => (
-                <TodayCard key={t.id} test={t} onSelect={setSelected} />
-              ))}
+          <div className="hidden text-right sm:block">
+            <p className="text-sm font-semibold">{headerDay}</p>
+            <p className="text-muted-foreground text-sm tabular-nums">
+              {headerDate}
+            </p>
+          </div>
+        </div>
+
+        {/* All tests */}
+        <section>
+          {/* Toolbar */}
+          <div className="mb-4 flex flex-wrap items-center gap-3">
+            {/* Search */}
+            <div className="relative min-w-[200px] flex-1">
+              <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+              <Input
+                placeholder="Search tests…"
+                value={queryInput}
+                onChange={(e) => setQueryInput(e.target.value)}
+                className="pr-9 pl-9"
+              />
+              {queryInput && (
+                <button
+                  onClick={clearSearch}
+                  className="text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
             </div>
-          )}
-        </section>
-      )}
 
-      {hasTodayTests && <Separator />}
+            {/* Date picker */}
+            <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant={selectedDate && !isToday ? "default" : "outline"}
+                  size="sm"
+                  className="h-9 gap-2 px-3 text-xs"
+                >
+                  <CalendarIcon className="h-3.5 w-3.5" />
+                  {selectedDate && !isToday
+                    ? formatDate(selectedDate)
+                    : "Pick date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="end">
+                <Calendar
+                  mode="single"
+                  selected={selectedDate ?? new Date()}
+                  onSelect={handleDateSelect}
+                  disabled={(date) => date > new Date()}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
 
-      {/* All tests */}
-      <section>
-        {/* Toolbar */}
-        <div className="mb-4 flex flex-wrap items-center gap-3">
-          <div className="relative min-w-[200px] flex-1">
-            <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
-            <Input
-              placeholder="Search tests…"
-              value={queryInput}
-              onChange={(e) => setQueryInput(e.target.value)}
-              className="pr-9 pl-9"
-            />
-            {queryInput && (
-              <button
-                onClick={clearSearch}
-                className="text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2"
+            {/* Clear date filter */}
+            {selectedDate && !isToday && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-9 gap-1.5 px-2 text-xs"
+                onClick={clearDate}
               >
-                <X className="h-4 w-4" />
-              </button>
+                <X className="h-3.5 w-3.5" />
+                Clear date
+              </Button>
             )}
           </div>
 
-          <ToggleGroup
-            type="single"
-            value={typeFilter}
-            onValueChange={(v) => v && setParam("type", v)}
-            className="bg-muted/40 h-9 gap-0 rounded-lg border p-0.5"
-          >
-            {(["all", "legal", "general", "special"] as const).map((t) => (
-              <ToggleGroupItem
-                key={t}
-                value={t}
-                className="data-[state=on]:bg-background data-[state=off]:text-muted-foreground h-8 rounded-md px-3 text-xs font-medium capitalize data-[state=on]:shadow-sm"
-              >
-                {t}
-              </ToggleGroupItem>
-            ))}
-          </ToggleGroup>
+          {/* Result count */}
+          {!isLoading && (
+            <p className="text-muted-foreground mb-3 text-xs tabular-nums">
+              {isSearching
+                ? `${filtered.length} result${filtered.length !== 1 ? "s" : ""} for "${debouncedQuery}"`
+                : selectedDate && !isToday
+                  ? `${filtered.length} test${filtered.length !== 1 ? "s" : ""} on ${formatDate(selectedDate)}`
+                  : `${data?.total ?? 0} tests`}
+            </p>
+          )}
 
-          <ToggleGroup
-            type="single"
-            value={sort}
-            onValueChange={(v) => v && setParam("sort", v)}
-            className="bg-muted/40 h-9 gap-0 rounded-lg border p-0.5"
-          >
-            {(["newest", "oldest"] as const).map((s) => (
-              <ToggleGroupItem
-                key={s}
-                value={s}
-                className="data-[state=on]:bg-background data-[state=off]:text-muted-foreground h-8 rounded-md px-3 text-xs font-medium capitalize data-[state=on]:shadow-sm"
-              >
-                {s}
-              </ToggleGroupItem>
-            ))}
-          </ToggleGroup>
-
-          <div className="bg-muted/40 flex items-center gap-0.5 rounded-lg border p-0.5">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setView("grid")}
-              className={`h-8 w-8 ${view === "grid" ? "bg-background shadow-sm" : "text-muted-foreground"}`}
-            >
-              <LayoutGrid className="h-3.5 w-3.5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setView("list")}
-              className={`h-8 w-8 ${view === "list" ? "bg-background shadow-sm" : "text-muted-foreground"}`}
-            >
-              <List className="h-3.5 w-3.5" />
-            </Button>
-          </div>
-        </div>
-
-        {!isLoading && (
-          <p className="text-muted-foreground mb-3 text-xs tabular-nums">
-            {isSearching
-              ? `${sorted.length} result${sorted.length !== 1 ? "s" : ""} for "${debouncedQuery}"`
-              : `${data?.total ?? 0} tests`}
-          </p>
-        )}
-
-        {/* Content */}
-        {isLoading ? (
-          view === "grid" ? (
-            <GridSkeleton />
-          ) : (
-            <div className="rounded-xl border">
+          {/* Content */}
+          {isLoading ? (
+            <div className="overflow-hidden rounded-xl border">
               <Table>
                 <TableBody>
                   {Array.from({ length: 8 }).map((_, i) => (
@@ -643,7 +471,7 @@ export default function UserTestsPage() {
                         <Skeleton className="h-5 w-20" />
                       </TableCell>
                       <TableCell>
-                        <Skeleton className="h-4 w-8" />
+                        <Skeleton className="h-4 w-16" />
                       </TableCell>
                       <TableCell>
                         <Skeleton className="ml-auto h-8 w-28" />
@@ -653,92 +481,97 @@ export default function UserTestsPage() {
                 </TableBody>
               </Table>
             </div>
-          )
-        ) : sorted.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed py-20 text-center">
-            <Search className="text-muted-foreground/30 mb-3 h-7 w-7" />
-            <p className="text-muted-foreground text-sm font-medium">
-              {isSearching ? "No tests found" : "No tests available"}
-            </p>
-            <p className="text-muted-foreground/60 mt-1 text-xs">
-              {isSearching ? "Try a different search" : "Check back soon"}
-            </p>
-            {isSearching && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="mt-4"
-                onClick={clearSearch}
-              >
-                Clear search
-              </Button>
-            )}
-          </div>
-        ) : view === "grid" ? (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {sorted.map((t) => (
-              <GridCard key={t.id} test={t} onSelect={setSelected} />
-            ))}
-          </div>
-        ) : (
-          <div className="overflow-hidden rounded-xl border">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/20 hover:bg-muted/20">
-                  <TableHead>Test</TableHead>
-                  <TableHead>Speeds</TableHead>
-                  <TableHead className="w-16 text-right">Attempts</TableHead>
-                  <TableHead className="w-48" />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {sorted.map((t) => (
-                  <TestRow key={t.id} test={t} onSelect={setSelected} />
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        )}
-
-        {/* Pagination */}
-        {!isSearching && (data?.totalPages ?? 1) > 1 && (
-          <div className="mt-5 flex items-center justify-between border-t pt-4">
-            <p className="text-muted-foreground/60 text-xs tabular-nums">
-              Page {page} of {data?.totalPages}
-            </p>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={page <= 1}
-                onClick={() => setParam("page", String(page - 1))}
-              >
-                <ChevronLeft className="h-3.5 w-3.5" />
-                Prev
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={page >= (data?.totalPages ?? 1)}
-                onClick={() => setParam("page", String(page + 1))}
-              >
-                Next
-                <ChevronRight className="h-3.5 w-3.5" />
-              </Button>
+          ) : filtered.length === 0 ? (
+            <div className="flex flex-col items-center justify-center rounded-xl border border-dashed py-20 text-center">
+              <Search className="text-muted-foreground/30 mb-3 h-7 w-7" />
+              <p className="text-muted-foreground text-sm font-medium">
+                {isSearching
+                  ? "No tests found"
+                  : selectedDate && !isToday
+                    ? "No tests on this date"
+                    : "No tests available"}
+              </p>
+              <p className="text-muted-foreground/60 mt-1 text-xs">
+                {isSearching
+                  ? "Try a different search"
+                  : selectedDate && !isToday
+                    ? "Try a different date"
+                    : "Check back soon"}
+              </p>
+              {(isSearching || (selectedDate && !isToday)) && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-4"
+                  onClick={() => {
+                    clearSearch();
+                    clearDate();
+                  }}
+                >
+                  Clear filters
+                </Button>
+              )}
             </div>
-          </div>
-        )}
-      </section>
+          ) : (
+            <div className="overflow-hidden rounded-xl border">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/20 hover:bg-muted/20">
+                    <TableHead>Test</TableHead>
+                    <TableHead>Speeds</TableHead>
+                    <TableHead>Transcription Time</TableHead>
+                    <TableHead className="w-48" />
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filtered.map((t) => (
+                    <TestRow key={t.id} test={t} onSelect={setSelected} />
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
 
-      <TestStartDialog
-        open={!!selected}
-        onOpenChange={(open) => {
-          if (!open) setSelected(null);
-        }}
-        testId={selected?.test.id ?? ""}
-        testTitle={selected?.test.title ?? ""}
-        speeds={selected?.test.speeds ?? []}
-      />
-    </div>
+          {/* Pagination — only when not filtering by a specific date */}
+          {!isSearching && isToday && (data?.totalPages ?? 1) > 1 && (
+            <div className="mt-5 flex items-center justify-between border-t pt-4">
+              <p className="text-muted-foreground/60 text-xs tabular-nums">
+                Page {page} of {data?.totalPages}
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={page <= 1}
+                  onClick={() => setParam("page", String(page - 1))}
+                >
+                  <ChevronLeft className="h-3.5 w-3.5" />
+                  Prev
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={page >= (data?.totalPages ?? 1)}
+                  onClick={() => setParam("page", String(page + 1))}
+                >
+                  Next
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            </div>
+          )}
+        </section>
+
+        <TestStartDialog
+          open={!!selected}
+          onOpenChange={(open) => {
+            if (!open) setSelected(null);
+          }}
+          testId={selected?.test.id ?? ""}
+          testTitle={selected?.test.title ?? ""}
+          speeds={selected?.test.speeds ?? []}
+        />
+      </div>
+    </TooltipProvider>
   );
 }
