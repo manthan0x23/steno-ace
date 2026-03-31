@@ -1,16 +1,11 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { Trophy, Award, X } from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar';
-import { Card, CardContent, CardHeader } from '~/components/ui/card';
-import { Badge } from '~/components/ui/badge';
-import { Button } from '~/components/ui/button';
-
-export const metadata = {
-  title: 'Hall of Fame - Steno Dexter Champions',
-  description: 'Meet our most accomplished stenographers and certified professionals.',
-};
+import { useState } from "react";
+import { Trophy, Award, X } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
+import { Card, CardContent, CardHeader } from "~/components/ui/card";
+import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
 
 interface HallOfFameAlumni {
   id: string;
@@ -24,68 +19,68 @@ interface HallOfFameAlumni {
 // Sample data aligned with database schema
 const alumni: HallOfFameAlumni[] = [
   {
-    id: '1',
-    name: 'Sarah Johnson',
-    department: 'Legal Stenography',
-    batch: '2022',
-    note: 'Fastest Typist 2024 - 320 WPM',
-    photoKey: 'sarah-johnson',
+    id: "1",
+    name: "Sarah Johnson",
+    department: "Legal Stenography",
+    batch: "2022",
+    note: "Fastest Typist 2024 - 320 WPM",
+    photoKey: "sarah-johnson",
   },
   {
-    id: '2',
-    name: 'Michael Chen',
-    department: 'Medical Stenography',
-    batch: '2021',
-    note: 'Perfect Accuracy Award - 99.9% Accuracy',
-    photoKey: 'michael-chen',
+    id: "2",
+    name: "Michael Chen",
+    department: "Medical Stenography",
+    batch: "2021",
+    note: "Perfect Accuracy Award - 99.9% Accuracy",
+    photoKey: "michael-chen",
   },
   {
-    id: '3',
-    name: 'Emily Rodriguez',
-    department: 'Real-time Translation',
-    batch: '2023',
-    note: 'CART Excellence Award - CART Certified',
-    photoKey: 'emily-rodriguez',
+    id: "3",
+    name: "Emily Rodriguez",
+    department: "Real-time Translation",
+    batch: "2023",
+    note: "CART Excellence Award - CART Certified",
+    photoKey: "emily-rodriguez",
   },
   {
-    id: '4',
-    name: 'James Wilson',
-    department: 'Professional Stenography',
-    batch: '2022',
-    note: 'Most Improved Student - 150% Improvement',
-    photoKey: 'james-wilson',
+    id: "4",
+    name: "James Wilson",
+    department: "Professional Stenography",
+    batch: "2022",
+    note: "Most Improved Student - 150% Improvement",
+    photoKey: "james-wilson",
   },
   {
-    id: '5',
-    name: 'Lisa Anderson',
-    department: 'Course Creation',
-    batch: '2020',
-    note: 'Instructor Excellence - 50+ Courses Created',
-    photoKey: 'lisa-anderson',
+    id: "5",
+    name: "Lisa Anderson",
+    department: "Course Creation",
+    batch: "2020",
+    note: "Instructor Excellence - 50+ Courses Created",
+    photoKey: "lisa-anderson",
   },
   {
-    id: '6',
-    name: 'David Kumar',
-    department: 'Certification',
-    batch: '2021',
-    note: 'Certification Master - 5 Certifications',
-    photoKey: 'david-kumar',
+    id: "6",
+    name: "David Kumar",
+    department: "Certification",
+    batch: "2021",
+    note: "Certification Master - 5 Certifications",
+    photoKey: "david-kumar",
   },
   {
-    id: '7',
-    name: 'Jennifer Martinez',
-    department: 'Community Leadership',
-    batch: '2022',
-    note: 'Community Champion - 500+ Mentees',
-    photoKey: 'jennifer-martinez',
+    id: "7",
+    name: "Jennifer Martinez",
+    department: "Community Leadership",
+    batch: "2022",
+    note: "Community Champion - 500+ Mentees",
+    photoKey: "jennifer-martinez",
   },
   {
-    id: '8',
-    name: 'Alexander Thompson',
-    department: 'AI Integration',
-    batch: '2023',
-    note: 'Innovation Leader - Tech Pioneer',
-    photoKey: 'alexander-thompson',
+    id: "8",
+    name: "Alexander Thompson",
+    department: "AI Integration",
+    batch: "2023",
+    note: "Innovation Leader - Tech Pioneer",
+    photoKey: "alexander-thompson",
   },
 ];
 
@@ -98,14 +93,14 @@ export default function HallOfFame() {
       <section className="container mx-auto px-4">
         <div className="mx-auto max-w-3xl space-y-6 text-center">
           <div className="flex items-center justify-center gap-3">
-            <Trophy className="h-10 w-10 text-accent" />
+            <Trophy className="text-accent h-10 w-10" />
             <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
               Hall of Fame
             </h1>
           </div>
-          <p className="text-lg text-muted-foreground">
-            Celebrating our most accomplished and inspiring stenographers who have
-            achieved excellence through dedication and hard work.
+          <p className="text-muted-foreground text-lg">
+            Celebrating our most accomplished and inspiring stenographers who
+            have achieved excellence through dedication and hard work.
           </p>
         </div>
       </section>
@@ -117,7 +112,7 @@ export default function HallOfFame() {
             <div key={person.id} className="h-full">
               <Card className="group relative h-full cursor-pointer overflow-hidden transition-all duration-300 hover:shadow-lg">
                 {/* Background Placeholder */}
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-accent/10" />
+                <div className="from-primary/10 to-accent/10 absolute inset-0 bg-gradient-to-br" />
 
                 {/* Card Content */}
                 <CardHeader className="relative flex flex-col items-center gap-4 pt-6">
@@ -129,16 +124,16 @@ export default function HallOfFame() {
                       src={`/images/alumni/${person.photoKey}.jpg`}
                       alt={person.name}
                     />
-                    <AvatarFallback className="bg-primary text-lg font-bold text-primary-foreground">
+                    <AvatarFallback className="bg-primary text-primary-foreground text-lg font-bold">
                       {person.name
-                        .split(' ')
+                        .split(" ")
                         .map((n) => n[0])
-                        .join('')}
+                        .join("")}
                     </AvatarFallback>
                   </Avatar>
 
                   <div className="text-center">
-                    <h3 className="font-bold text-lg">{person.name}</h3>
+                    <h3 className="text-lg font-bold">{person.name}</h3>
                     <Badge variant="outline" className="mt-2">
                       {person.department}
                     </Badge>
@@ -148,7 +143,7 @@ export default function HallOfFame() {
                 <CardContent className="relative space-y-3 text-center">
                   {/* Always Visible */}
                   <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-muted-foreground text-sm">
                       Batch {person.batch}
                     </p>
                   </div>
@@ -157,11 +152,11 @@ export default function HallOfFame() {
                   <div
                     className={`absolute inset-0 flex flex-col items-center justify-center gap-3 rounded-lg bg-black/80 p-4 backdrop-blur-sm transition-all duration-300 ${
                       expandedId === person.id
-                        ? 'opacity-100'
-                        : 'opacity-0 pointer-events-none'
+                        ? "opacity-100"
+                        : "pointer-events-none opacity-0"
                     }`}
                   >
-                    <Award className="h-6 w-6 text-accent" />
+                    <Award className="text-accent h-6 w-6" />
                     <p className="text-sm font-semibold text-white">
                       {person.note}
                     </p>
@@ -194,7 +189,7 @@ export default function HallOfFame() {
         <div className="space-y-12">
           <div className="mx-auto max-w-3xl text-center">
             <h2 className="text-3xl font-bold">Recognition Categories</h2>
-            <p className="mt-4 text-muted-foreground">
+            <p className="text-muted-foreground mt-4">
               We honor excellence across multiple dimensions
             </p>
           </div>
@@ -202,43 +197,43 @@ export default function HallOfFame() {
           <div className="grid gap-6 md:grid-cols-3">
             {[
               {
-                category: 'Speed Excellence',
-                description: 'Fastest stenographers achieving over 300 WPM',
-                count: '142',
+                category: "Speed Excellence",
+                description: "Fastest stenographers achieving over 300 WPM",
+                count: "142",
               },
               {
-                category: 'Accuracy Masters',
-                description: 'Perfect or near-perfect accuracy records',
-                count: '89',
+                category: "Accuracy Masters",
+                description: "Perfect or near-perfect accuracy records",
+                count: "89",
               },
               {
-                category: 'Certified Professionals',
-                description: 'Successfully certified stenographers',
-                count: '3,456',
+                category: "Certified Professionals",
+                description: "Successfully certified stenographers",
+                count: "3,456",
               },
               {
-                category: 'Instructors',
-                description: 'Expert educators creating quality courses',
-                count: '48',
+                category: "Instructors",
+                description: "Expert educators creating quality courses",
+                count: "48",
               },
               {
-                category: 'Community Leaders',
-                description: 'Active mentors and community contributors',
-                count: '234',
+                category: "Community Leaders",
+                description: "Active mentors and community contributors",
+                count: "234",
               },
               {
-                category: 'Innovation Champions',
-                description: 'Pioneers in new stenography techniques',
-                count: '56',
+                category: "Innovation Champions",
+                description: "Pioneers in new stenography techniques",
+                count: "56",
               },
             ].map((item, idx) => (
               <Card key={idx}>
                 <CardContent className="pt-6 text-center">
-                  <div className="mb-3 text-3xl font-bold text-primary">
+                  <div className="text-primary mb-3 text-3xl font-bold">
                     {item.count}
                   </div>
                   <h3 className="mb-2 font-semibold">{item.category}</h3>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-muted-foreground text-sm">
                     {item.description}
                   </p>
                 </CardContent>
@@ -251,12 +246,13 @@ export default function HallOfFame() {
       {/* Quote Section */}
       <section className="container mx-auto px-4">
         <Card>
-          <CardContent className="pt-8 md:pt-12 text-center">
+          <CardContent className="pt-8 text-center md:pt-12">
             <blockquote className="space-y-4">
-              <p className="text-lg italic text-muted-foreground md:text-xl">
-                &quot;These exceptional stenographers represent the pinnacle of what&apos;s
-                possible with dedication, practice, and the right tools. They inspire
-                us every day to keep improving our platform.&quot;
+              <p className="text-muted-foreground text-lg italic md:text-xl">
+                &quot;These exceptional stenographers represent the pinnacle of
+                what&apos;s possible with dedication, practice, and the right
+                tools. They inspire us every day to keep improving our
+                platform.&quot;
               </p>
               <footer className="text-sm font-semibold">
                 — Steno Dexter Founders
@@ -269,17 +265,13 @@ export default function HallOfFame() {
       {/* CTA Section */}
       <section className="container mx-auto px-4">
         <Card className="bg-primary/5">
-          <CardContent className="py-12 md:py-16 text-center">
+          <CardContent className="py-12 text-center md:py-16">
             <h2 className="mb-4 text-3xl font-bold">Join Our Hall of Fame</h2>
-            <p className="mx-auto mb-8 max-w-2xl text-muted-foreground">
-              Achieve excellence in stenography and get recognized in our Hall of
-              Fame. Start your journey today.
+            <p className="text-muted-foreground mx-auto mb-8 max-w-2xl">
+              Achieve excellence in stenography and get recognized in our Hall
+              of Fame. Start your journey today.
             </p>
-            <Button
-              size="lg"
-              className="gap-2"
-              asChild
-            >
+            <Button size="lg" className="gap-2" asChild>
               <a href="/user/auth/register">
                 <Trophy className="h-4 w-4" />
                 Start Now
