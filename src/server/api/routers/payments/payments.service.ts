@@ -1,4 +1,4 @@
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, not, sql } from "drizzle-orm";
 import type { db } from "~/server/db";
 import { payment, subscription } from "~/server/db/schema";
 import type {
@@ -75,6 +75,14 @@ export function createPaymentService(db: Db) {
         return { ok: true };
       }
 
+      const existingSub = await db.query.subscription.findFirst({
+        where: eq(subscription.userId, found.userId),
+      });
+
+      if (existingSub?.status === "revoked") {
+        throw new Error("User subscription is revoked. Cannot verify payment.");
+      }
+
       await db.transaction(async (tx: any) => {
         await tx
           .update(payment)
@@ -86,8 +94,7 @@ export function createPaymentService(db: Db) {
           .where(eq(payment.id, input.paymentId));
 
         const existing = await tx.query.subscription.findFirst({
-          where: (s: any, { eq, and }: any) =>
-            and(eq(s.userId, found.userId), eq(s.status, "active")),
+          where: (s: any, { eq, and }: any) => and(eq(s.userId, found.userId)),
         });
 
         const now = new Date();

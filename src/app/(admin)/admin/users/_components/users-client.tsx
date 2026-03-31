@@ -28,12 +28,14 @@ import {
   FileText,
   Activity,
   RefreshCw,
+  ShieldOff,
 } from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
 import { cn } from "~/lib/utils";
 import SendNotificationDialog from "~/components/common/admin/send-notification";
 import type { InitialRecipient } from "~/components/common/admin/send-notification";
+import { RevokeSubscriptionDialog } from "./revoke-subcription";
 
 // ─── types ────────────────────────────────────────────────────────────────────
 
@@ -114,7 +116,7 @@ function UserKpiCards({
         }}
       >
         <div className="flex items-start justify-between gap-2">
-          <p className="text-muted-foreground text-xs font-medium leading-none">
+          <p className="text-muted-foreground text-xs leading-none font-medium">
             Registered users
           </p>
           <span className="bg-primary/10 text-primary rounded-full px-2 py-0.5 text-[10px] font-semibold">
@@ -145,7 +147,7 @@ function UserKpiCards({
         }}
       >
         <div className="flex items-start justify-between gap-2">
-          <p className="text-muted-foreground text-xs font-medium leading-none">
+          <p className="text-muted-foreground text-xs leading-none font-medium">
             Active users
           </p>
           <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
@@ -158,7 +160,8 @@ function UserKpiCards({
         <div className="flex items-center gap-1.5">
           <Activity className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
           <p className="text-muted-foreground text-xs">
-            1d: {overview.activeUsers.last1d} · 7d: {overview.activeUsers.last7d}
+            1d: {overview.activeUsers.last1d} · 7d:{" "}
+            {overview.activeUsers.last7d}
           </p>
         </div>
       </button>
@@ -243,6 +246,7 @@ function UsersTable({
   onPageChange,
   onTotalChange,
   onSort,
+  isAdmin = false,
 }: {
   query: string;
   page: number;
@@ -250,15 +254,17 @@ function UsersTable({
   sortField: SortField;
   sortOrder: SortOrder;
   filter: Filter;
+  isAdmin?: boolean;
   onPageChange: (p: number) => void;
   onTotalChange: (n: number) => void;
   onSort: (field: SortField) => void;
 }) {
   const router = useRouter();
   const [notify, setNotify] = useState<InitialRecipient | null>(null);
+  const [revokeTarget, setRevokeTarget] = useState<UserRow | null>(null);
 
   const { data, isLoading, isFetching } = trpc.analytics.getUsers.useQuery(
-    { query, page, pageSize, sortField: sortField , sortOrder, filter },
+    { query, page, pageSize, sortField: sortField, sortOrder, filter },
     { staleTime: 30_000 },
   );
 
@@ -282,7 +288,9 @@ function UsersTable({
 
   return (
     <>
-      <div className={`transition-opacity duration-150 ${dim ? "opacity-60" : ""}`}>
+      <div
+        className={`transition-opacity duration-150 ${dim ? "opacity-60" : ""}`}
+      >
         {isLoading ? (
           <TableSkeleton rows={pageSize} />
         ) : users.length === 0 ? (
@@ -332,11 +340,7 @@ function UsersTable({
               </TableHeader>
               <TableBody>
                 {users.map((u) => (
-                  <TableRow
-                    key={u.id}
-                    className="group cursor-pointer"
-                    onClick={() => router.push(`/admin/report-card/${u.id}`)}
-                  >
+                  <TableRow key={u.id} className="group">
                     {/* Avatar */}
                     <TableCell className="py-3 pl-4">
                       <Avatar className="h-8 w-8 shrink-0">
@@ -369,12 +373,14 @@ function UsersTable({
                     {/* Renewals */}
                     <TableCell className="py-3 text-right">
                       {u.renewCount > 0 ? (
-                        <span className="inline-flex items-center gap-1 rounded-md bg-sky-500/10 px-1.5 py-0.5 text-xs font-semibold tabular-nums text-sky-600 dark:text-sky-400">
+                        <span className="inline-flex items-center gap-1 rounded-md bg-sky-500/10 px-1.5 py-0.5 text-xs font-semibold text-sky-600 tabular-nums dark:text-sky-400">
                           <RefreshCw className="h-2.5 w-2.5" />
                           {u.renewCount}×
                         </span>
                       ) : (
-                        <span className="text-muted-foreground/40 text-xs">—</span>
+                        <span className="text-muted-foreground/40 text-xs">
+                          —
+                        </span>
                       )}
                     </TableCell>
 
@@ -411,6 +417,22 @@ function UsersTable({
                         >
                           <FileText className="h-3.5 w-3.5" />
                         </Button>
+
+                        {isAdmin && ( // <── ADD BLOCK
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            aria-label="revoke-subscription"
+                            className="h-7 w-7 border-red-500/30 text-red-500 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-red-500/10"
+                            title="Revoke subscription"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setRevokeTarget(u);
+                            }}
+                          >
+                            <ShieldOff className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -467,6 +489,16 @@ function UsersTable({
         onClose={() => setNotify(null)}
         initialRecipient={notify ?? undefined}
       />
+
+      {revokeTarget && (
+        <RevokeSubscriptionDialog
+          open={!!revokeTarget}
+          onClose={() => setRevokeTarget(null)}
+          userId={revokeTarget.id}
+          userName={revokeTarget.name}
+          userEmail={revokeTarget.email}
+        />
+      )}
     </>
   );
 }
@@ -549,7 +581,10 @@ export default function AdminUsersPage() {
 
       {/* KPI cards — clicking sets filter */}
       <Suspense fallback={<KpiSkeleton />}>
-        <UserKpiCards activeFilter={filter} onFilterChange={handleFilterChange} />
+        <UserKpiCards
+          activeFilter={filter}
+          onFilterChange={handleFilterChange}
+        />
       </Suspense>
 
       {/* Search bar */}
@@ -583,6 +618,7 @@ export default function AdminUsersPage() {
           onPageChange={setPage}
           onTotalChange={setTotal}
           onSort={handleSort}
+          isAdmin={true}
         />
       </div>
     </div>

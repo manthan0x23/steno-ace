@@ -20,9 +20,10 @@ import {
   userIdSchema,
 } from "./user.schema";
 import R2Service from "~/server/services/r2.service";
-import { account, user } from "~/server/db/schema";
+import { account, subscription, user } from "~/server/db/schema";
 import { eq } from "drizzle-orm";
-import { accountSchema } from "better-auth";
+import { notificationsService } from "../notifications/notification.service";
+import { emailService } from "~/server/services/mail.service";
 
 const editUserSchema = z.object({
   name: z.string().min(1).optional(),
@@ -59,8 +60,7 @@ export const userRouter = createTRPCRouter({
 
   checkSubscription: protectedProcedure.query(async ({ ctx }) => {
     const sub = await ctx.db.query.subscription.findFirst({
-      where: (s, { eq, and }) =>
-        and(eq(s.userId, ctx.user.id), eq(s.status, "active")),
+      where: (s, { eq }) => eq(s.userId, ctx.user.id),
       orderBy: (s, { desc }) => desc(s.currentPeriodEnd),
     });
 
@@ -69,17 +69,77 @@ export const userRouter = createTRPCRouter({
         and(eq(p.userId, ctx.user.id), eq(p.status, "pending")),
     });
 
-    if (!sub) return { active: false, expiresAt: null, pendingPayment };
+    if (!sub)
+      return {
+        active: false,
+        expiresAt: null,
+        pendingPayment,
+        isRevoked: false,
+      };
 
     const now = new Date();
 
+    const isRevoked = sub.status === "revoked";
+    const isActive = sub.status === "active" && sub.currentPeriodEnd >= now;
+
     return {
-      active: sub.currentPeriodEnd >= now,
+      active: isActive,
       expiresAt: sub.currentPeriodEnd.toISOString(),
       pendingPayment,
+      isRevoked,
     };
   }),
 
+  revokeUserSubscription: adminProcedure
+    .input(
+      z.object({
+        userId: z.string(),
+        note: z.string().min(1),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      const sub = await ctx.db.query.subscription.findFirst({
+        where: (s, { eq, and }) =>
+          and(eq(s.userId, input.userId), eq(s.status, "active")),
+        orderBy: (s, { desc }) => desc(s.currentPeriodEnd),
+        with: {
+          user: true,
+        },
+      });
+
+      if (!sub) {
+        throw new Error("Active subscription not found");
+      }
+
+      await ctx.db
+        .update(subscription)
+        .set({
+          status: "revoked",
+          currentPeriodEnd: new Date(),
+          revocationReason: input.note,
+        })
+        .where(eq(subscription.id, sub.id));
+
+      await notificationsService.send({
+        title: "Subscription Revoked",
+        message: input.note,
+        to: input.userId,
+      });
+
+      if (sub.user?.email) {
+        await emailService.sendEmail({
+          to: sub.user.email,
+          subject: "Your Subscription Has Been Revoked",
+          html: `
+          <p>Your subscription has been revoked by the admin.</p>
+          <p><strong>Reason:</strong> ${input.note}</p>
+          <p>If you think this is a mistake, please contact support.</p>
+        `,
+        });
+      }
+
+      return { ok: true };
+    }),
   getUser: adminProcedure
     .input(z.object({ userId: z.string() }))
     .query(async ({ input, ctx }) => {

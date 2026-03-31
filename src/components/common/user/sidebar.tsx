@@ -49,7 +49,6 @@ const TEST_TYPES = [
 const MAIN_NAV = [
   { label: "My Report", href: "/user/report-card", icon: ChartSpline },
   { label: "Attempts", href: "/user/attempts", icon: Star },
-  { label: "Hall of Fame", href: "/user/hall-of-fame", icon: Frame },
 ];
 
 const SETTINGS_NAV = [

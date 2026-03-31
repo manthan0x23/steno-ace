@@ -22,6 +22,7 @@ export const paymentStatusEnum = pgEnum("payment_status", [
 export const subscriptionStatusEnum = pgEnum("subscription_status", [
   "active",
   "expired",
+  "revoked",
 ]);
 
 export const payment = pgTable(
@@ -77,7 +78,8 @@ export const subscription = pgTable(
 
     userId: text("user_id")
       .notNull()
-      .references(() => user.id, { onDelete: "cascade" }),
+      .references(() => user.id, { onDelete: "cascade" })
+      .unique(),
 
     paymentProofId: text("payment_proof_id").references(() => payment.id),
 
@@ -96,6 +98,8 @@ export const subscription = pgTable(
     lastReminderSentAt: timestamp("last_reminder_sent_at", {
       withTimezone: true,
     }),
+
+    revocationReason: text("revocation_reason"),
 
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
