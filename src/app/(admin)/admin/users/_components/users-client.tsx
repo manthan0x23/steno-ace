@@ -29,6 +29,7 @@ import {
   Activity,
   RefreshCw,
   ShieldOff,
+  TextAlignJustify,
 } from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
@@ -419,19 +420,35 @@ function UsersTable({
                         </Button>
 
                         {isAdmin && ( // <── ADD BLOCK
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            aria-label="revoke-subscription"
-                            className="h-7 w-7 border-red-500/30 text-red-500 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-red-500/10"
-                            title="Revoke subscription"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setRevokeTarget(u);
-                            }}
-                          >
-                            <ShieldOff className="h-3.5 w-3.5" />
-                          </Button>
+                          <>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              aria-label="revoke-subscription"
+                              className="h-7 w-7 border-red-500/30 text-red-500 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-red-500/10"
+                              title="Revoke subscription"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setRevokeTarget(u);
+                              }}
+                            >
+                              <ShieldOff className="h-3.5 w-3.5" />
+                            </Button>
+
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              aria-label="revoke-subscription"
+                              className="h-7 w-7 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-yellow-500/10"
+                              title="View User's Attempts"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                router.push(`/admin/attempts/user/${u.id}`);
+                              }}
+                            >
+                              <TextAlignJustify className="h-3.5 w-3.5" />
+                            </Button>
+                          </>
                         )}
                       </div>
                     </TableCell>
