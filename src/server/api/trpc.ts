@@ -233,10 +233,10 @@ export const systemAdminProcedure = adminProcedure.use(({ ctx, next }) => {
 const resolveSubscription = async (userId: string) => {
   const nowTs = Date.now();
 
-  const cached = subscriptionCache.get(userId);
-  if (cached && cached.expiresAt > nowTs) {
-    return cached.value;
-  }
+  // const cached = subscriptionCache.get(userId);
+  // if (cached && cached.expiresAt > nowTs) {
+  //   return cached.value;
+  // }
 
   const now = new Date();
 

@@ -306,7 +306,7 @@ export function TestLeaderboardPage({
       { enabled: !!resolvedSpeedId, staleTime: 30_000 },
     );
 
-  const entries = (leaderboardData ?? []) as LeaderboardEntry[];
+  const entries = (leaderboardData ?? []) as unknown as LeaderboardEntry[];
   const userEntry = currentUserId
     ? entries.find((e) => e.user.id === currentUserId)
     : null;
