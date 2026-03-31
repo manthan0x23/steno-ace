@@ -176,7 +176,8 @@ function Hero() {
       </Badge>
 
       <h1 className="max-w-4xl text-5xl leading-[1.06] font-extrabold tracking-tight sm:text-6xl md:text-[72px]">
-        Master Stenography.{" "}
+        Master Stenography.
+        <br />
         <span className="from-primary via-primary to-secondary bg-gradient-to-r bg-clip-text text-transparent">
           Land Your Dream Job.
         </span>
