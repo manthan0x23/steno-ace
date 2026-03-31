@@ -17,59 +17,12 @@ interface SubmitState {
 }
 
 export default function ContactUs() {
-  const [form, setForm] = useState<FormState>({
-    name: "",
-    email: "",
-    subject: "",
-    message: "",
-  });
-
-  const [submit, setSubmit] = useState<SubmitState>({
-    isLoading: false,
-    isSuccess: false,
-    error: null,
-  });
-
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setSubmit({ isLoading: true, isSuccess: false, error: null });
-
-    try {
-      // Simulate form submission
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      setForm({ name: "", email: "", subject: "", message: "" });
-      setSubmit({ isLoading: false, isSuccess: true, error: null });
-
-      // Reset success message after 5 seconds
-      setTimeout(() => {
-        setSubmit({ isLoading: false, isSuccess: false, error: null });
-      }, 5000);
-    } catch (err) {
-      setSubmit({
-        isLoading: false,
-        isSuccess: false,
-        error: "Something went wrong. Please try again.",
-      });
-    }
-  };
-
   return (
     <div className="space-y-16 py-12 md:py-20">
       {/* Hero Section */}
-      <section className="container mx-auto px-4">
+      <section className="container mx-auto px-4 mt-[60px]">
         <div className="mx-auto max-w-3xl space-y-6 text-center">
-          <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
+          <h1 className="text-4xl font-bold tracking-tight sm:text-5xl text-logo">
             Get In Touch
           </h1>
           <p className="text-muted-foreground text-lg">

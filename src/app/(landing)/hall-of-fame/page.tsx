@@ -1,278 +1,183 @@
 "use client";
 
-import { useState } from "react";
-import { Trophy, Award, X } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
-import { Card, CardContent, CardHeader } from "~/components/ui/card";
-import { Badge } from "~/components/ui/badge";
+import { useEffect, useRef, useState, useCallback } from "react";
+import { Trophy, Loader2 } from "lucide-react";
 import { Button } from "~/components/ui/button";
+import { Card, CardContent } from "~/components/ui/card";
+import { trpc } from "~/trpc/react";
 
-interface HallOfFameAlumni {
-  id: string;
-  name: string;
-  department: string;
-  batch: string;
-  note: string;
-  photoKey?: string;
-}
-
-// Sample data aligned with database schema
-const alumni: HallOfFameAlumni[] = [
-  {
-    id: "1",
-    name: "Sarah Johnson",
-    department: "Legal Stenography",
-    batch: "2022",
-    note: "Fastest Typist 2024 - 320 WPM",
-    photoKey: "sarah-johnson",
-  },
-  {
-    id: "2",
-    name: "Michael Chen",
-    department: "Medical Stenography",
-    batch: "2021",
-    note: "Perfect Accuracy Award - 99.9% Accuracy",
-    photoKey: "michael-chen",
-  },
-  {
-    id: "3",
-    name: "Emily Rodriguez",
-    department: "Real-time Translation",
-    batch: "2023",
-    note: "CART Excellence Award - CART Certified",
-    photoKey: "emily-rodriguez",
-  },
-  {
-    id: "4",
-    name: "James Wilson",
-    department: "Professional Stenography",
-    batch: "2022",
-    note: "Most Improved Student - 150% Improvement",
-    photoKey: "james-wilson",
-  },
-  {
-    id: "5",
-    name: "Lisa Anderson",
-    department: "Course Creation",
-    batch: "2020",
-    note: "Instructor Excellence - 50+ Courses Created",
-    photoKey: "lisa-anderson",
-  },
-  {
-    id: "6",
-    name: "David Kumar",
-    department: "Certification",
-    batch: "2021",
-    note: "Certification Master - 5 Certifications",
-    photoKey: "david-kumar",
-  },
-  {
-    id: "7",
-    name: "Jennifer Martinez",
-    department: "Community Leadership",
-    batch: "2022",
-    note: "Community Champion - 500+ Mentees",
-    photoKey: "jennifer-martinez",
-  },
-  {
-    id: "8",
-    name: "Alexander Thompson",
-    department: "AI Integration",
-    batch: "2023",
-    note: "Innovation Leader - Tech Pioneer",
-    photoKey: "alexander-thompson",
-  },
-];
+const PAGE_LIMIT = 25;
 
 export default function HallOfFame() {
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [page, setPage] = useState(0);
+  const [allItems, setAllItems] = useState<
+    Array<{
+      id: string;
+      name: string;
+      department: string;
+      batch: string;
+      note: string;
+      photoUrl?: string | null;
+    }>
+  >([]);
+  const [hasMore, setHasMore] = useState(true);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  const { data, isFetching } = trpc.hof.list.useQuery(
+    { page, limit: PAGE_LIMIT },
+    { staleTime: 60_000 },
+  );
+
+  // Accumulate pages
+  useEffect(() => {
+    if (!data) return;
+
+    const mapped = data.data.map((d) => ({
+      id: d.id,
+      name: d.name,
+      department: d.department,
+      batch: d.batch ?? "",
+      note: d.note ?? "",
+      photoUrl: d.photoUrl ?? null,
+    }));
+
+    setAllItems((prev) => (page === 0 ? mapped : [...prev, ...mapped]));
+    setHasMore(page < data.totalPages - 1);
+  }, [data, page]);
+
+  // Intersection observer triggers next page
+  const handleObserver = useCallback(
+    (entries: IntersectionObserverEntry[]) => {
+      if (entries[0]?.isIntersecting && hasMore && !isFetching) {
+        setPage((p) => p + 1);
+      }
+    },
+    [hasMore, isFetching],
+  );
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(handleObserver, {
+      rootMargin: "300px",
+      threshold: 0,
+    });
+    if (sentinelRef.current) observer.observe(sentinelRef.current);
+    return () => observer.disconnect();
+  }, [handleObserver]);
 
   return (
-    <div className="space-y-16 py-12 md:py-20">
-      {/* Hero Section */}
+    <div className="mt-[60px] space-y-16 py-12 md:py-20">
+      {/* Header */}
       <section className="container mx-auto px-4">
-        <div className="mx-auto max-w-3xl space-y-6 text-center">
-          <div className="flex items-center justify-center gap-3">
-            <Trophy className="text-accent h-10 w-10" />
-            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-              Hall of Fame
-            </h1>
-          </div>
-          <p className="text-muted-foreground text-lg">
-            Celebrating our most accomplished and inspiring stenographers who
-            have achieved excellence through dedication and hard work.
+        <div className="mx-auto max-w-2xl space-y-3 text-center">
+          <p className="text-primary text-xs font-semibold tracking-widest uppercase">
+            Hall of Fame
+          </p>
+          <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">
+            Our Govt. Selections
+          </h1>
+          <p className="text-muted-foreground">
+            Students who cleared government exams through dedicated practice and
+            expert guidance.
           </p>
         </div>
       </section>
 
-      {/* Alumni Grid */}
+      {/* Photo Grid */}
       <section className="container mx-auto px-4">
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-          {alumni.map((person) => (
-            <div key={person.id} className="h-full">
-              <Card className="group relative h-full cursor-pointer overflow-hidden transition-all duration-300 hover:shadow-lg">
-                {/* Background Placeholder */}
-                <div className="from-primary/10 to-accent/10 absolute inset-0 bg-gradient-to-br" />
+        <div className="grid grid-cols-2 gap-1 sm:grid-cols-3 lg:grid-cols-4">
+          {allItems.map((person) => {
+            const initials = person.name
+              .split(" ")
+              .map((n) => n[0])
+              .join("");
+            const isHovered = hoveredId === person.id;
 
-                {/* Card Content */}
-                <CardHeader className="relative flex flex-col items-center gap-4 pt-6">
-                  <Avatar
-                    size="lg"
-                    className="h-20 w-20 transition-transform duration-300 group-hover:scale-110"
-                  >
-                    <AvatarImage
-                      src={`/images/alumni/${person.photoKey}.jpg`}
-                      alt={person.name}
-                    />
-                    <AvatarFallback className="bg-primary text-primary-foreground text-lg font-bold">
-                      {person.name
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")}
-                    </AvatarFallback>
-                  </Avatar>
+            return (
+              <div
+                key={person.id}
+                className="bg-muted relative aspect-[3/4] cursor-pointer overflow-hidden"
+                onMouseEnter={() => setHoveredId(person.id)}
+                onMouseLeave={() => setHoveredId(null)}
+              >
+                {/* Photo */}
+                {person.photoUrl && (
+                  <img
+                    src={person.photoUrl}
+                    alt={person.name}
+                    className="h-full w-full object-cover object-top transition-transform duration-500 ease-out"
+                    style={{
+                      transform: isHovered ? "scale(1.04)" : "scale(1)",
+                    }}
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = "none";
+                    }}
+                  />
+                )}
 
-                  <div className="text-center">
-                    <h3 className="text-lg font-bold">{person.name}</h3>
-                    <Badge variant="outline" className="mt-2">
-                      {person.department}
-                    </Badge>
-                  </div>
-                </CardHeader>
+                {/* Initials fallback */}
+                <div className="bg-muted absolute inset-0 -z-10 flex items-center justify-center">
+                  <span className="text-muted-foreground/25 text-5xl font-extrabold">
+                    {initials}
+                  </span>
+                </div>
 
-                <CardContent className="relative space-y-3 text-center">
-                  {/* Always Visible */}
-                  <div className="space-y-1">
-                    <p className="text-muted-foreground text-sm">
-                      Batch {person.batch}
-                    </p>
-                  </div>
-
-                  {/* Hover Reveal Content */}
-                  <div
-                    className={`absolute inset-0 flex flex-col items-center justify-center gap-3 rounded-lg bg-black/80 p-4 backdrop-blur-sm transition-all duration-300 ${
-                      expandedId === person.id
-                        ? "opacity-100"
-                        : "pointer-events-none opacity-0"
-                    }`}
-                  >
-                    <Award className="text-accent h-6 w-6" />
-                    <p className="text-sm font-semibold text-white">
-                      {person.note}
-                    </p>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="mt-2 text-white hover:bg-white/20"
-                      onClick={() => setExpandedId(null)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </CardContent>
-
-                {/* Click trigger area */}
+                {/* Hover overlay */}
                 <div
-                  className="absolute inset-0 cursor-pointer rounded-2xl"
-                  onClick={() =>
-                    setExpandedId(expandedId === person.id ? null : person.id)
-                  }
-                />
-              </Card>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Recognition Section */}
-      <section className="container mx-auto px-4">
-        <div className="space-y-12">
-          <div className="mx-auto max-w-3xl text-center">
-            <h2 className="text-3xl font-bold">Recognition Categories</h2>
-            <p className="text-muted-foreground mt-4">
-              We honor excellence across multiple dimensions
-            </p>
-          </div>
-
-          <div className="grid gap-6 md:grid-cols-3">
-            {[
-              {
-                category: "Speed Excellence",
-                description: "Fastest stenographers achieving over 300 WPM",
-                count: "142",
-              },
-              {
-                category: "Accuracy Masters",
-                description: "Perfect or near-perfect accuracy records",
-                count: "89",
-              },
-              {
-                category: "Certified Professionals",
-                description: "Successfully certified stenographers",
-                count: "3,456",
-              },
-              {
-                category: "Instructors",
-                description: "Expert educators creating quality courses",
-                count: "48",
-              },
-              {
-                category: "Community Leaders",
-                description: "Active mentors and community contributors",
-                count: "234",
-              },
-              {
-                category: "Innovation Champions",
-                description: "Pioneers in new stenography techniques",
-                count: "56",
-              },
-            ].map((item, idx) => (
-              <Card key={idx}>
-                <CardContent className="pt-6 text-center">
-                  <div className="text-primary mb-3 text-3xl font-bold">
-                    {item.count}
-                  </div>
-                  <h3 className="mb-2 font-semibold">{item.category}</h3>
-                  <p className="text-muted-foreground text-sm">
-                    {item.description}
+                  className="absolute inset-0 flex flex-col justify-end p-4 transition-opacity duration-300"
+                  style={{
+                    background:
+                      "linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.35) 50%, transparent 100%)",
+                    opacity: isHovered ? 1 : 0,
+                  }}
+                >
+                  <p className="text-base leading-tight font-bold text-white">
+                    {person.name}
                   </p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  <p className="mt-0.5 text-xs text-white/70">
+                    {person.department}
+                  </p>
+                  <p className="mt-2 text-xs text-white/60">{person.note}</p>
+                  <p className="text-primary mt-1 text-[10px] font-semibold tracking-widest uppercase">
+                    Batch {person.batch}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
         </div>
+
+        {/* Sentinel — sits just below the grid */}
+        <div ref={sentinelRef} className="h-1" />
+
+        {/* Spinner */}
+        {isFetching && (
+          <div className="flex justify-center py-10">
+            <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
+          </div>
+        )}
+
+        {/* End message */}
+        {!hasMore && allItems.length > 0 && !isFetching && (
+          <p className="text-muted-foreground py-10 text-center text-xs">
+            Showing all {allItems.length} selections
+          </p>
+        )}
       </section>
 
-      {/* Quote Section */}
+      {/* CTA */}
       <section className="container mx-auto px-4">
-        <Card>
-          <CardContent className="pt-8 text-center md:pt-12">
-            <blockquote className="space-y-4">
-              <p className="text-muted-foreground text-lg italic md:text-xl">
-                &quot;These exceptional stenographers represent the pinnacle of
-                what&apos;s possible with dedication, practice, and the right
-                tools. They inspire us every day to keep improving our
-                platform.&quot;
-              </p>
-              <footer className="text-sm font-semibold">
-                — Steno Dexter Founders
-              </footer>
-            </blockquote>
-          </CardContent>
-        </Card>
-      </section>
-
-      {/* CTA Section */}
-      <section className="container mx-auto px-4">
-        <Card className="bg-primary/5">
+        <Card className="border-primary/10 bg-primary/5">
           <CardContent className="py-12 text-center md:py-16">
-            <h2 className="mb-4 text-3xl font-bold">Join Our Hall of Fame</h2>
-            <p className="text-muted-foreground mx-auto mb-8 max-w-2xl">
-              Achieve excellence in stenography and get recognized in our Hall
-              of Fame. Start your journey today.
+            <h2 className="mb-2 text-3xl font-extrabold tracking-tight">
+              Your name could be here.
+            </h2>
+            <p className="text-muted-foreground mx-auto mb-8 max-w-md text-sm">
+              Start your journey today — consistent practice, expert guidance,
+              real results.
             </p>
             <Button size="lg" className="gap-2" asChild>
-              <a href="/user/auth/register">
+              <a href="/user">
                 <Trophy className="h-4 w-4" />
                 Start Now
               </a>

@@ -41,7 +41,7 @@ import Image from "next/image";
 
 const TEST_TYPES = [
   { label: "All Tests", href: "/user/tests", icon: ClipboardList },
-  { label: "Legal", href: "/user/tests?type=legal", icon: Scale  },
+  { label: "Legal", href: "/user/tests?type=legal", icon: Scale },
   { label: "General", href: "/user/tests?type=general", icon: FileText },
   { label: "Special", href: "/user/tests?type=special", icon: Sparkles },
 ];
@@ -72,7 +72,7 @@ export function UserSidebar() {
     <Sidebar>
       {/* ── Brand ── */}
       <SidebarHeader className="px-4 py-4">
-        <div className="flex flex-col items-center gap-2.5">
+        <Link href={"/user"} className="flex flex-col items-center gap-2.5">
           <div className="flex h-13.5 w-13.5 items-center justify-center rounded-sm bg-white shadow-sm">
             <Image
               src="/icon.png"
@@ -82,7 +82,7 @@ export function UserSidebar() {
               className="h-full w-full"
             />
           </div>
-          <div className="flex flex-col justify-center items-center leading-none">
+          <div className="flex flex-col items-center justify-center leading-none">
             <span className="font-logo text-xl font-bold tracking-tight">
               STENO<span className="text-primary"> DEXTER</span>
             </span>
@@ -90,7 +90,7 @@ export function UserSidebar() {
               Speed. Precision. Success.
             </span>
           </div>
-        </div>
+        </Link>
       </SidebarHeader>
 
       <SidebarContent className="px-2">

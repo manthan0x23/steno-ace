@@ -100,7 +100,7 @@ export function AdminSidebar() {
     <Sidebar>
       {/* ── Brand ── */}
       <SidebarHeader className="px-4 py-4">
-        <div className="flex flex-col items-center gap-2.5">
+        <Link href="/admin" className="flex flex-col items-center gap-2.5">
           <div className="flex h-13.5 w-13.5 items-center justify-center rounded-sm bg-white shadow-sm">
             <Image
               src="/icon.png"
@@ -118,10 +118,9 @@ export function AdminSidebar() {
               Speed. Precision. Success.
             </span>
           </div>
-        </div>
+        </Link>
       </SidebarHeader>
 
-      
       <SidebarContent className="px-2">
         {/* ── Create CTA ── */}
         <div className="mb-1 px-2 pt-1">

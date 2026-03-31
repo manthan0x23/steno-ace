@@ -111,9 +111,9 @@ export default function CoursesPage() {
   return (
     <div className="space-y-16 py-12 md:py-20">
       {/* Hero Section */}
-      <section className="container mx-auto px-4">
+      <section className="container mx-auto px-4 mt-[60px]">
         <div className="mx-auto max-w-3xl space-y-6 text-center">
-          <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
+          <h1 className="text-4xl font-bold tracking-tight sm:text-5xl text-logo">
             Our Courses
           </h1>
           <p className="text-lg text-muted-foreground">

@@ -11,7 +11,8 @@ import {
   Outfit,
   Figtree,
 } from "next/font/google";
-import Script from "next/script"; // 👈 add this
+import Script from "next/script"; 
+
 
 import { TRPCReactProvider } from "~/trpc/react";
 import { TooltipProvider } from "~/components/ui/tooltip";
