@@ -325,7 +325,7 @@ function BreakStage({
       />
 
       <div className="space-y-1 text-center">
-        <p className="text-sm font-medium">As time gets over,</p>
+        <p className="text-sm font-medium">As the time gets over,</p>
         <p className="text-muted-foreground text-xs">
           your transcription will start automatically.
         </p>

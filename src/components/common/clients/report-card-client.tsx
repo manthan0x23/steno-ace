@@ -212,7 +212,7 @@ function MistakesChart({
       });
 
   const chartData = series.map((r) => ({
-    date: format(new Date(r.submittedAt), "d MMM"),
+    date: format(new Date(r.submittedAt), "do MMMM"),
     Mistakes: r.mistakes,
   }));
 

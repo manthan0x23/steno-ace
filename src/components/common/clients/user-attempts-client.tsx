@@ -553,7 +553,7 @@ export function AttemptsClient({ adminUserId }: AttemptsClientProps) {
           <BarChart2 className="text-muted-foreground/30 mb-3 h-7 w-7" />
           <p className="text-muted-foreground text-sm font-medium">
             {hasDateFilter
-              ? `No attempts on ${format(dateFilter!, "dd MMMM, yyyy")}`
+              ? `No attempts on ${format(dateFilter!, "do MMMM, yyyy")}`
               : "No attempts yet"}
           </p>
           <p className="text-muted-foreground/60 mt-1 text-xs">
