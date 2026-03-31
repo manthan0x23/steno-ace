@@ -1,30 +1,21 @@
-import Link from "next/link";
+import { Navbar } from "~/components/landing/navbar";
+import { Hero } from "~/components/landing/hero";
+import { Features } from "~/components/landing/features";
+import { Benefits } from "~/components/landing/benefits";
+import { Courses } from "~/components/landing/courses";
+import { FAQ } from "~/components/landing/faq";
+import { Footer } from "~/components/landing/footer";
 
 export default function Home() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#2e026d] to-[#15162c] text-white">
-      <div className="container flex flex-col items-center justify-center gap-10 px-4 py-16">
-        <h1 className="text-5xl font-extrabold tracking-tight sm:text-[5rem]">
-          Welcome to Steno Dexter
-        </h1>
-        <p className="max-w-xl text-center text-lg text-white/80">
-          This Landing Page will be changed.
-        </p>
-        <div className="flex flex-col gap-4 sm:flex-row">
-          <Link
-            href="/user"
-            className="rounded-xl bg-white/10 px-8 py-3 text-center text-lg font-semibold hover:bg-white/20"
-          >
-            User space
-          </Link>
-          <Link
-            href="/admin"
-            className="rounded-xl border border-white/30 px-8 py-3 text-center text-lg font-semibold hover:bg-white/10"
-          >
-            Admin space
-          </Link>
-        </div>
-      </div>
+    <main className="min-h-screen bg-background text-foreground">
+      <Navbar />
+      <Hero />
+      <Features />
+      <Benefits />
+      <Courses />
+      <FAQ />
+      <Footer />
     </main>
   );
 }
