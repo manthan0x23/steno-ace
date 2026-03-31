@@ -205,7 +205,7 @@ function CreateInviteDialog({
                 </p>
                 <p className="mt-0.5 font-semibold">
                   {created.expiresAt
-                    ? format(new Date(created.expiresAt), "dd MMM yyyy")
+                    ? format(new Date(created.expiresAt), "do MMMM, yyyy")
                     : "Never"}
                 </p>
               </div>
@@ -674,7 +674,7 @@ function InvitesTable() {
                           inv.status === "expired" && "text-red-400",
                         )}
                       >
-                        {format(new Date(inv.expiresAt), "dd MMM yy")}
+                        {format(new Date(inv.expiresAt), "do MMMM, yy")}
                       </span>
                     ) : (
                       <span className="text-muted-foreground/40">—</span>

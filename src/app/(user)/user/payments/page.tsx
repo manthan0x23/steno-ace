@@ -135,7 +135,7 @@ export default function UserSubscriptionPage() {
                     <p className="text-muted-foreground mt-1 text-sm">
                       {isExpired
                         ? `Expired ${formatDistanceToNow(expiry, { addSuffix: true })}`
-                        : `Valid until ${format(expiry, "dd MMM yyyy")}`}
+                        : `Valid until ${format(expiry, "dd MMMM, yyyy")}`}
                     </p>
                   </>
                 ) : (
@@ -277,7 +277,7 @@ export default function UserSubscriptionPage() {
                     ₹{p.amount.toLocaleString("en-IN")}
                   </p>
                   <p className="text-muted-foreground mt-0.5 text-xs tabular-nums">
-                    {format(new Date(p.createdAt), "dd MMM yyyy, hh:mm a")}
+                    {format(new Date(p.createdAt), "dd MMMM, yyyy, hh:mm a")}
                   </p>
                 </div>
 

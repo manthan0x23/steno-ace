@@ -90,7 +90,7 @@ function ordinal(n: number) {
 }
 
 function formatDate(d: Date) {
-  return `${ordinal(d.getDate())} ${format(d, "MMMM yyyy")}`;
+  return `${ordinal(d.getDate())} ${format(d, "MMMM, yyyy")}`;
 }
 
 function isWithin24h(d: Date) {

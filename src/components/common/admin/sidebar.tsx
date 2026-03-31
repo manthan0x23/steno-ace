@@ -39,6 +39,7 @@ import {
   FileText,
   Star,
   UserKey,
+  Scale,
 } from "lucide-react";
 import { trpc } from "~/trpc/react";
 import { useMemo } from "react";
@@ -57,7 +58,7 @@ const MAIN_NAV = [
 
 const TEST_TYPES = [
   { label: "All Tests", href: "/admin/tests", icon: ClipboardList },
-  { label: "Legal", href: "/admin/tests?type=legal", icon: Gavel },
+  { label: "Legal", href: "/admin/tests?type=legal", icon: Scale },
   { label: "General", href: "/admin/tests?type=general", icon: FileText },
   { label: "Special", href: "/admin/tests?type=special", icon: Star },
 ];
@@ -112,7 +113,7 @@ export function AdminSidebar() {
           </div>
           <div className="flex flex-col items-center justify-center leading-none">
             <span className="font-logo text-xl font-bold tracking-tight">
-              STENO<span className="text-primary"> DEXTER</span>
+              <span className="text-primary"> STENO</span> DEXTER
             </span>
             <span className="text-muted-foreground text-[10px] font-medium tracking-widest uppercase">
               Speed. Precision. Success.

@@ -175,12 +175,12 @@ function CountdownOverlay({
   return (
     <div className="flex h-full flex-col items-center justify-center gap-8 px-6 text-center select-none">
       <div className="space-y-2">
-        <p className="text-lg font-semibold">{testTitle}</p>
+        <p className="text-xl font-bold">{testTitle}</p>
         <Badge
           variant={attemptType === "assessment" ? "default" : "secondary"}
           className="capitalize"
         >
-          {attemptType}
+          {attemptType === "assessment" ? "test" : "practice"}
         </Badge>
       </div>
       <div className="space-y-1">
@@ -414,7 +414,7 @@ function WritingStage({
             />
           </svg>
           <span
-            className={`text-sm leading-none font-semibold tabular-nums ${isLow ? "text-destructive" : ""}`}
+            className={`text-lg leading-none font-semibold tabular-nums ${isLow ? "text-destructive" : ""}`}
           >
             {formatTime(secondsLeft)}
           </span>
@@ -430,7 +430,7 @@ function WritingStage({
           <span
             className={`h-1.5 w-1.5 rounded-full transition-colors ${isSyncing ? "animate-pulse bg-amber-400" : "bg-emerald-500"}`}
           />
-          <span className="text-muted-foreground text-[11px]">
+          <span className="text-muted-foreground text-sm">
             {isSyncing ? "Saving…" : "Saved"}
           </span>
         </div>
@@ -494,7 +494,7 @@ function WritingStage({
           fontSize: `${fontSize}px`,
           lineHeight: "1.8",
         }}
-        placeholder="Begin typing your transcription here…"
+        placeholder="Begin your transcription here…"
         value={answer}
         onChange={(e) => onChange(e.target.value)}
         autoFocus
@@ -756,7 +756,7 @@ export default function AttemptPage() {
   }, [stage, data]);
 
   useEffect(() => {
-    if (!["audio", "break", "writing"].includes(stage)) return;
+    if (!["audio", "break", "transcription"].includes(stage)) return;
     if (timeLeft <= 0) {
       handleStageEnd();
       return;
@@ -828,7 +828,7 @@ export default function AttemptPage() {
     <div className="bg-background fixed inset-0 flex flex-col">
       {stage !== "countdown" && stage !== "submitted" && (
         <div className="flex shrink-0 items-center justify-between border-b px-6 py-3">
-          <p className="max-w-sm truncate text-sm font-medium">
+          <p className="max-w-sm truncate text-base font-semibold">
             {data.test.title}
           </p>
           <div className="flex items-center gap-2.5">

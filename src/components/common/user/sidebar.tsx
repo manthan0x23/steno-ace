@@ -83,7 +83,7 @@ export function UserSidebar() {
           </div>
           <div className="flex flex-col items-center justify-center leading-none">
             <span className="font-logo text-xl font-bold tracking-tight">
-              STENO<span className="text-primary"> DEXTER</span>
+              <span className="text-primary"> STENO</span> DEXTER
             </span>
             <span className="text-muted-foreground text-[10px] font-medium tracking-widest uppercase">
               Speed. Precision. Success.

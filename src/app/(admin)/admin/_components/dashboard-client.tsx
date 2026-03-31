@@ -838,7 +838,7 @@ function ColSkeleton({ rows = 5 }: { rows?: number }) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function DashboardClient() {
-  const today = format(new Date(), "EEEE, do MMMM yyyy");
+  const today = format(new Date(), "EEEE, do MMMM, yyyy");
 
   // Preload before Suspense boundaries
   trpc.analytics.getPlatformOverview.useQuery(undefined, { staleTime: 60_000 });

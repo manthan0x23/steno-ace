@@ -367,7 +367,7 @@ function UsersTable({
                     {/* Joined */}
                     <TableCell className="py-3 text-right">
                       <span className="text-muted-foreground text-xs tabular-nums">
-                        {format(new Date(u.createdAt), "do MMMM yyyy")}
+                        {format(new Date(u.createdAt), "do MMMM, yyyy")}
                       </span>
                     </TableCell>
 
