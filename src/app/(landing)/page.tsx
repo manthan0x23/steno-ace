@@ -18,6 +18,10 @@ import {
   CalendarCheck,
   TrendingUp,
   BookOpen,
+  CheckCircle,
+  Sparkles,
+  Medal,
+  Users,
 } from "lucide-react";
 
 export const metadata = {
@@ -62,7 +66,7 @@ const benefits = [
     desc: "Know exactly what to improve.",
   },
   {
-    icon: CalendarCheck,
+    icon: CheckCircle,
     title: "Weekly Tests",
     desc: "Every Sunday — stay consistent.",
   },
@@ -104,6 +108,35 @@ const govtBodies = [
   "Delhi Police",
 ];
 
+const successStories = [
+  { stat: "900K+", label: "Active Learners" },
+  { stat: "98%", label: "Success Rate" },
+  { stat: "15 Days", label: "Avg. to Progress" },
+];
+
+const whyChoose = [
+  {
+    icon: Sparkles,
+    title: "Precision Engineered",
+    desc: "Every course is meticulously designed by certified stenography experts with real government exam experience.",
+  },
+  {
+    icon: Medal,
+    title: "Proven Track Record",
+    desc: "Thousands of successful selections across SSC, High Court, NHM, and state PSCs.",
+  },
+  {
+    icon: Users,
+    title: "Supportive Community",
+    desc: "Learn alongside 900K+ students in a platform built for your success.",
+  },
+  {
+    icon: TrendingUp,
+    title: "Data-Driven Progress",
+    desc: "Real-time analytics show exactly what to improve, ensuring every session counts.",
+  },
+];
+
 /* ─────────────────── PAGE ─────────────────── */
 
 export default function LandingHome() {
@@ -112,10 +145,9 @@ export default function LandingHome() {
       <Hero />
       <LogoStrip />
       <Features />
-      <StudyMoment />
+      <WhyChoose />
       <Benefits />
-      <ShorthandGallery />
-      <Motivation />
+      <Testimonial />
       <FAQ />
     </main>
   );
@@ -125,50 +157,22 @@ export default function LandingHome() {
 function Hero() {
   return (
     <section className="relative isolate flex min-h-screen flex-col items-center justify-center overflow-hidden px-4 pt-24 pb-20 text-center">
-      {/* ─── BACKGROUND ─── */}
+      {/* ─── BACKGROUND GRADIENTS ─── */}
       <div className="bg-background absolute inset-0 -z-20" />
 
-      {/* Hero image — faded into background on right */}
-      <div className="pointer-events-none absolute inset-y-0 right-0 -z-10 hidden w-[48%] lg:block">
-        <div className="relative h-full w-full">
-          <Image
-            src="/landing/5.jpeg"
-            alt=""
-            fill
-            className="object-cover object-left opacity-[0.12]"
-            priority
-          />
-          {/* fade to left */}
-          <div className="from-background absolute inset-0 bg-gradient-to-r via-transparent to-transparent" />
-        </div>
-      </div>
-
-      {/* primary glow */}
+      {/* Animated background glow elements */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[520px] animate-[driftGlow_12s_ease-in-out_infinite] bg-[radial-gradient(ellipse_80%_60%_at_25%_-10%,hsl(var(--primary)/0.28),transparent)]"
+        className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[520px] animate-[driftGlow_12s_ease-in-out_infinite] bg-[radial-gradient(ellipse_80%_60%_at_25%_-10%,hsl(var(--primary)/0.25),transparent)]"
       />
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[520px] animate-[driftGlow_16s_ease-in-out_infinite] bg-[radial-gradient(ellipse_70%_50%_at_70%_0%,hsl(var(--secondary)/0.18),transparent)]"
+        className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[520px] animate-[driftGlow_16s_ease-in-out_infinite] bg-[radial-gradient(ellipse_70%_50%_at_70%_0%,hsl(var(--secondary)/0.15),transparent)]"
       />
       <div
         aria-hidden
-        className="bg-primary/10 pointer-events-none absolute bottom-[-120px] left-1/2 -z-10 h-[320px] w-[700px] -translate-x-1/2 animate-[driftGlow_18s_ease-in-out_infinite] blur-3xl"
+        className="bg-primary/8 pointer-events-none absolute bottom-[-100px] left-1/2 -z-10 h-[300px] w-[600px] -translate-x-1/2 animate-[driftGlow_18s_ease-in-out_infinite] blur-3xl"
       />
-
-      {/* subtle grid */}
-      <div
-        className="absolute inset-0 -z-10 opacity-[0.06]"
-        style={{
-          backgroundImage:
-            "linear-gradient(to right, hsl(var(--foreground)) 1px, transparent 1px), linear-gradient(to bottom, hsl(var(--foreground)) 1px, transparent 1px)",
-          backgroundSize: "64px 64px",
-          maskImage:
-            "radial-gradient(circle at center, black 30%, transparent 80%)",
-        }}
-      />
-      <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_center,transparent_0%,transparent_60%,hsl(var(--background))_100%)]" />
 
       {/* ─── CONTENT ─── */}
       <Badge
@@ -179,7 +183,7 @@ function Hero() {
         India&apos;s #1 Stenography Platform
       </Badge>
 
-      <h1 className="max-w-4xl text-5xl leading-[1.06] font-extrabold tracking-tight sm:text-6xl md:text-[72px]">
+      <h1 className="max-w-4xl text-5xl leading-[1.06] font-extrabold tracking-tight sm:text-6xl md:text-[72px] text-balance">
         Master Stenography.
         <br />
         <span className="from-primary via-primary to-secondary bg-gradient-to-r bg-clip-text text-transparent">
@@ -191,12 +195,11 @@ function Hero() {
         Speed &nbsp;&middot;&nbsp; Precision &nbsp;&middot;&nbsp; Success
       </p>
 
-      <p className="text-muted-foreground mt-5 max-w-lg text-lg leading-relaxed">
-        Structured daily practice, expert courses and weekly assessments — built
-        to get you selected in SSC, High Court &amp; government exams.
+      <p className="text-muted-foreground mt-6 max-w-lg text-lg leading-relaxed">
+        Structured daily practice, expert courses and weekly assessments — built to get you selected in SSC, High Court &amp; government exams.
       </p>
 
-      <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+      <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
         <Button
           size="lg"
           asChild
@@ -212,18 +215,14 @@ function Hero() {
         </Button>
       </div>
 
-      {/* stats */}
+      {/* Success metrics */}
       <div className="border-border/70 bg-background/50 divide-border mt-16 grid grid-cols-3 divide-x overflow-hidden rounded-2xl border shadow-lg shadow-black/5 backdrop-blur-md">
-        {[
-          { value: "900K+", label: "Active Learners" },
-          { value: "98%", label: "Success Rate" },
-          { value: "15 Days", label: "Guaranteed Progress" },
-        ].map((s) => (
+        {successStories.map((s) => (
           <div
             key={s.label}
             className="bg-muted/20 px-8 py-5 text-center sm:px-12"
           >
-            <p className="text-primary text-3xl font-extrabold">{s.value}</p>
+            <p className="text-primary text-3xl font-extrabold">{s.stat}</p>
             <p className="text-muted-foreground mt-1 text-xs">{s.label}</p>
           </div>
         ))}
@@ -235,21 +234,23 @@ function Hero() {
 /* ─── LOGO STRIP ─── */
 function LogoStrip() {
   return (
-    <div className="border-border bg-muted/20 border-y px-4 py-5">
-      <p className="text-muted-foreground mb-3 text-center text-[10px] font-semibold tracking-widest uppercase">
-        Our students selected in
-      </p>
-      <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-2">
-        {govtBodies.map((item) => (
-          <span
-            key={item}
-            className="text-muted-foreground/70 text-sm font-medium"
-          >
-            {item}
-          </span>
-        ))}
+    <section className="border-border bg-muted/30 border-y px-4 py-8">
+      <div className="mx-auto max-w-6xl">
+        <p className="text-muted-foreground mb-4 text-center text-xs font-semibold tracking-widest uppercase">
+          Trusted by students selected in
+        </p>
+        <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
+          {govtBodies.map((item) => (
+            <span
+              key={item}
+              className="text-muted-foreground text-sm font-medium hover:text-primary transition-colors"
+            >
+              {item}
+            </span>
+          ))}
+        </div>
       </div>
-    </div>
+    </section>
   );
 }
 
@@ -263,19 +264,19 @@ function Features() {
           title="Built for real results"
           sub="Everything on this platform is purpose-built for one outcome — getting you selected."
         />
-        <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {features.map((f) => {
             const Icon = f.icon;
             return (
               <Card
                 key={f.title}
-                className="border-border transition-shadow hover:shadow-md"
+                className="border-border/60 bg-muted/30 transition-all hover:border-primary/40 hover:shadow-md"
               >
-                <CardHeader className="pb-2">
-                  <div className="bg-primary/10 mb-3 inline-flex h-10 w-10 items-center justify-center rounded-lg">
-                    <Icon className="text-primary h-5 w-5" />
+                <CardHeader className="pb-3">
+                  <div className="bg-primary/10 mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl">
+                    <Icon className="text-primary h-6 w-6" />
                   </div>
-                  <p className="font-bold">{f.title}</p>
+                  <p className="font-bold text-base">{f.title}</p>
                 </CardHeader>
                 <CardContent>
                   <p className="text-muted-foreground text-sm leading-relaxed">
@@ -291,56 +292,39 @@ function Features() {
   );
 }
 
-/* ─── STUDY MOMENT — image 1 (laptop + notebook) & image 3 (typewriter) ─── */
-function StudyMoment() {
+/* ─── WHY CHOOSE US ─── */
+function WhyChoose() {
   return (
-    <section className="px-4 py-10 pb-24">
+    <section className="relative overflow-hidden px-4 py-24">
       <div className="mx-auto max-w-6xl">
-        {/* Bento-style image row */}
-        <div className="grid grid-cols-12 gap-4">
-          {/* Large: notebook + laptop */}
-          <div className="relative col-span-12 overflow-hidden rounded-2xl md:col-span-7">
-            <div className="relative h-72 w-full md:h-96">
-              <Image
-                src="/landing/1.jpeg"
-                alt="Student studying stenography with laptop and notebook"
-                fill
-                className="object-cover object-center"
-              />
-              <div className="from-background/80 absolute inset-0 bg-gradient-to-t via-transparent to-transparent" />
-              <div className="absolute bottom-0 left-0 p-6">
-                <p className="text-foreground text-sm font-semibold tracking-widest uppercase opacity-80">
-                  Study on your terms
-                </p>
-                <p className="text-muted-foreground mt-1 max-w-xs text-xs leading-relaxed">
-                  Combine digital lessons with handwritten shorthand practice —
-                  the proven formula for retention.
-                </p>
-              </div>
-            </div>
-          </div>
+        <SectionHead
+          tag="What Sets Us Apart"
+          title="Why choose Steno Dexter?"
+          sub="Every feature is designed around your success. From curriculum to community."
+        />
 
-          {/* Tall: vintage typewriter */}
-          <div className="relative col-span-12 overflow-hidden rounded-2xl md:col-span-5">
-            <div className="relative h-72 w-full md:h-96">
-              <Image
-                src="/landing/3.jpeg"
-                alt="Hands on a vintage typewriter — the art of stenography"
-                fill
-                className="object-cover object-center"
-              />
-              <div className="from-background/70 absolute inset-0 bg-gradient-to-t via-transparent to-transparent" />
-              <div className="absolute bottom-0 left-0 p-6">
-                <p className="text-foreground text-sm font-semibold tracking-widest uppercase opacity-80">
-                  A timeless craft
-                </p>
-                <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
-                  Stenography has powered courts and offices for 150 years.
-                  Master it today.
-                </p>
-              </div>
-            </div>
-          </div>
+        <div className="mt-16 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          {whyChoose.map((item) => {
+            const Icon = item.icon;
+            return (
+              <Card
+                key={item.title}
+                className="border-border/60 bg-gradient-to-br from-muted/40 to-muted/20 transition-all hover:border-primary/40 hover:shadow-lg"
+              >
+                <CardHeader className="pb-3">
+                  <div className="bg-primary/10 mb-4 inline-flex h-10 w-10 items-center justify-center rounded-lg">
+                    <Icon className="text-primary h-5 w-5" />
+                  </div>
+                  <p className="font-semibold text-sm">{item.title}</p>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground text-xs leading-relaxed">
+                    {item.desc}
+                  </p>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       </div>
     </section>
@@ -350,7 +334,7 @@ function StudyMoment() {
 /* ─── BENEFITS ─── */
 function Benefits() {
   return (
-    <section id="benefits" className="px-4 py-24">
+    <section id="benefits" className="bg-muted/20 px-4 py-24">
       <div className="mx-auto max-w-6xl">
         <div className="grid gap-16 lg:grid-cols-2 lg:items-center">
           <div>
@@ -372,17 +356,17 @@ function Benefits() {
             </Button>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-4">
             {benefits.map((b) => {
               const Icon = b.icon;
               return (
                 <Card
                   key={b.title}
-                  className="hover:border-primary/40 p-4 transition-colors"
+                  className="border-border/60 bg-background hover:border-primary/40 hover:shadow-md p-5 transition-all"
                 >
                   <Icon className="text-primary mb-3 h-5 w-5" />
                   <p className="text-sm font-semibold">{b.title}</p>
-                  <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
+                  <p className="text-muted-foreground mt-2 text-xs leading-relaxed">
                     {b.desc}
                   </p>
                 </Card>
@@ -395,119 +379,73 @@ function Benefits() {
   );
 }
 
-/* ─── SHORTHAND GALLERY — images 2, 4 (shorthand notes) ─── */
-function ShorthandGallery() {
+/* ─── TESTIMONIAL SECTION ─── */
+function Testimonial() {
   return (
-    <section className="px-4 py-10 pb-24">
-      <div className="mx-auto max-w-6xl">
-        <div className="mb-10 text-center">
+    <section className="px-4 py-24">
+      <div className="mx-auto max-w-4xl">
+        <div className="text-center mb-12">
           <p className="text-primary mb-2 text-xs font-semibold tracking-widest uppercase">
-            The Craft
+            Success Stories
           </p>
           <h2 className="text-3xl font-extrabold tracking-tight">
-            Shorthand in action
+            From our community
           </h2>
           <p className="text-muted-foreground mx-auto mt-3 max-w-md text-sm leading-relaxed">
-            Every curved symbol is a word. Every line is precision. Our
-            exercises take you from alphabet to fluency.
+            Real students. Real results. Real success in government exams.
           </p>
         </div>
 
-        <div className="grid grid-cols-12 gap-4">
-          {/* Shorthand notes handwritten */}
-          <div className="col-span-12 md:col-span-5">
-            <div className="relative h-80 w-full overflow-hidden rounded-2xl">
-              <Image
-                src="/landing/2.jpeg"
-                alt="Handwritten shorthand notes"
-                fill
-                className="object-cover object-top"
-              />
-              <div className="from-background/60 absolute inset-0 bg-gradient-to-t" />
-              <div className="absolute bottom-0 left-0 p-5">
-                <Badge variant="outline" className="text-[10px] tracking-wider">
-                  Handwritten Practice
-                </Badge>
-              </div>
-            </div>
-          </div>
-
-          {/* Shorthand textbook exercises */}
-          <div className="col-span-12 md:col-span-7">
-            <div className="relative h-80 w-full overflow-hidden rounded-2xl">
-              <Image
-                src="/landing/4.jpeg"
-                alt="Shorthand exercise book — Exercise 115 and 116"
-                fill
-                className="object-cover object-center"
-              />
-              <div className="from-background/70 absolute inset-0 bg-gradient-to-t" />
-              <div className="absolute bottom-0 left-0 p-5">
-                <Badge variant="outline" className="text-[10px] tracking-wider">
-                  Structured Exercises
-                </Badge>
-                <p className="text-muted-foreground mt-2 max-w-xs text-xs leading-relaxed">
-                  Hundreds of graded exercises, mirroring real exam passages
-                  from SSC & High Court papers.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ─── MOTIVATION BANNER — image 6 (Now or Never study desk) ─── */
-function Motivation() {
-  return (
-    <section className="px-4 py-10 pb-24">
-      <div className="mx-auto max-w-6xl">
-        <div className="relative overflow-hidden rounded-3xl">
-          {/* Background image */}
-          <div className="relative h-[420px] w-full md:h-[500px]">
-            <Image
-              src="/landing/6.jpeg"
-              alt="Dedicated study desk — Now or Never"
-              fill
-              className="object-cover object-center"
-            />
-            {/* Overlay */}
-            <div className="from-background/95 via-background/70 absolute inset-0 bg-gradient-to-r to-transparent" />
-          </div>
-
-          {/* Text content */}
-          <div className="absolute inset-0 flex flex-col items-start justify-center px-8 md:px-16">
-            <p className="text-primary mb-3 text-xs font-semibold tracking-widest uppercase">
-              The Mindset
-            </p>
-            <h2 className="max-w-sm text-4xl font-extrabold leading-tight tracking-tight md:text-5xl">
-              Now or{" "}
-              <span className="from-primary to-secondary bg-gradient-to-r bg-clip-text text-transparent">
-                Never.
+        <Card className="border-border/60 bg-gradient-to-br from-muted/40 to-muted/20 p-8 md:p-10">
+          <div className="mb-6 flex gap-1">
+            {[...Array(5)].map((_, i) => (
+              <span
+                key={i}
+                className="text-primary text-xl"
+              >
+                ★
               </span>
-            </h2>
-            <p className="text-muted-foreground mt-4 max-w-xs text-sm leading-relaxed">
-              Every topper you admire was once where you are now. The difference
-              is daily practice — and the decision to start today.
-            </p>
-            <Button className="mt-8 gap-2 px-6" asChild>
-              <Link href="/user">
-                Begin Your Journey <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
+            ))}
+          </div>
+          <p className="text-lg leading-relaxed mb-6 text-foreground font-medium">
+            "I went from 0 to 80 WPM in just 2 months. The structured approach and daily tests kept me accountable. The community support is amazing. I got selected in SSC Stenographer Grade-A!"
+          </p>
+          <div className="flex items-center gap-3 pt-4 border-t border-border/30">
+            <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center">
+              <span className="text-primary font-bold text-lg">A</span>
+            </div>
+            <div>
+              <p className="font-semibold text-sm">Aditya Kumar</p>
+              <p className="text-muted-foreground text-xs">SSC Stenographer Grade-A 2024</p>
+            </div>
+          </div>
+        </Card>
+
+        <div className="mt-12 grid grid-cols-3 gap-6 text-center">
+          <div className="p-4 rounded-lg bg-muted/30 border border-border/50">
+            <p className="text-2xl font-bold text-primary mb-1">25K+</p>
+            <p className="text-muted-foreground text-xs">Selected in 2024</p>
+          </div>
+          <div className="p-4 rounded-lg bg-muted/30 border border-border/50">
+            <p className="text-2xl font-bold text-primary mb-1">4.8/5</p>
+            <p className="text-muted-foreground text-xs">Avg Rating</p>
+          </div>
+          <div className="p-4 rounded-lg bg-muted/30 border border-border/50">
+            <p className="text-2xl font-bold text-primary mb-1">45 Days</p>
+            <p className="text-muted-foreground text-xs">Avg to First Selection</p>
           </div>
         </div>
       </div>
     </section>
   );
 }
+
+
 
 /* ─── FAQ ─── */
 function FAQ() {
   return (
-    <section id="faq" className="bg-muted/30 px-4 py-24">
+    <section id="faq" className="bg-muted/20 px-4 py-24">
       <div className="mx-auto max-w-2xl">
         <SectionHead
           tag="FAQ"
@@ -515,18 +453,30 @@ function FAQ() {
           sub="Everything you would want to know before enrolling."
           center
         />
-        <Accordion type="single" collapsible className="mt-10 w-full">
+        <Accordion type="single" collapsible className="mt-12 w-full">
           {faqs.map((f, i) => (
-            <AccordionItem key={i} value={`item-${i}`}>
-              <AccordionTrigger className="text-left text-[15px] font-semibold">
+            <AccordionItem 
+              key={i} 
+              value={`item-${i}`}
+              className="border-border/40"
+            >
+              <AccordionTrigger className="text-left text-[15px] font-semibold hover:text-primary transition-colors">
                 {f.q}
               </AccordionTrigger>
-              <AccordionContent className="text-muted-foreground leading-relaxed">
+              <AccordionContent className="text-muted-foreground leading-relaxed pt-4">
                 {f.a}
               </AccordionContent>
             </AccordionItem>
           ))}
         </Accordion>
+
+        {/* CTA */}
+        <div className="mt-16 text-center">
+          <p className="text-muted-foreground mb-6">Still have questions?</p>
+          <Button size="lg" asChild>
+            <Link href="/contact-us">Get in touch with our team</Link>
+          </Button>
+        </div>
       </div>
     </section>
   );
