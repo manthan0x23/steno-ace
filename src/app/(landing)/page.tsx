@@ -259,33 +259,49 @@ function Features() {
   return (
     <section id="features" className="px-4 py-24">
       <div className="mx-auto max-w-6xl">
-        <SectionHead
-          tag="Why Steno Dexter"
-          title="Built for real results"
-          sub="Everything on this platform is purpose-built for one outcome — getting you selected."
-        />
-        <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {features.map((f) => {
-            const Icon = f.icon;
-            return (
-              <Card
-                key={f.title}
-                className="border-border/60 bg-muted/30 transition-all hover:border-primary/40 hover:shadow-md"
-              >
-                <CardHeader className="pb-3">
-                  <div className="bg-primary/10 mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl">
-                    <Icon className="text-primary h-6 w-6" />
-                  </div>
-                  <p className="font-bold text-base">{f.title}</p>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground text-sm leading-relaxed">
-                    {f.desc}
-                  </p>
-                </CardContent>
-              </Card>
-            );
-          })}
+        <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
+          {/* Left: Content */}
+          <div>
+            <SectionHead
+              tag="Why Steno Dexter"
+              title="Built for real results"
+              sub="Everything on this platform is purpose-built for one outcome — getting you selected."
+            />
+            <div className="mt-8 grid gap-4 grid-cols-2">
+              {features.map((f) => {
+                const Icon = f.icon;
+                return (
+                  <Card
+                    key={f.title}
+                    className="border-border/60 bg-muted/30 transition-all hover:border-primary/40 hover:shadow-md"
+                  >
+                    <CardHeader className="pb-3">
+                      <div className="bg-primary/10 mb-3 inline-flex h-10 w-10 items-center justify-center rounded-lg">
+                        <Icon className="text-primary h-5 w-5" />
+                      </div>
+                      <p className="font-bold text-sm">{f.title}</p>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-muted-foreground text-xs leading-relaxed">
+                        {f.desc}
+                      </p>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Right: Image */}
+          <div className="relative h-96 hidden lg:block">
+            <Image
+              src="/landing/2.jpeg"
+              alt="Shorthand practice notes and study materials"
+              fill
+              className="object-cover rounded-2xl shadow-lg"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-background/60 to-transparent rounded-2xl" />
+          </div>
         </div>
       </div>
     </section>
@@ -295,36 +311,52 @@ function Features() {
 /* ─── WHY CHOOSE US ─── */
 function WhyChoose() {
   return (
-    <section className="relative overflow-hidden px-4 py-24">
+    <section className="relative overflow-hidden px-4 py-24 bg-muted/20">
       <div className="mx-auto max-w-6xl">
-        <SectionHead
-          tag="What Sets Us Apart"
-          title="Why choose Steno Dexter?"
-          sub="Every feature is designed around your success. From curriculum to community."
-        />
+        <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
+          {/* Content */}
+          <div>
+            <SectionHead
+              tag="What Sets Us Apart"
+              title="Why choose Steno Dexter?"
+              sub="Every feature is designed around your success. From curriculum to community."
+            />
 
-        <div className="mt-16 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-          {whyChoose.map((item) => {
-            const Icon = item.icon;
-            return (
-              <Card
-                key={item.title}
-                className="border-border/60 bg-gradient-to-br from-muted/40 to-muted/20 transition-all hover:border-primary/40 hover:shadow-lg"
-              >
-                <CardHeader className="pb-3">
-                  <div className="bg-primary/10 mb-4 inline-flex h-10 w-10 items-center justify-center rounded-lg">
-                    <Icon className="text-primary h-5 w-5" />
-                  </div>
-                  <p className="font-semibold text-sm">{item.title}</p>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground text-xs leading-relaxed">
-                    {item.desc}
-                  </p>
-                </CardContent>
-              </Card>
-            );
-          })}
+            <div className="mt-10 grid gap-4 sm:grid-cols-2">
+              {whyChoose.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <Card
+                    key={item.title}
+                    className="border-border/60 bg-background transition-all hover:border-primary/40 hover:shadow-lg"
+                  >
+                    <CardHeader className="pb-3">
+                      <div className="bg-primary/10 mb-3 inline-flex h-10 w-10 items-center justify-center rounded-lg">
+                        <Icon className="text-primary h-5 w-5" />
+                      </div>
+                      <p className="font-semibold text-sm">{item.title}</p>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-muted-foreground text-xs leading-relaxed">
+                        {item.desc}
+                      </p>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Image */}
+          <div className="relative h-96 hidden lg:block">
+            <Image
+              src="/landing/3.jpeg"
+              alt="Typewriter and stenography equipment"
+              fill
+              className="object-cover rounded-2xl shadow-lg"
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-background/40 to-transparent rounded-2xl" />
+          </div>
         </div>
       </div>
     </section>
@@ -337,7 +369,19 @@ function Benefits() {
     <section id="benefits" className="bg-muted/20 px-4 py-24">
       <div className="mx-auto max-w-6xl">
         <div className="grid gap-16 lg:grid-cols-2 lg:items-center">
-          <div>
+          {/* Left: Image */}
+          <div className="relative h-96 hidden lg:block order-2">
+            <Image
+              src="/landing/1.jpeg"
+              alt="Student studying stenography with laptop and notebook"
+              fill
+              className="object-cover rounded-2xl shadow-lg"
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-background/50 to-transparent rounded-2xl" />
+          </div>
+
+          {/* Right: Content */}
+          <div className="lg:order-1">
             <SectionHead
               tag="What You Get"
               title={
@@ -349,29 +393,30 @@ function Benefits() {
               }
               sub="One platform. All the structure, material and support — from beginner to job-ready."
             />
+
+            <div className="mt-8 grid grid-cols-2 gap-4">
+              {benefits.map((b) => {
+                const Icon = b.icon;
+                return (
+                  <Card
+                    key={b.title}
+                    className="border-border/60 bg-background hover:border-primary/40 hover:shadow-md p-5 transition-all"
+                  >
+                    <Icon className="text-primary mb-3 h-5 w-5" />
+                    <p className="text-sm font-semibold">{b.title}</p>
+                    <p className="text-muted-foreground mt-2 text-xs leading-relaxed">
+                      {b.desc}
+                    </p>
+                  </Card>
+                );
+              })}
+            </div>
+
             <Button className="mt-8 gap-2" asChild>
               <Link href="/user">
                 Start Learning <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            {benefits.map((b) => {
-              const Icon = b.icon;
-              return (
-                <Card
-                  key={b.title}
-                  className="border-border/60 bg-background hover:border-primary/40 hover:shadow-md p-5 transition-all"
-                >
-                  <Icon className="text-primary mb-3 h-5 w-5" />
-                  <p className="text-sm font-semibold">{b.title}</p>
-                  <p className="text-muted-foreground mt-2 text-xs leading-relaxed">
-                    {b.desc}
-                  </p>
-                </Card>
-              );
-            })}
           </div>
         </div>
       </div>
@@ -383,8 +428,8 @@ function Benefits() {
 function Testimonial() {
   return (
     <section className="px-4 py-24">
-      <div className="mx-auto max-w-4xl">
-        <div className="text-center mb-12">
+      <div className="mx-auto max-w-6xl">
+        <div className="text-center mb-16">
           <p className="text-primary mb-2 text-xs font-semibold tracking-widest uppercase">
             Success Stories
           </p>
@@ -396,42 +441,57 @@ function Testimonial() {
           </p>
         </div>
 
-        <Card className="border-border/60 bg-gradient-to-br from-muted/40 to-muted/20 p-8 md:p-10">
-          <div className="mb-6 flex gap-1">
-            {[...Array(5)].map((_, i) => (
-              <span
-                key={i}
-                className="text-primary text-xl"
-              >
-                ★
-              </span>
-            ))}
-          </div>
-          <p className="text-lg leading-relaxed mb-6 text-foreground font-medium">
-            "I went from 0 to 80 WPM in just 2 months. The structured approach and daily tests kept me accountable. The community support is amazing. I got selected in SSC Stenographer Grade-A!"
-          </p>
-          <div className="flex items-center gap-3 pt-4 border-t border-border/30">
-            <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center">
-              <span className="text-primary font-bold text-lg">A</span>
+        <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
+          {/* Testimonial Card */}
+          <Card className="border-border/60 bg-gradient-to-br from-muted/40 to-muted/20 p-8 md:p-10">
+            <div className="mb-6 flex gap-1">
+              {[...Array(5)].map((_, i) => (
+                <span
+                  key={i}
+                  className="text-primary text-xl"
+                >
+                  ★
+                </span>
+              ))}
             </div>
-            <div>
-              <p className="font-semibold text-sm">Aditya Kumar</p>
-              <p className="text-muted-foreground text-xs">SSC Stenographer Grade-A 2024</p>
+            <p className="text-lg leading-relaxed mb-6 text-foreground font-medium">
+              "I went from 0 to 80 WPM in just 2 months. The structured approach and daily tests kept me accountable. The community support is amazing. I got selected in SSC Stenographer Grade-A!"
+            </p>
+            <div className="flex items-center gap-3 pt-4 border-t border-border/30">
+              <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center">
+                <span className="text-primary font-bold text-lg">A</span>
+              </div>
+              <div>
+                <p className="font-semibold text-sm">Aditya Kumar</p>
+                <p className="text-muted-foreground text-xs">SSC Stenographer Grade-A 2024</p>
+              </div>
             </div>
-          </div>
-        </Card>
+          </Card>
 
-        <div className="mt-12 grid grid-cols-3 gap-6 text-center">
-          <div className="p-4 rounded-lg bg-muted/30 border border-border/50">
-            <p className="text-2xl font-bold text-primary mb-1">25K+</p>
+          {/* Image */}
+          <div className="relative h-96 hidden lg:block">
+            <Image
+              src="/landing/4.jpeg"
+              alt="Shorthand exercise and practice materials"
+              fill
+              className="object-cover rounded-2xl shadow-lg"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-background/40 to-transparent rounded-2xl" />
+          </div>
+        </div>
+
+        {/* Stats */}
+        <div className="mt-16 grid grid-cols-3 gap-6 text-center">
+          <div className="p-6 rounded-xl bg-muted/30 border border-border/50 hover:border-primary/30 transition-colors">
+            <p className="text-3xl font-bold text-primary mb-2">25K+</p>
             <p className="text-muted-foreground text-xs">Selected in 2024</p>
           </div>
-          <div className="p-4 rounded-lg bg-muted/30 border border-border/50">
-            <p className="text-2xl font-bold text-primary mb-1">4.8/5</p>
+          <div className="p-6 rounded-xl bg-muted/30 border border-border/50 hover:border-primary/30 transition-colors">
+            <p className="text-3xl font-bold text-primary mb-2">4.8/5</p>
             <p className="text-muted-foreground text-xs">Avg Rating</p>
           </div>
-          <div className="p-4 rounded-lg bg-muted/30 border border-border/50">
-            <p className="text-2xl font-bold text-primary mb-1">45 Days</p>
+          <div className="p-6 rounded-xl bg-muted/30 border border-border/50 hover:border-primary/30 transition-colors">
+            <p className="text-3xl font-bold text-primary mb-2">45 Days</p>
             <p className="text-muted-foreground text-xs">Avg to First Selection</p>
           </div>
         </div>
