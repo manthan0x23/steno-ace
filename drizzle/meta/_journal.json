@@ -29,6 +29,13 @@
       "when": 1774958676535,
       "tag": "0003_crazy_lockjaw",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1775583112416,
+      "tag": "0004_good_husk",
+      "breakpoints": true
     }
   ]
 }

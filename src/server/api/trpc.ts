@@ -1,11 +1,3 @@
-/**
- * tRPC bootstrap
- *
- * - User session: resolved normally via better-auth on every request (traditional)
- * - Admin session: lazy + cached (keyed by admin_token cookie, 60s TTL)
- * - Public routes: zero DB calls
- */
-
 import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import { ZodError } from "zod";
@@ -17,43 +9,14 @@ import { db } from "~/server/db";
 import { subscription } from "~/server/db/schema";
 import type { AdminSession } from "../better-auth/config";
 import R2Service from "../services/r2.service";
+import { redisService } from "../services/redis.service";
 
 // ---------------------------------------------------------------------------
-// Admin session cache
+// Cache TTLs
 // ---------------------------------------------------------------------------
 
-const ADMIN_SESSION_CACHE_TTL_MS = 10 * 60_000; // 5 minute
-const SUBSCRIPTION_CACHE_TTL_MS = 20 * 60_000; // 10 minutes
-
-interface CachedAdminSession {
-  value: AdminSession;
-  expiresAt: number;
-}
-
-const adminSessionCache = new Map<string, CachedAdminSession>();
-
-// Sweep expired entries every 5 minutes
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, entry] of adminSessionCache) {
-    if (entry.expiresAt <= now) adminSessionCache.delete(key);
-  }
-}, 5 * 60_000);
-
-interface CachedSubscription {
-  value: typeof subscription.$inferSelect | null;
-  expiresAt: number;
-}
-
-const subscriptionCache = new Map<string, CachedSubscription>();
-
-// cleanup (optional but good)
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, entry] of subscriptionCache) {
-    if (entry.expiresAt <= now) subscriptionCache.delete(key);
-  }
-}, 5 * 60_000);
+const ADMIN_SESSION_CACHE_TTL_SEC = 10 * 60; // 10 minutes
+const SUBSCRIPTION_CACHE_TTL_SEC = 20 * 60; // 20 minutes
 
 // ---------------------------------------------------------------------------
 // 1. CONTEXT
@@ -63,12 +26,10 @@ setInterval(() => {
 // ---------------------------------------------------------------------------
 
 export const createTRPCContext = async (opts: { headers: Headers }) => {
-  // User session — resolved normally via better-auth
   const userSession = (await auth.api.getSession({
     headers: opts.headers,
   })) as UserSession | null;
 
-  // Admin token — raw cookie only, resolved lazily in adminProcedure
   const cookieHeader = opts.headers.get("cookie") ?? "";
   const parsedCookies = parseCookie(cookieHeader);
   const adminTokenRaw = parsedCookies["admin_token"] ?? null;
@@ -76,10 +37,8 @@ export const createTRPCContext = async (opts: { headers: Headers }) => {
   return {
     db,
     headers: opts.headers,
-    // User session available immediately
     user: userSession?.user ?? null,
     userSession: userSession?.session ?? null,
-    // Admin resolved lazily — only raw token in context
     _adminToken: adminTokenRaw,
     admin: null as any,
     adminSession: null as any,
@@ -118,12 +77,23 @@ const timingMiddleware = t.middleware(async ({ next, path }) => {
   return result;
 });
 
+const rateLimitMiddleware = t.middleware(async ({ ctx, next, path }) => {
+  await redisService.rateLimitOrThrow(
+    { headers: ctx.headers, route: path },
+    60,
+    60,
+  );
+  return next({ ctx });
+});
+
 // ---------------------------------------------------------------------------
 // 3. PROCEDURES
 // ---------------------------------------------------------------------------
 
 /** Public — no auth required */
-export const publicProcedure = t.procedure.use(timingMiddleware);
+export const publicProcedure = t.procedure
+  .use(timingMiddleware)
+  .use(rateLimitMiddleware);
 
 /** Protected user — better-auth session already resolved in context */
 export const protectedProcedure = publicProcedure.use(({ ctx, next }) => {
@@ -146,7 +116,7 @@ export const protectedProcedure = publicProcedure.use(({ ctx, next }) => {
 });
 
 // ---------------------------------------------------------------------------
-// Admin session resolver (lazy + cached)
+// Admin session resolver — Redis cached
 // ---------------------------------------------------------------------------
 
 const resolveAdminSession = async (
@@ -154,32 +124,28 @@ const resolveAdminSession = async (
 ): Promise<AdminSession | null> => {
   if (!token) return null;
 
-  const now = Date.now();
-  const cached = adminSessionCache.get(token);
-  if (cached && cached.expiresAt > now) return cached.value;
+  const cacheKey = `admin_session:${token}`;
 
-  // Cache miss — hit the DB
-  const adminSession = await db.query.adminSession.findFirst({
-    where: (s) => and(eq(s.token, token), gt(s.expiresAt, new Date())),
-    with: { admin: true },
-  });
+  return redisService.cache<AdminSession>(
+    cacheKey,
+    async () => {
+      const adminSession = await db.query.adminSession.findFirst({
+        where: (s) => and(eq(s.token, token), gt(s.expiresAt, new Date())),
+        with: { admin: true },
+      });
 
-  if (!adminSession?.admin) return null;
+      if (!adminSession?.admin) return null as unknown as AdminSession;
 
-  const value = {
-    session: adminSession,
-    admin: adminSession.admin,
-  } as unknown as AdminSession;
-
-  adminSessionCache.set(token, {
-    value,
-    expiresAt: now + ADMIN_SESSION_CACHE_TTL_MS,
-  });
-
-  return value;
+      return {
+        session: adminSession,
+        admin: adminSession.admin,
+      } as unknown as AdminSession;
+    },
+    ADMIN_SESSION_CACHE_TTL_SEC,
+  );
 };
 
-/** Admin — resolves + caches admin session lazily */
+/** Admin — resolves + caches admin session lazily via Redis */
 export const adminProcedure = publicProcedure.use(async ({ ctx, next }) => {
   const adminData = await resolveAdminSession(ctx._adminToken);
 
@@ -226,40 +192,30 @@ export const systemAdminProcedure = adminProcedure.use(({ ctx, next }) => {
   return next();
 });
 
-/**
- * Paid user — requires active subscription.
- * Subscription check commented out; re-enable when ready.
- */
 const resolveSubscription = async (userId: string) => {
-  const nowTs = Date.now();
+  const cacheKey = `subscription:${userId}`;
 
-  // const cached = subscriptionCache.get(userId);
-  // if (cached && cached.expiresAt > nowTs) {
-  //   return cached.value;
-  // }
+  return redisService.cache<typeof subscription.$inferSelect | null>(
+    cacheKey,
+    async () => {
+      const now = new Date();
 
-  const now = new Date();
+      const [activeSubscription] = await db
+        .select()
+        .from(subscription)
+        .where(
+          and(
+            eq(subscription.userId, userId),
+            eq(subscription.status, "active"),
+            gt(subscription.currentPeriodEnd, now),
+          ),
+        )
+        .limit(1);
 
-  const [activeSubscription] = await db
-    .select()
-    .from(subscription)
-    .where(
-      and(
-        eq(subscription.userId, userId),
-        eq(subscription.status, "active"),
-        gt(subscription.currentPeriodEnd, now),
-      ),
-    )
-    .limit(1);
-
-  const value = activeSubscription ?? null;
-
-  subscriptionCache.set(userId, {
-    value,
-    expiresAt: nowTs + SUBSCRIPTION_CACHE_TTL_MS,
-  });
-
-  return value;
+      return activeSubscription ?? null;
+    },
+    SUBSCRIPTION_CACHE_TTL_SEC,
+  );
 };
 
 export const paidUserProcedure = protectedProcedure.use(
@@ -282,6 +238,72 @@ export const paidUserProcedure = protectedProcedure.use(
   },
 );
 
+export const demoOrPaidUserProcedure = protectedProcedure.use(
+  async ({ ctx, next }) => {
+    const now = new Date();
+
+    if (ctx.user.isDemo) {
+      const expires = ctx.user.demoExpiresAt;
+      if ((expires && now > new Date(expires)) || ctx.user.demoRevoked) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Your demo access has expired.",
+        });
+      }
+      return next({
+        ctx: {
+          ...ctx,
+          user: {
+            ...ctx.user,
+            profilePicUrl: R2Service.getPublicUrl(ctx.user.image),
+          },
+          subscription: null,
+        },
+      });
+    }
+
+    const sub = await resolveSubscription(ctx.user.id);
+
+    if (!sub) {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "An active subscription is required to access this feature.",
+      });
+    }
+
+    return next({
+      ctx: {
+        ...ctx,
+        user: {
+          ...ctx.user,
+          profilePicUrl: R2Service.getPublicUrl(ctx.user.image),
+        },
+        subscription: sub,
+      },
+    });
+  },
+);
+
+export const nonDemoUserProcedure = protectedProcedure.use(
+  async ({ ctx, next }) => {
+    if (ctx.user.isDemo) {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "Demo users are not allowed to access this feature.",
+      });
+    }
+
+    const sub = await resolveSubscription(ctx.user.id);
+
+    return next({
+      ctx: {
+        ...ctx,
+        subscription: sub ?? null,
+      },
+    });
+  },
+);
+
 export const secureProcedure = publicProcedure.use(async ({ ctx, next }) => {
   if (!ctx.user && !ctx._adminToken) {
     throw new TRPCError({
@@ -290,23 +312,14 @@ export const secureProcedure = publicProcedure.use(async ({ ctx, next }) => {
     });
   }
 
-  return next({
-    ctx,
-  });
+  return next({ ctx });
 });
 
-// ---------------------------------------------------------------------------
-// Cache invalidation
-// Call after admin logout / session revocation
-// ---------------------------------------------------------------------------
+export const invalidateAdminSessionCache = (token: string) =>
+  redisService.del(`admin_session:${token}`);
 
-export const invalidateAdminSessionCache = (token: string) => {
-  adminSessionCache.delete(token);
-};
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
+export const invalidateSubscriptionCache = (userId: string) =>
+  redisService.del(`subscription:${userId}`);
 
 export type TRPCContext = Awaited<ReturnType<typeof createTRPCContext>>;
 

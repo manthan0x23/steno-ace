@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { authClient } from "~/server/better-auth/client";
+import type { AuthUser } from "~/server/better-auth/config";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -447,10 +448,10 @@ export function PasswordSection({ email }: { email: string }) {
 
 export default function UserSettingsPage({
   providers,
-  email,
+  user,
 }: {
   providers: string[];
-  email: string;
+  user: AuthUser;
 }) {
   console.log("PROVIDERS", providers);
 
@@ -474,13 +475,13 @@ export default function UserSettingsPage({
 
         <Separator />
 
-        {providers.includes("credential") && (
+        {providers.includes("credential") && !user.isDemo && (
           <Section
             icon={Lock}
             title="Password"
             description="Change your password. Other active sessions will be signed out."
           >
-            <PasswordSection email={email} />
+            <PasswordSection email={user.email} />
           </Section>
         )}
       </div>

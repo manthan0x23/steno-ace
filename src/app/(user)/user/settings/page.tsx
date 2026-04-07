@@ -6,5 +6,5 @@ export default async function SettingsPage() {
 
   const providers = data.accounts.map((a) => a.providerId);
 
-  return <UserSettingsPage providers={providers} email={data.user.email} />;
+  return <UserSettingsPage providers={providers} user={data.user} />;
 }

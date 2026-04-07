@@ -41,6 +41,7 @@ import type { api } from "~/trpc/server";
 import { trpc } from "~/trpc/react";
 import { ThemeToggle } from "~/components/utils/theme-toggle";
 import { authClient } from "~/server/better-auth/client";
+import { useLocalStorage } from "~/hooks/use-local-storage";
 
 // ─── types ────────────────────────────────────────────────────────────────────
 
@@ -225,17 +226,14 @@ function NotificationList({ close }: { close: () => void }) {
   const notifications: Notification[] = (data?.data ??
     []) as unknown as Notification[];
 
-  // FIX 2: deps array now includes `notifications` so the effect actually sees
-  // real data (not the empty array from the initial render). The ref guards
-  // against re-firing on subsequent re-renders once it has run.
   useEffect(() => {
     if (hasAutoMarked.current || notifications.length === 0) return;
-    const noLinkUnread = notifications
-      .filter((n) => !n.seen && !n.link)
+    const unreadIds = notifications
+      .filter((n) => !n.seen) // ← all unread, not just no-link
       .map((n) => n.id);
-    if (noLinkUnread.length === 0) return;
+    if (unreadIds.length === 0) return;
     hasAutoMarked.current = true;
-    const t = setTimeout(() => markSeen.mutate({ ids: noLinkUnread }), 800);
+    const t = setTimeout(() => markSeen.mutate({ ids: unreadIds }), 800);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [notifications]);
@@ -340,7 +338,7 @@ function NotificationCenter() {
         </Button>
       </SheetTrigger>
 
-      <SheetContent className="flex w-full flex-col gap-0 p-0 sm:max-w-sm">
+      <SheetContent className="flex w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-sm">
         <SheetHeader className="border-b px-4 py-3.5">
           <SheetTitle className="flex items-center gap-2.5 text-sm font-semibold tracking-tight">
             <Bell className="h-4 w-4" />
@@ -352,12 +350,11 @@ function NotificationCenter() {
             )}
           </SheetTitle>
         </SheetHeader>
-
-        <ScrollArea className="flex-1">
-          {/* NotificationList only mounts when open; unmounts on close which
-              also resets hasAutoMarked for the next open */}
-          {open && <NotificationList close={() => setOpen(false)} />}
-        </ScrollArea>
+        <div className="min-h-0 flex-1">
+          <ScrollArea className="h-full">
+            {open && <NotificationList close={() => setOpen(false)} />}
+          </ScrollArea>
+        </div>
       </SheetContent>
     </Sheet>
   );
@@ -368,12 +365,13 @@ function NotificationCenter() {
 export function UserNavbar({ user }: NavbarProps) {
   const router = useRouter();
 
+  const [isOpen, setIsOpen] = useLocalStorage<boolean>("sidebar-open", true);
+
   return (
     <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
-      <SidebarTrigger className="-ml-1" />
+      <SidebarTrigger onClick={() => setIsOpen((prev) => !prev)} />
       <Separator orientation="vertical" className="mr-2 h-4" />
       <span className="text-sm font-semibold">Hi, {user.name}</span>
-
       <div className="ml-auto flex items-center gap-2">
         <ThemeToggle />
 

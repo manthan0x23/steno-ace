@@ -43,6 +43,7 @@ import {
   CalendarIcon,
   ArrowUpDown,
   SlidersHorizontal,
+  Scale,
 } from "lucide-react";
 import { isSameDay, format } from "date-fns";
 import { TestStartDialog } from "~/components/common/user/test-start-dialog";
@@ -119,9 +120,7 @@ function formatWrittenDuration(seconds: number): string {
   return `${m}m ${s}s`;
 }
 
-// ─── badges ───────────────────────────────────────────────────────────────────
-
-const TYPE_ICON = { legal: Gavel, general: FileText, special: Star };
+const TYPE_ICON = { legal: Scale, general: FileText, special: Star };
 const TYPE_LABEL = { legal: "Legal", general: "General", special: "Special" };
 
 function TypeBadge({ type }: { type: TestItem["type"] }) {
@@ -141,8 +140,6 @@ function NewBadge() {
     </Badge>
   );
 }
-
-// ─── action button ────────────────────────────────────────────────────────────
 
 function ActionButton({
   test,

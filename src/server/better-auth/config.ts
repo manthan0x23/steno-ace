@@ -5,6 +5,8 @@ import { env } from "~/env";
 import { db } from "~/server/db";
 import type { admin, adminSession } from "../db/schema";
 import { emailService } from "../services/mail.service";
+import { comparePassword, hashPassword } from "../lib/hash";
+import { redisService } from "../services/redis.service";
 
 export const auth = betterAuth({
   ...(env.BETTER_AUTH_SECRET && { secret: env.BETTER_AUTH_SECRET }),
@@ -12,8 +14,38 @@ export const auth = betterAuth({
   database: drizzleAdapter(db, { provider: "pg" }),
   baseURL: env.BETTER_AUTH_BASE_URL,
 
+  user: {
+    additionalFields: {
+      isDemo: {
+        type: "boolean",
+        required: false,
+      },
+      demoExpiresAt: {
+        type: "date",
+        required: false,
+      },
+      demoRevoked: { type: "boolean", required: false, defaultValue: false },
+      demoNote: { type: "string", required: false, defaultValue: null },
+      demoCreatedByAdminId: {
+        type: "string",
+        required: false,
+        defaultValue: null,
+      },
+    },
+  },
+
   emailAndPassword: {
     enabled: true,
+
+    password: {
+      async hash(password) {
+        return await hashPassword(password);
+      },
+
+      async verify(data) {
+        return await comparePassword(data.password, data.hash);
+      },
+    },
 
     sendResetPassword: async ({ user, url }) => {
       await emailService.sendEmail({
@@ -76,9 +108,40 @@ export const auth = betterAuth({
       secure: env.BETTER_AUTH_BASE_URL.startsWith("https://"),
     },
   },
+
+  rateLimit: {
+    enabled: true,
+    window: 60,
+    max: 20,
+    customRules: {
+      "/api/auth/sign-in/email": { window: 60, max: 10 },
+      "/api/auth/sign-up/email": { window: 60, max: 5 },
+      "/api/auth/forget-password": { window: 60, max: 5 },
+      "/api/auth/reset-password": { window: 60, max: 5 },
+      "/api/auth/verify-email": { window: 60, max: 10 },
+      "/api/auth/sign-in/social": { window: 60, max: 10 },
+    },
+    storage: "secondary-storage",
+  },
+
+  secondaryStorage: {
+    async get(key: string) {
+      const val = await redisService.get<string>(key);
+      return val ?? null;
+    },
+    async set(key, value, ttlSec) {
+      console.log("SETTING", key, value, ttlSec);
+      await redisService.set(key, value, ttlSec);
+    },
+    async delete(key: string) {
+      await redisService.del(key);
+    },
+  },
 });
 
 export type UserSession = typeof auth.$Infer.Session;
+
+export type AuthUser = UserSession["user"];
 export type AdminSession = {
   admin: typeof admin.$inferSelect;
   session: typeof adminSession.$inferSelect;

@@ -4,6 +4,7 @@ import z from "zod";
 import {
   adminProcedure,
   createTRPCRouter,
+  demoOrPaidUserProcedure,
   paidUserProcedure,
   protectedProcedure,
 } from "../../trpc";
@@ -59,6 +60,26 @@ export const userRouter = createTRPCRouter({
   }),
 
   checkSubscription: protectedProcedure.query(async ({ ctx }) => {
+    const now = new Date();
+
+    if (ctx.user.isDemo) {
+      const expires = ctx.user.demoExpiresAt;
+      if (
+        (expires && now > new Date(expires)) ||
+        ctx.user.demoRevoked ||
+        !expires
+      ) {
+        return {
+          active: false,
+        };
+      } else {
+        return {
+          active: true,
+          expiresAt: expires.toISOString,
+        };
+      }
+    }
+
     const sub = await ctx.db.query.subscription.findFirst({
       where: (s, { eq }) => eq(s.userId, ctx.user.id),
       orderBy: (s, { desc }) => desc(s.currentPeriodEnd),
@@ -76,8 +97,6 @@ export const userRouter = createTRPCRouter({
         pendingPayment,
         isRevoked: false,
       };
-
-    const now = new Date();
 
     const isRevoked = sub.status === "revoked";
     const isActive = sub.status === "active" && sub.currentPeriodEnd >= now;
@@ -161,7 +180,7 @@ export const userRouter = createTRPCRouter({
       };
     }),
 
-  edit: paidUserProcedure
+  edit: demoOrPaidUserProcedure
     .input(editUserSchema)
     .mutation(async ({ input, ctx }) => {
       const patch: Partial<typeof user.$inferInsert> = {
@@ -177,7 +196,7 @@ export const userRouter = createTRPCRouter({
 
   // ── Report ────────────────────────────────────────────────────────────────
 
-  getReport: paidUserProcedure
+  getReport: demoOrPaidUserProcedure
     .input(
       z
         .object({ type: z.enum(["assessment", "practice"]).optional() })
@@ -195,7 +214,7 @@ export const userRouter = createTRPCRouter({
 
   // ── Progress ──────────────────────────────────────────────────────────────
 
-  getProgress: paidUserProcedure
+  getProgress: demoOrPaidUserProcedure
     .input(dateRangeSchema.optional())
     .query(({ ctx, input }) =>
       createUserService(ctx.db).getProgress(
@@ -219,7 +238,7 @@ export const userRouter = createTRPCRouter({
 
   // ── Personal Bests ────────────────────────────────────────────────────────
 
-  getPersonalBests: paidUserProcedure
+  getPersonalBests: demoOrPaidUserProcedure
     .input(
       z
         .object({ type: z.enum(["assessment", "practice"]).optional() })
@@ -237,7 +256,7 @@ export const userRouter = createTRPCRouter({
 
   // ── Test-Wise Performance ─────────────────────────────────────────────────
 
-  getTestWisePerformance: paidUserProcedure
+  getTestWisePerformance: demoOrPaidUserProcedure
     .input(testWiseInputSchema.optional())
     .query(({ ctx, input }) =>
       createUserService(ctx.db).getTestWisePerformance(
@@ -259,7 +278,7 @@ export const userRouter = createTRPCRouter({
 
   // ── Progress Series ───────────────────────────────────────────────────────
 
-  getProgressSeries: paidUserProcedure
+  getProgressSeries: demoOrPaidUserProcedure
     .input(
       z
         .object({
@@ -286,9 +305,7 @@ export const userRouter = createTRPCRouter({
       ),
     ),
 
-  // ── Paginated Attempts ────────────────────────────────────────────────────
-
-  getAttemptsPaginated: paidUserProcedure
+  getAttemptsPaginated: demoOrPaidUserProcedure
     .input(
       z
         .object({
@@ -320,30 +337,6 @@ export const userRouter = createTRPCRouter({
         input.limit,
         input.type,
         input.testId,
-      ),
-    ),
-
-  // ── Heatmap ───────────────────────────────────────────────────────────────
-
-  getHeatmap: paidUserProcedure
-    .input(heatmapSchema)
-    .query(({ ctx, input }) =>
-      createUserService(ctx.db).getHeatmap(
-        ctx.user.id,
-        input.from,
-        input.to,
-        input.includePractice,
-      ),
-    ),
-
-  getHeatmapAdmin: adminProcedure
-    .input(heatmapAdminSchema)
-    .query(({ input, ctx }) =>
-      createUserService(ctx.db).getHeatmap(
-        input.userId,
-        input.from,
-        input.to,
-        input.includePractice,
       ),
     ),
 });

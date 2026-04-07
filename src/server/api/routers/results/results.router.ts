@@ -2,7 +2,7 @@ import z from "zod";
 import {
   adminProcedure,
   createTRPCRouter,
-  paidUserProcedure,
+  demoOrPaidUserProcedure,
   secureProcedure,
 } from "../../trpc";
 import { resultService } from "./results.service";
@@ -14,7 +14,7 @@ import {
 
 export const resultRouter = createTRPCRouter({
   // User: view their own attempt result
-  getResult: paidUserProcedure
+  getResult: demoOrPaidUserProcedure
     .input(z.object({ attemptId: z.string() }))
     .query(({ input, ctx }) =>
       resultService.getResult(input.attemptId, ctx.user.id),

@@ -27,6 +27,8 @@ export const env = createEnv({
     R2_PUBLIC_URL: z.string().url(),
     RESEND_API_KEY: z.string(),
     APP_SUBSCRIPTION_PRICE: z.coerce.number().nonnegative(),
+    UPSTASH_REDIS_REST_URL: z.string(),
+    UPSTASH_REDIS_REST_TOKEN: z.string(),
     APP_URL: z.string().url(),
   },
   client: {
@@ -50,6 +52,8 @@ export const env = createEnv({
     BETTER_AUTH_GOOGLE_CLIENT_SECRET:
       process.env.BETTER_AUTH_GOOGLE_CLIENT_SECRET,
     DATABASE_URL: process.env.DATABASE_URL,
+    UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
+    UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
     ADMIN_INVITE_CODE: process.env.ADMIN_INVITE_CODE,
     JWT_SECRET: process.env.JWT_SECRET,
     NODE_ENV: process.env.NODE_ENV,

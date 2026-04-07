@@ -5,6 +5,7 @@
 import {
   adminProcedure,
   createTRPCRouter,
+  demoOrPaidUserProcedure,
   paidUserProcedure,
   publicProcedure,
   secureProcedure,
@@ -86,7 +87,7 @@ export const testRouter = createTRPCRouter({
     .query(({ input }) => testService.list(input)),
 
   // User: active tests feed with hasAttempted flag
-  listForUser: paidUserProcedure
+  listForUser: demoOrPaidUserProcedure
     .input(listUserTestsSchema)
     .query(({ input, ctx }) => testService.listForUserFeed(input, ctx.user.id)),
 
@@ -101,7 +102,7 @@ export const testRouter = createTRPCRouter({
     .query(({ input }) => testService.getTests(input)),
 
   // User: search active tests
-  search: paidUserProcedure
+  search: demoOrPaidUserProcedure
     .input(searchTestsSchema)
     .query(({ input, ctx }) => testService.searchForUser(input, ctx.user.id)),
 

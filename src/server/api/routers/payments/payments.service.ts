@@ -9,6 +9,7 @@ import type {
 import R2Service, { r2Service } from "~/server/services/r2.service";
 import { notificationsService } from "../notifications/notification.service";
 import { emailService } from "~/server/services/mail.service";
+import { invalidateSubscriptionCache } from "../../trpc";
 
 type Db = typeof db;
 
@@ -31,6 +32,8 @@ export function createPaymentService(db: Db) {
         fromUPIId: data.fromUPIId,
         screenshotKey: data.screenshotKey,
       });
+
+      await invalidateSubscriptionCache(userId);
 
       return { ok: true };
     },
@@ -71,6 +74,8 @@ export function createPaymentService(db: Db) {
             input.rejectionReason,
           );
         }
+
+        await invalidateSubscriptionCache(found.userId);
 
         return { ok: true };
       }

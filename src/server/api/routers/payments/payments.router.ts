@@ -1,6 +1,7 @@
 import {
   adminProcedure,
   createTRPCRouter,
+  nonDemoUserProcedure,
   protectedProcedure,
 } from "../../trpc";
 import { createPaymentService } from "./payments.service";
@@ -13,14 +14,17 @@ import {
 import { subscription } from "~/server/db/schema";
 import { desc } from "drizzle-orm";
 
+
+// TODO NEEDS TO BE CHANGED
+
 export const paymentRouter = createTRPCRouter({
-  submit: protectedProcedure
+  submit: nonDemoUserProcedure
     .input(submitPaymentSchema)
     .mutation(({ ctx, input }) =>
       createPaymentService(ctx.db).submitPayment(ctx.user.id, input),
     ),
 
-  myPayments: protectedProcedure
+  myPayments: nonDemoUserProcedure
     .input(userGetPaymentsSchema.optional())
     .query(({ ctx, input }) =>
       createPaymentService(ctx.db).getMyPayments(
@@ -47,7 +51,7 @@ export const paymentRouter = createTRPCRouter({
       }),
     ),
 
-  getMine: protectedProcedure.query(async ({ ctx }) => {
+  getMine: nonDemoUserProcedure.query(async ({ ctx }) => {
     const active = await ctx.db.query.subscription.findFirst({
       where: (s, { eq, and }) =>
         and(eq(s.userId, ctx.user.id), eq(s.status, "active")),

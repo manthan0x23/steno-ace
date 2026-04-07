@@ -12,6 +12,7 @@ import { notificationsRouter } from "./routers/notifications/notification.router
 import { hofRouter } from "./routers/hof/hof.router";
 import { cronRouter } from "./routers/crons/crons.router";
 import { paymentRouter } from "./routers/payments/payments.router";
+import { dusRouter } from "./routers/demo-users/dus.router";
 
 /**
  * This is the primary router for your server.
@@ -30,6 +31,7 @@ export const appRouter = createTRPCRouter({
   hof: hofRouter,
   crons: cronRouter,
   payment: paymentRouter,
+  dus: dusRouter,
 });
 
 // export type definition of API

@@ -1,6 +1,6 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   Sidebar,
@@ -38,6 +38,7 @@ import {
   Scale,
 } from "lucide-react";
 import Image from "next/image";
+import type { api } from "~/trpc/server";
 
 const TEST_TYPES = [
   { label: "All Tests", href: "/user/tests", icon: ClipboardList },
@@ -52,12 +53,38 @@ const MAIN_NAV = [
 ];
 
 const SETTINGS_NAV = [
-  { label: "Payments ", href: "/user/payments", icon: CreditCard },
+  {
+    label: "Payments ",
+    href: "/user/payments",
+    icon: CreditCard,
+    hideForDemo: true,
+  },
   { label: "Settings", href: "/user/settings", icon: Settings },
 ];
 
-export function UserSidebar() {
+interface SidebarProps {
+  user: Awaited<ReturnType<typeof api.user.me>>;
+}
+
+export function UserSidebar({ user }: SidebarProps) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const currentType = searchParams.get("type");
+
+  function isTestTypeActive(
+    href: string,
+    pathname: string,
+    currentType: string | null,
+  ) {
+    if (!pathname.startsWith("/user/tests")) return false;
+
+    const params = href.split("?")[1];
+    const typeFromHref = params
+      ? new URLSearchParams(params).get("type")
+      : null;
+
+    return typeFromHref ? currentType === typeFromHref : currentType === null;
+  }
 
   const isActive = (href: string) =>
     href === "/user"
@@ -69,7 +96,6 @@ export function UserSidebar() {
 
   return (
     <Sidebar>
-      {/* ── Brand ── */}
       <SidebarHeader className="px-4 py-4">
         <Link href={"/user"} className="flex flex-col items-center gap-2.5">
           <div className="flex h-13.5 w-13.5 items-center justify-center rounded-sm bg-white shadow-sm">
@@ -113,32 +139,23 @@ export function UserSidebar() {
 
                   <CollapsibleContent>
                     <SidebarMenuSub>
-                      {TEST_TYPES.map(({ label, href, icon: Icon }) => {
-                        const active = href.includes("?type=")
-                          ? typeof window !== "undefined" &&
-                            pathname === "/user" &&
-                            new URLSearchParams(window.location.search).get(
-                              "type",
-                            ) ===
-                              new URLSearchParams(href.split("?")[1]).get(
-                                "type",
-                              )
-                          : pathname === "/user" &&
-                            (typeof window === "undefined" ||
-                              !new URLSearchParams(window.location.search).get(
-                                "type",
-                              ));
-                        return (
-                          <SidebarMenuSubItem key={href}>
-                            <SidebarMenuSubButton asChild isActive={active}>
-                              <Link href={href}>
-                                <Icon className="h-3.5 w-3.5" />
-                                {label}
-                              </Link>
-                            </SidebarMenuSubButton>
-                          </SidebarMenuSubItem>
-                        );
-                      })}
+                      {TEST_TYPES.map(({ label, href, icon: Icon }) => (
+                        <SidebarMenuSubItem key={href}>
+                          <SidebarMenuSubButton
+                            asChild
+                            isActive={isTestTypeActive(
+                              href,
+                              pathname,
+                              currentType,
+                            )}
+                          >
+                            <Link href={href}>
+                              <Icon className="h-3.5 w-3.5" />
+                              {label}
+                            </Link>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      ))}
                     </SidebarMenuSub>
                   </CollapsibleContent>
                 </SidebarMenuItem>
@@ -163,7 +180,9 @@ export function UserSidebar() {
           <SidebarGroupLabel>Account</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {SETTINGS_NAV.map(({ label, href, icon: Icon }) => (
+              {SETTINGS_NAV.filter(
+                (item) => !(item.hideForDemo && user?.isDemo),
+              ).map(({ label, href, icon: Icon }) => (
                 <SidebarMenuItem key={href}>
                   <SidebarMenuButton asChild isActive={isActive(href)}>
                     <Link href={href}>

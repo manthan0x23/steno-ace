@@ -18,6 +18,7 @@ import { scoringEngine } from "~/server/services/scoring.service";
 // ── Db type ───────────────────────────────────────────────────────────────────
 
 import type { db as dbInstance } from "~/server/db";
+import type { AuthUser } from "~/server/better-auth/config";
 type Db = typeof dbInstance;
 
 // ── factory ───────────────────────────────────────────────────────────────────
@@ -142,9 +143,10 @@ export function createAttemptService(db: Db) {
     //   2. Insert result row
     //   3. If assessment → insert leaderboard row
 
-    async submit(input: SubmitAttemptInput, userId: string) {
+    async submit(input: SubmitAttemptInput, user: AuthUser) {
       return db.transaction(async (tx) => {
-        // Load attempt with its speed (for timing) and test (for correctAnswer)
+        const userId = user.id;
+
         const attempt = await tx.query.testAttempts.findFirst({
           where: and(
             eq(testAttempts.id, input.attemptId),
@@ -206,7 +208,7 @@ export function createAttemptService(db: Db) {
 
         // 3. Leaderboard — assessment only
         // uniqueIndex on (testId, userId) prevents duplicates at DB level
-        if (attempt.type === "assessment") {
+        if (attempt.type === "assessment" && !user.isDemo) {
           await tx
             .insert(leaderboard)
             .values({

@@ -1,6 +1,6 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   Sidebar,
@@ -40,6 +40,7 @@ import {
   Star,
   UserKey,
   Scale,
+  FlaskConical,
 } from "lucide-react";
 import { trpc } from "~/trpc/react";
 import { useMemo } from "react";
@@ -71,6 +72,12 @@ const MANAGE_NAV = [
     super: true,
   },
   {
+    label: "Demo Sessions",
+    href: "/admin/demo",
+    icon: FlaskConical,
+    super: true,
+  },
+  {
     label: "Notifications",
     href: "/admin/notifications",
     icon: BellDot,
@@ -88,6 +95,8 @@ const MANAGE_NAV = [
 export function AdminSidebar() {
   const pathname = usePathname();
   const admin = trpc.admin.auth.me.useQuery();
+  const searchParams = useSearchParams();
+  const type = searchParams.get("type");
   const isSuper = useMemo(() => admin.data?.isSuper, [admin.data]);
 
   const isActive = (href: string) =>
@@ -165,23 +174,14 @@ export function AdminSidebar() {
                   <CollapsibleContent>
                     <SidebarMenuSub>
                       {TEST_TYPES.map(({ label, href, icon: Icon }) => {
-                        // Active: exact match for "All Tests", type-param match for others
-                        const active = href.includes("?type=")
-                          ? pathname === "/admin/tests" &&
-                            new URLSearchParams(href.split("?")[1]).get(
-                              "type",
-                            ) ===
-                              new URLSearchParams(
-                                typeof window !== "undefined"
-                                  ? window.location.search
-                                  : "",
-                              ).get("type")
-                          : pathname === "/admin/tests" &&
-                            !new URLSearchParams(
-                              typeof window !== "undefined"
-                                ? window.location.search
-                                : "",
-                            ).get("type");
+                        const hrefType = new URLSearchParams(
+                          href.split("?")[1],
+                        ).get("type");
+
+                        const active =
+                          pathname === "/admin/tests" &&
+                          ((hrefType && hrefType === type) ||
+                            (!hrefType && !type));
 
                         return (
                           <SidebarMenuSubItem key={href}>

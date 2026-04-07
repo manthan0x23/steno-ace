@@ -1,31 +1,46 @@
 import { relations } from "drizzle-orm";
 import { boolean, index, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 import { subscription } from "./subscription";
+import { admin } from "./admin";
 
-export const user = pgTable("user", {
-  id: text("id").primaryKey(),
-  name: text("name").notNull(),
-  userCode: text("user_code")
-    .$defaultFn(() => {
-      const num = Math.floor(10000 + Math.random() * 90000);
-      return "SD" + num;
-    })
-    .notNull()
-    .unique(),
-  email: text("email").notNull().unique(),
-  emailVerified: boolean("email_verified")
-    .$defaultFn(() => false)
-    .notNull(),
-  phone: text("phone"),
-  image: text("profile_url"),
-  gender: text("gender"),
-  createdAt: timestamp("created_at")
-    .$defaultFn(() => new Date())
-    .notNull(),
-  updatedAt: timestamp("updated_at")
-    .$defaultFn(() => new Date())
-    .notNull(),
-});
+export const user = pgTable(
+  "user",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+    userCode: text("user_code")
+      .$defaultFn(() => {
+        const num = Math.floor(10000 + Math.random() * 90000);
+        return "SD" + num;
+      })
+      .notNull()
+      .unique(),
+    email: text("email").notNull().unique(),
+    emailVerified: boolean("email_verified")
+      .$defaultFn(() => false)
+      .notNull(),
+    phone: text("phone"),
+    image: text("profile_url"),
+    gender: text("gender"),
+
+    isDemo: boolean("is_demo").default(false),
+    demoExpiresAt: timestamp("demo_expires_at"),
+    demoRevoked: boolean("demo_revoked").default(false),
+    demoNote: text("demo_note"),
+    demoCreatedByAdminId: text("demo_created_by_admin_id").references(
+      () => admin.id,
+      { onDelete: "set null" },
+    ),
+
+    createdAt: timestamp("created_at")
+      .$defaultFn(() => new Date())
+      .notNull(),
+    updatedAt: timestamp("updated_at")
+      .$defaultFn(() => new Date())
+      .notNull(),
+  },
+  (t) => [index("is_demo_idx_users").on(t.isDemo)],
+);
 
 export const session = pgTable(
   "session",
