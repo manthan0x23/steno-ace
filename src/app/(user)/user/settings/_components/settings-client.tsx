@@ -30,10 +30,12 @@ import {
   AlertCircle,
   Phone,
   CheckCircle2,
+  Hash,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { authClient } from "~/server/better-auth/client";
 import type { AuthUser } from "~/server/better-auth/config";
+import { Badge } from "~/components/ui/badge";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -453,11 +455,16 @@ export default function UserSettingsPage({
   providers: string[];
   user: AuthUser;
 }) {
-  console.log("PROVIDERS", providers);
-
   return (
     <div className="mx-auto w-full max-w-2xl px-6 py-8">
       <div className="mb-8">
+        <div className="flex items-end gap-2">
+          <span className="text-2xl font-bold tracking-tight">
+            {user.userCode}
+          </span>
+          <span className="text-muted-foreground text-sm">Student ID</span>
+        </div>
+        <Separator className="my-4" />
         <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
         <p className="text-muted-foreground mt-0.5 text-sm">
           Update your profile and account security.

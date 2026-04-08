@@ -15,12 +15,6 @@ admin can approve multiple IPS
 
 1 Device login
 
-___ 
-test attempt
-
-cursor is locked
-
-
 ___
 scoring engine
 
@@ -78,5 +72,6 @@ side bar local storage state
 ___ 
 test attempt
 
+cursor is locked
 
 time <-> saved

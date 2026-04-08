@@ -52,6 +52,8 @@ export const userRouter = createTRPCRouter({
       },
     });
 
+    console.log(ctx.user);
+
     return { accounts, user: ctx.user };
   }),
 

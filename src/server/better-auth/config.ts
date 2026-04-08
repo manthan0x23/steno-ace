@@ -20,6 +20,10 @@ export const auth = betterAuth({
 
   user: {
     additionalFields: {
+      userCode: {
+        type: "string",
+        required: false,
+      },
       isDemo: {
         type: "boolean",
         required: false,
