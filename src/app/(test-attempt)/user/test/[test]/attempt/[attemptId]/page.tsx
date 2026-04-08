@@ -354,7 +354,7 @@ function BreakStage({
 
 // ─── Writing stage ────────────────────────────────────────────────────────────
 
-export function WritingStage({
+function WritingStage({
   secondsLeft,
   totalSeconds,
   answer,
