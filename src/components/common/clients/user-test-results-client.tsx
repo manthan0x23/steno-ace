@@ -363,7 +363,7 @@ function AttemptCard({
         <div className="absolute left-1/2 flex -translate-x-1/2 items-center gap-4">
           <div className="text-center">
             <p className={`text-lg font-bold tabular-nums`}>
-              {Math.max(0, wordCount - entry.result.mistakes)}
+              {totalWords}
             </p>
             <p className="text-muted-foreground text-[10px] uppercase">
               Matter Words

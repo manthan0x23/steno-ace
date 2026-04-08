@@ -42,6 +42,7 @@ type TestDetails = {
   createdAt: Date;
   speeds: Speed[];
   hasAttempted: boolean;
+  lockedCursor: boolean;
 };
 
 type Selected = { test: TestDetails };
@@ -261,6 +262,7 @@ export default function TestDetailsPage() {
           onOpenChange={(open) => {
             if (!open) setSelected(null);
           }}
+          lockedCursor={!!selected?.test.lockedCursor}
           testId={selected?.test.id ?? ""}
           testTitle={selected?.test.title ?? ""}
           speeds={selected?.test.speeds ?? []}

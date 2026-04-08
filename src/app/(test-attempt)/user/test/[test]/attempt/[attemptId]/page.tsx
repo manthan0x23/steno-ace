@@ -2,7 +2,14 @@
 
 // ─── app/(user)/test/[test]/attempt/[attemptId]/page.tsx ─────────────────────
 
-import { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  useCallback,
+  useMemo,
+  useLayoutEffect,
+} from "react";
 import { useRouter, useParams } from "next/navigation";
 import { trpc } from "~/trpc/react";
 import { toast } from "sonner";
@@ -10,7 +17,14 @@ import { Button } from "~/components/ui/button";
 import { Textarea } from "~/components/ui/textarea";
 import { Badge } from "~/components/ui/badge";
 import { useCookie } from "~/hooks/use-cookie";
-import { SkipForward, Send, CheckCircle2, ZoomIn, ZoomOut } from "lucide-react";
+import {
+  SkipForward,
+  Send,
+  CheckCircle2,
+  ZoomIn,
+  ZoomOut,
+  Lock,
+} from "lucide-react";
 
 // ─── constants ────────────────────────────────────────────────────────────────
 
@@ -340,7 +354,7 @@ function BreakStage({
 
 // ─── Writing stage ────────────────────────────────────────────────────────────
 
-function WritingStage({
+export function WritingStage({
   secondsLeft,
   totalSeconds,
   answer,
@@ -348,6 +362,7 @@ function WritingStage({
   onSubmit,
   isSubmitting,
   isSyncing,
+  lockedCursor = false,
 }: {
   secondsLeft: number;
   totalSeconds: number;
@@ -356,23 +371,76 @@ function WritingStage({
   onSubmit: () => void;
   isSubmitting: boolean;
   isSyncing: boolean;
+  lockedCursor?: boolean;
 }) {
   const { get: getCookie, set: setCookie } = useCookie();
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
-  // ── Font size — 2px steps, FONT_MIN–FONT_MAX, cookie-persisted ──────────────
   const [fontSize, setFontSize] = useState<number>(() => {
     const stored =
       typeof document !== "undefined" ? getCookie("attempt_font_size") : null;
     const parsed = stored ? parseInt(stored, 10) : NaN;
-    return !isNaN(parsed) && parsed >= FONT_MIN && parsed <= FONT_MAX
+    return !Number.isNaN(parsed) && parsed >= FONT_MIN && parsed <= FONT_MAX
       ? parsed
       : FONT_DEFAULT;
   });
 
-  const updateFontSize = (next: number) => {
-    setFontSize(next);
-    setCookie("attempt_font_size", String(next), { days: 365 });
-  };
+  const updateFontSize = useCallback(
+    (next: number) => {
+      setFontSize(next);
+      setCookie("attempt_font_size", String(next), { days: 365 });
+    },
+    [setCookie],
+  );
+
+  const moveCursorToEnd = useCallback(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+
+    const len = el.value.length;
+    try {
+      el.setSelectionRange(len, len);
+    } catch {
+      // no-op
+    }
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!lockedCursor) return;
+    moveCursorToEnd();
+  }, [answer, lockedCursor, moveCursorToEnd]);
+
+  const forceEndFocus = useCallback(() => {
+    if (!lockedCursor) return;
+    requestAnimationFrame(() => {
+      textareaRef.current?.focus();
+      moveCursorToEnd();
+    });
+  }, [lockedCursor, moveCursorToEnd]);
+
+  const handleChange = useCallback(
+    (val: string) => {
+      if (!lockedCursor) {
+        onChange(val);
+        return;
+      }
+
+      const prev = answer;
+
+      // Allow typing/paste at the end and backspace from the end.
+      // Reject any mid-text replacement/insertion.
+      const valid =
+        val.startsWith(prev) || // appended at end
+        prev.startsWith(val); // deleted from end
+
+      if (valid) {
+        onChange(val);
+      }
+
+      requestAnimationFrame(moveCursorToEnd);
+    },
+    [answer, lockedCursor, moveCursorToEnd, onChange],
+  );
 
   const isLow = secondsLeft < 60;
   const pct = Math.min(
@@ -387,9 +455,8 @@ function WritingStage({
 
   return (
     <div className="flex h-full flex-col">
-      {/* ── Top bar ── */}
+      {/* Top bar */}
       <div className="flex shrink-0 items-center justify-between gap-4 border-b px-6 py-2.5">
-        {/* Timer */}
         <div className="flex items-center gap-1.5">
           <span
             className={`h-1.5 w-1.5 rounded-full transition-colors ${isSyncing ? "animate-pulse bg-amber-400" : "bg-emerald-500"}`}
@@ -422,11 +489,13 @@ function WritingStage({
               style={{ transition: "stroke-dashoffset 1s linear" }}
             />
           </svg>
+
           <span
             className={`text-lg leading-none font-semibold tabular-nums ${isLow ? "text-destructive" : ""}`}
           >
             {formatTime(secondsLeft)}
           </span>
+
           {isLow && (
             <Badge variant="destructive" className="text-[10px]">
               Low time
@@ -434,11 +503,7 @@ function WritingStage({
           )}
         </div>
 
-        {/* Save status */}
-
-        {/* Zoom controls + stats + submit */}
         <div className="flex items-center gap-3">
-          {/* ── Zoom: +/- buttons, 2px steps, 14–48px ── */}
           <div className="bg-muted/40 flex items-center gap-0.5 rounded-md border p-0.5">
             <Button
               variant="ghost"
@@ -451,9 +516,11 @@ function WritingStage({
             >
               <ZoomOut className="h-3 w-3" />
             </Button>
+
             <span className="text-muted-foreground w-8 text-center text-[10px] tabular-nums">
               {fontSize}px
             </span>
+
             <Button
               variant="ghost"
               size="icon"
@@ -479,7 +546,7 @@ function WritingStage({
         </div>
       </div>
 
-      {/* ── Progress line ── */}
+      {/* Progress line */}
       <div className="bg-border h-0.5 w-full shrink-0">
         <div
           className={`h-full transition-all duration-1000 ${isLow ? "bg-destructive" : "bg-primary"}`}
@@ -487,9 +554,12 @@ function WritingStage({
         />
       </div>
 
-      {/* ── Writing area ── */}
+      {/* Writing area */}
       <Textarea
-        className="flex-1 resize-none rounded-none border-0 px-8 py-6 leading-8 focus-visible:ring-0 focus-visible:ring-offset-0"
+        ref={textareaRef}
+        className={`flex-1 resize-none rounded-none border-0 px-8 py-6 leading-8 focus-visible:ring-0 focus-visible:ring-offset-0 ${
+          lockedCursor ? "selection:bg-transparent" : ""
+        }`}
         style={{
           fontFamily: "'Calibri', 'Carlito', 'Liberation Sans', sans-serif",
           fontSize: `${fontSize}px`,
@@ -497,12 +567,64 @@ function WritingStage({
         }}
         placeholder="Begin your transcription here…"
         value={answer}
-        onChange={(e) => onChange(e.target.value)}
-        autoFocus
+        onChange={(e) => handleChange(e.target.value)}
+        onClick={forceEndFocus}
+        onMouseDown={(e) => {
+          if (!lockedCursor) return;
+          e.preventDefault();
+          forceEndFocus();
+        }}
+        onTouchStart={(e) => {
+          if (!lockedCursor) return;
+          e.preventDefault();
+          forceEndFocus();
+        }}
+        onSelect={moveCursorToEnd}
+        onKeyUp={forceEndFocus}
+        onKeyDown={(e) => {
+          if (!lockedCursor) return;
+
+          const allowed = [
+            "Backspace",
+            "Delete",
+            "ArrowLeft",
+            "ArrowRight",
+            "ArrowUp",
+            "ArrowDown",
+            "Home",
+            "End",
+            "Tab",
+          ];
+
+          // Let normal editing keys work only at the end; we snap back after input.
+          // Block obvious shortcuts that could move/select/cut/paste into the middle.
+          const isShortcut =
+            (e.ctrlKey || e.metaKey) &&
+            ["a", "x", "v", "c", "z", "y"].includes(e.key.toLowerCase());
+
+          if (isShortcut) {
+            // allow copy/select-all shortcuts if you want, but prevent destructive/mid-edit behavior
+            if (["x", "v", "z", "y"].includes(e.key.toLowerCase())) {
+              e.preventDefault();
+            }
+            return;
+          }
+
+          if (
+            !allowed.includes(e.key) &&
+            e.key.length === 1 &&
+            textareaRef.current
+          ) {
+            // typing is allowed; we will validate the resulting value in onChange
+            return;
+          }
+        }}
+        onFocus={forceEndFocus}
         spellCheck={false}
+        autoFocus
       />
 
-      {/* ── Footer ── */}
+      {/* Footer */}
       <div className="flex shrink-0 items-center justify-between border-t px-6 py-2">
         <p className="text-muted-foreground text-[11px]">
           Draft saved automatically · Submit when done
@@ -514,7 +636,6 @@ function WritingStage({
     </div>
   );
 }
-
 // ─── Live clock ───────────────────────────────────────────────────────────────
 
 function LiveClock() {
@@ -829,10 +950,18 @@ export default function AttemptPage() {
     <div className="bg-background fixed inset-0 flex flex-col">
       {stage !== "countdown" && stage !== "submitted" && (
         <div className="flex shrink-0 items-center justify-between border-b px-6 py-3">
-          <p className="max-w-sm truncate text-base font-semibold">
-            {data.test.title}
-          </p>
+          <div className="flex items-center gap-2">
+            <p className="truncate text-base font-semibold">
+              {data.test.title}
+            </p>
+          </div>
           <div className="flex items-center gap-2.5">
+            {data.test.lockedCursor && (
+              <Badge variant="outline" className="text-muted-foreground">
+                <Lock />
+                Locked Cursor
+              </Badge>
+            )}
             <LiveClock />
             <Badge
               variant={
@@ -894,6 +1023,7 @@ export default function AttemptPage() {
             onSubmit={handleSubmit}
             isSubmitting={submitMutation.isPending}
             isSyncing={isSyncing}
+            lockedCursor={!!data.test.lockedCursor}
           />
         )}
 

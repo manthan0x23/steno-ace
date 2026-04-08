@@ -44,6 +44,7 @@ import {
   ArrowUpDown,
   SlidersHorizontal,
   Scale,
+  Lock,
 } from "lucide-react";
 import { isSameDay, format } from "date-fns";
 import { TestStartDialog } from "~/components/common/user/test-start-dialog";
@@ -76,6 +77,7 @@ type TestItem = {
   attemptCount: number;
   hasAttempted: boolean;
   speeds: Speed[];
+  lockedCursor: boolean;
 };
 
 type SortOrder = "newest" | "oldest";
@@ -189,9 +191,20 @@ function TestRow({
       <TableCell className="py-3.5">
         <div className="flex flex-wrap items-center gap-2">
           {/* Title with truncation + wrap */}
-          <p className="line-clamp-2 max-w-[280px] text-sm leading-snug font-semibold sm:max-w-xs md:max-w-lg">
-            {test.title}
-          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="line-clamp-2 max-w-[280px] text-sm leading-snug font-semibold sm:max-w-xs md:max-w-lg">
+              {test.title}
+            </p>
+            {test.lockedCursor && (
+              <Badge
+                variant="outline"
+                className="text-muted-foreground text-xs"
+              >
+                <Lock />
+                Cursor
+              </Badge>
+            )}
+          </div>
           {within24h && !test.hasAttempted && <NewBadge />}
           <TypeBadge type={test.type} />
         </div>
@@ -608,6 +621,7 @@ export default function UserTestsPage() {
           }}
           testId={selected?.test.id ?? ""}
           testTitle={selected?.test.title ?? ""}
+          lockedCursor={!!selected?.test.lockedCursor}
           speeds={selected?.test.speeds ?? []}
         />
       </div>

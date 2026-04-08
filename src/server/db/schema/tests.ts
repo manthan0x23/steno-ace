@@ -44,6 +44,8 @@ export const tests = pgTable(
 
     correctAnswer: text("correct_answer").notNull(),
 
+    lockedCursor: boolean("locked_cursor").default(false),
+
     status: testStatusEnum("status").notNull().default("draft"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()

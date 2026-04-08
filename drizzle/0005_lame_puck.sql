@@ -1,0 +1,1 @@
+ALTER TABLE "tests" ADD COLUMN "locked_cursor" boolean DEFAULT false;

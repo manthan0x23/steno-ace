@@ -35,6 +35,7 @@ import {
   ChevronUp,
   Music2,
 } from "lucide-react";
+import { Switch } from "~/components/ui/switch";
 
 // ─── schemas ──────────────────────────────────────────────────────────────────
 
@@ -54,6 +55,7 @@ const formSchema = z.object({
   correctAnswer: z.string().min(10),
   speeds: z.array(speedSchema).min(1),
   solutionAudioKey: z.string().optional(),
+  lockedCursor: z.boolean().default(false),
 });
 
 type SpeedDraft = {
@@ -719,6 +721,7 @@ export function CreateTestForm() {
       outlinePdfKey: "",
       correctAnswer: "",
       solutionAudioKey: "",
+      lockedCursor: false,
     },
     onSubmit: async ({ value }) => {
       const speedsOk = speeds.every(
@@ -820,6 +823,22 @@ export function CreateTestForm() {
             )}
           </form.Field>
         </div>
+
+        <form.Field name="lockedCursor">
+          {(field) => (
+            <div className="mt-4 flex items-center gap-3">
+              <Switch
+                id="lockedCursor"
+                checked={field.state.value}
+                onCheckedChange={field.handleChange}
+                className="cursor-pointer"
+              />
+              <label htmlFor="lockedCursor" className="cursor-pointer text-sm">
+                Lock cursor
+              </label>
+            </div>
+          )}
+        </form.Field>
       </Section>
       {/* ── 2. Speeds ───────────────────────────────────────────────────────── */}
       <Section
@@ -1120,6 +1139,7 @@ export function CreateTestForm() {
                       outlinePdfKey: value.outlinePdfKey || undefined,
                       correctAnswer: value.correctAnswer,
                       solutionAudioKey: value.solutionAudioKey || undefined,
+                      lockedCursor: value.lockedCursor,
                       speeds: speeds.map(
                         (
                           {

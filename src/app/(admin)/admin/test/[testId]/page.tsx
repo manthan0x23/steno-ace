@@ -18,8 +18,64 @@ import {
   CalendarDays,
   FileAudio,
   Trash2,
+  Lock,
+  List,
+  FileText,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { env } from "~/env";
+
+function PdfCard({
+  label,
+  url,
+  icon: Icon,
+  accent,
+}: {
+  label: string;
+  url: string;
+  icon: React.ElementType;
+  accent: "violet" | "blue";
+}) {
+  const cls =
+    accent === "violet"
+      ? "border-violet-400/40 text-violet-600 dark:text-violet-400"
+      : "border-blue-400/40 text-blue-600 dark:text-blue-400";
+
+  const hoverCls =
+    accent === "violet" ? "hover:bg-violet-500/5" : "hover:bg-blue-500/5";
+
+  return (
+    <div
+      className={`flex items-center gap-3 rounded-xl border px-4 py-3.5 ${cls}`}
+    >
+      <Icon className="h-5 w-5 shrink-0" />
+      <span className="text-sm font-medium">{label}</span>
+
+      <div className="ml-auto flex items-center gap-1">
+        {/* Open in viewer */}
+        <a
+          href={`${env.NEXT_PUBLIC_APP_URL}/viewer?file=${encodeURIComponent(url)}`}
+          target="_blank"
+          className={`rounded-md px-2 py-1 text-xs opacity-60 transition-colors hover:opacity-100 ${hoverCls}`}
+          title="Open in viewer"
+        >
+          Open ↗
+        </a>
+
+        {/* Download */}
+        <a
+          href={url}
+          target="_blank"
+          download
+          className={`rounded-md px-2 py-1 text-xs opacity-60 transition-colors hover:opacity-100 ${hoverCls}`}
+          title={`Download ${label} PDF`}
+        >
+          ↓ Download
+        </a>
+      </div>
+    </div>
+  );
+}
 
 export default function TestPage({
   params,
@@ -68,6 +124,15 @@ export default function TestPage({
             <Badge variant="outline">
               {test.type.charAt(0).toUpperCase() + test.type.slice(1)}
             </Badge>
+            {test.lockedCursor && (
+              <Badge
+                variant={"outline"}
+                className="text-muted-foreground shrink-0"
+              >
+                <Lock />
+                cursor
+              </Badge>
+            )}
             <Badge variant={isDraft ? "secondary" : "default"}>
               {test.status.charAt(0).toUpperCase() + test.status.slice(1)}
             </Badge>
@@ -197,6 +262,25 @@ export default function TestPage({
           </Button>
         </div>
       </div>
+
+      {test.matterPdfUrl && (
+        <PdfCard
+          icon={FileText}
+          key={test.matterPdfKey}
+          url={test.matterPdfUrl}
+          label="Matter"
+          accent="violet"
+        />
+      )}
+      {test.outlinePdfKey && test.outlinePdfUrl && (
+        <PdfCard
+          icon={FileText}
+          key={test.outlinePdfKey}
+          url={test.outlinePdfUrl}
+          label="Outlines"
+          accent="blue"
+        />
+      )}
 
       <DeleteTestDialog
         open={deleteOpen}

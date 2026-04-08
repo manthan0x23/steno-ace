@@ -30,6 +30,7 @@ import {
   RefreshCw,
   ShieldOff,
   TextAlignJustify,
+  MoreHorizontal,
 } from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
@@ -37,10 +38,11 @@ import { cn } from "~/lib/utils";
 import SendNotificationDialog from "~/components/common/admin/send-notification";
 import type { InitialRecipient } from "~/components/common/admin/send-notification";
 import { RevokeSubscriptionDialog } from "./revoke-subcription";
+import { UserActionsDialog } from "./user-action-dialog";
 
 // ─── types ────────────────────────────────────────────────────────────────────
 
-type UserRow = {
+export type UserRow = {
   id: string;
   name: string | null;
   email: string;
@@ -56,7 +58,7 @@ type Filter = "all" | "active";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
-function initials(u: Pick<UserRow, "name" | "email">) {
+export function initials(u: Pick<UserRow, "name" | "email">) {
   return (u.name ?? u.email ?? "?")[0]?.toUpperCase() ?? "?";
 }
 
@@ -262,6 +264,7 @@ function UsersTable({
   onSort: (field: SortField) => void;
 }) {
   const router = useRouter();
+  const [actionsTarget, setActionsTarget] = useState<UserRow | null>(null);
   const [notify, setNotify] = useState<InitialRecipient | null>(null);
   const [revokeTarget, setRevokeTarget] = useState<UserRow | null>(null);
 
@@ -391,73 +394,19 @@ function UsersTable({
                       )}
                     </TableCell>
 
-                    {/* Actions */}
                     <TableCell className="py-3 pr-4">
-                      <div className="flex items-center justify-end gap-1.5">
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-7 w-7 opacity-0 transition-opacity group-hover:opacity-100"
-                          title="Notify user"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setNotify({
-                              id: u.id,
-                              name: u.name,
-                              email: u.email,
-                              profilePicUrl: u.profilePicUrl,
-                              userCode: u.userCode,
-                            });
-                          }}
-                        >
-                          <Bell className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          aria-label="report-card"
-                          className="h-7 w-7 opacity-0 transition-opacity group-hover:opacity-100"
-                          title="User's Report Card"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            router.push(`/admin/report-card/${u.id}`);
-                          }}
-                        >
-                          <FileText className="h-3.5 w-3.5" />
-                        </Button>
-
-                        {isAdmin && ( // <── ADD BLOCK
-                          <>
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              aria-label="revoke-subscription"
-                              className="h-7 w-7 border-red-500/30 text-red-500 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-red-500/10"
-                              title="Revoke subscription"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setRevokeTarget(u);
-                              }}
-                            >
-                              <ShieldOff className="h-3.5 w-3.5" />
-                            </Button>
-
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              aria-label="revoke-subscription"
-                              className="h-7 w-7 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-yellow-500/10"
-                              title="View User's Attempts"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                router.push(`/admin/attempts/user/${u.id}`);
-                              }}
-                            >
-                              <TextAlignJustify className="h-3.5 w-3.5" />
-                            </Button>
-                          </>
-                        )}
-                      </div>
+                      <Button
+                        variant="outline"
+                        size={"xs"}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActionsTarget(u);
+                        }}
+                        className="cursor-pointer"
+                      >
+                        <MoreHorizontal className="h-3.5 w-3.5" />
+                        Actions
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -523,6 +472,22 @@ function UsersTable({
           userEmail={revokeTarget.email}
         />
       )}
+
+      <UserActionsDialog
+        user={actionsTarget}
+        isAdmin={isAdmin}
+        onClose={() => setActionsTarget(null)}
+        onNotify={(u) =>
+          setNotify({
+            id: u.id,
+            name: u.name,
+            email: u.email,
+            profilePicUrl: u.profilePicUrl,
+            userCode: u.userCode,
+          })
+        }
+        onRevoke={(u) => setRevokeTarget(u)}
+      />
     </>
   );
 }

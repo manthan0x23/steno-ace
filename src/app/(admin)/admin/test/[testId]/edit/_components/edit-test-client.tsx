@@ -40,6 +40,7 @@ import {
   Lock,
   ArrowLeft,
 } from "lucide-react";
+import { Switch } from "~/components/ui/switch";
 
 // ─── schemas ──────────────────────────────────────────────────────────────────
 
@@ -58,6 +59,7 @@ const formSchema = z.object({
   outlinePdfKey: z.string().optional(),
   correctAnswer: z.string().min(10),
   solutionAudioKey: z.string().optional(),
+  lockedCursor: z.boolean().default(false),
 });
 
 // ─── speed draft type ─────────────────────────────────────────────────────────
@@ -748,6 +750,7 @@ function EditTestFormInner({ testId }: { testId: string }) {
       outlinePdfKey: testData.outlinePdfKey ?? "",
       correctAnswer: testData.correctAnswer ?? "",
       solutionAudioKey: testData.solutionAudioKey ?? "",
+      lockedCursor: testData.lockedCursor ?? false,
     },
     onSubmit: async ({ value }) => {
       const activeSpeeds = speeds.filter((s) => !s.markedForDeletion);
@@ -792,6 +795,7 @@ function EditTestFormInner({ testId }: { testId: string }) {
                   matterPdfKey: value.matterPdfKey || undefined,
                   outlinePdfKey: value.outlinePdfKey || undefined,
                   correctAnswer: value.correctAnswer || undefined,
+                  lockedCursor: value.lockedCursor,
                   solutionAudioKey: value.solutionAudioKey || undefined,
                 },
           );
@@ -860,6 +864,7 @@ function EditTestFormInner({ testId }: { testId: string }) {
                 matterPdfKey: parsed.data.matterPdfKey,
                 outlinePdfKey: parsed.data.outlinePdfKey || undefined,
                 correctAnswer: parsed.data.correctAnswer,
+                lockedCursor: parsed.data.lockedCursor,
                 solutionAudioKey: parsed.data.solutionAudioKey || undefined,
                 status: "active",
               },
@@ -1006,6 +1011,22 @@ function EditTestFormInner({ testId }: { testId: string }) {
             )}
           </form.Field>
         </div>
+        <form.Field name="lockedCursor">
+          {(field) => (
+            <div className="mt-4 flex items-center gap-3">
+              <Switch
+                id="lockedCursor"
+                checked={field.state.value}
+                onCheckedChange={field.handleChange}
+                disabled={isActive}
+                className="cursor-pointer"
+              />
+              <label htmlFor="lockedCursor" className="cursor-pointer text-sm">
+                Lock cursor during dictation
+              </label>
+            </div>
+          )}
+        </form.Field>
       </Section>
 
       {/* ── 2. Speeds ───────────────────────────────────────────────────────── */}

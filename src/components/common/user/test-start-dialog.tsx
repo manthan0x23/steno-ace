@@ -20,6 +20,7 @@ import {
   Zap,
   CheckCircle2,
   RotateCcw,
+  Lock,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { trpc } from "~/trpc/react";
@@ -48,6 +49,7 @@ interface TestStartDialogProps {
   onOpenChange: (open: boolean) => void;
   testId: string;
   testTitle: string;
+  lockedCursor: boolean;
   speeds: Speed[];
 }
 
@@ -68,6 +70,7 @@ export function TestStartDialog({
   onOpenChange,
   testId,
   testTitle,
+  lockedCursor,
   speeds,
 }: TestStartDialogProps) {
   const router = useRouter();
@@ -112,6 +115,13 @@ export function TestStartDialog({
           <DialogTitle className="text-base leading-snug">
             {testTitle}
           </DialogTitle>
+
+          {lockedCursor && (
+            <Badge variant="secondary" className="gap-1">
+              <Lock className="h-2 w-2 text-xs" />
+              Cursor is locked
+            </Badge>
+          )}
           {!isPractice && (
             <p className="text-muted-foreground text-sm">
               Your first attempt at this speed counts as a test. You can

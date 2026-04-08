@@ -33,6 +33,7 @@ export const createTestSchema = z.object({
   correctAnswer: z.string().min(1),
   solutionAudioKey: z.string().optional(),
   status: TestStatusEnum.default("draft"),
+  lockedCursor: z.boolean().optional().default(false),
 
   // At least one speed must be provided when creating a test
   speeds: z.array(createSpeedSchema).min(1, "At least one speed is required"),
@@ -47,6 +48,7 @@ export const updateTestSchema = z.object({
   correctAnswer: z.string().optional(),
   solutionAudioKey: z.string().nullable().optional(),
   status: TestStatusEnum.optional(),
+  lockedCursor: z.boolean().optional().default(false),
 
   // Speeds to upsert (create if no id, update if id present)
   upsertSpeeds: z
@@ -128,6 +130,8 @@ export const saveDraftSchema = z.object({
   outlinePdfKey: z.string().optional(),
   correctAnswer: z.string().optional().default(""),
   solutionAudioKey: z.string().optional(),
+  lockedCursor: z.boolean().optional().default(false),
+
   speeds: z
     .array(
       z.object({

@@ -21,6 +21,7 @@ import {
   Users,
   FileAudio,
   Zap,
+  Lock,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { SolutionAudioDialog } from "~/components/common/admin/add-explanation-audio-dialog";
@@ -38,6 +39,7 @@ type Test = {
   attemptCount: number;
   solutionAudioKey: string | null;
   speeds: TestSpeed[];
+  lockedCursor: boolean;
 };
 
 // ─── card (grid view) ─────────────────────────────────────────────────────────
@@ -63,9 +65,16 @@ function TestCard({ test }: { test: Test }) {
             <Badge variant="outline">
               {test.type.charAt(0).toUpperCase() + test.type.slice(1)}
             </Badge>
+
             <Badge variant={test.status === "active" ? "default" : "secondary"}>
               {test.status.charAt(0).toUpperCase() + test.status.slice(1)}
             </Badge>
+
+            {test.lockedCursor && (
+              <Badge variant="outline" className="gap-1 text-xs text-muted-foreground">
+                <Lock /> cursor
+              </Badge>
+            )}
           </div>
         </div>
 
@@ -130,7 +139,7 @@ function TestCard({ test }: { test: Test }) {
           </>
         )}
         {isDraft && (
-          <Button asChild variant="outline" size="sm">
+          <Button asChild variant="outline" size="xs">
             <Link href={`/admin/test/${test.id}/edit`}>
               <Pencil className="h-3.5 w-3.5" />
               Edit
@@ -161,6 +170,11 @@ function TestRow({ test }: { test: Test }) {
         <Badge variant="outline" className="shrink-0">
           {test.type.charAt(0).toUpperCase() + test.type.slice(1)}
         </Badge>
+        {test.lockedCursor && (
+          <Badge variant="outline" className="shrink-0 gap-1 text-xs text-muted-foreground">
+            <Lock /> cursor
+          </Badge>
+        )}
         <Badge
           variant={test.status === "active" ? "default" : "secondary"}
           className="shrink-0"
