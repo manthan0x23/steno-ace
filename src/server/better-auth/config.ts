@@ -10,7 +10,11 @@ import { redisService } from "../services/redis.service";
 
 export const auth = betterAuth({
   ...(env.BETTER_AUTH_SECRET && { secret: env.BETTER_AUTH_SECRET }),
-  trustedOrigins: [env.BETTER_AUTH_BASE_URL, "http://localhost:3000"],
+  trustedOrigins: [
+    "http://localhost:3000",
+    "https://stenodexter.com",
+    "https://www.stenodexter.com",
+  ],
   database: drizzleAdapter(db, { provider: "pg" }),
   baseURL: env.BETTER_AUTH_BASE_URL,
 
