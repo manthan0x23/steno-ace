@@ -353,7 +353,6 @@ function BreakStage({
 }
 
 // ─── Writing stage ────────────────────────────────────────────────────────────
-
 function WritingStage({
   secondsLeft,
   totalSeconds,
@@ -396,7 +395,6 @@ function WritingStage({
   const moveCursorToEnd = useCallback(() => {
     const el = textareaRef.current;
     if (!el) return;
-
     const len = el.value.length;
     try {
       el.setSelectionRange(len, len);
@@ -405,42 +403,56 @@ function WritingStage({
     }
   }, []);
 
-  useLayoutEffect(() => {
-    if (!lockedCursor) return;
-    moveCursorToEnd();
-  }, [answer, lockedCursor, moveCursorToEnd]);
-
-  const forceEndFocus = useCallback(() => {
-    if (!lockedCursor) return;
-    requestAnimationFrame(() => {
-      textareaRef.current?.focus();
-      moveCursorToEnd();
-    });
-  }, [lockedCursor, moveCursorToEnd]);
-
   const handleChange = useCallback(
     (val: string) => {
       if (!lockedCursor) {
         onChange(val);
         return;
       }
-
-      const prev = answer;
-
-      // Allow typing/paste at the end and backspace from the end.
-      // Reject any mid-text replacement/insertion.
-      const valid =
-        val.startsWith(prev) || // appended at end
-        prev.startsWith(val); // deleted from end
-
-      if (valid) {
+      // Only allow appending or backspacing from end
+      if (val.startsWith(answer) || answer.startsWith(val)) {
         onChange(val);
       }
-
-      requestAnimationFrame(moveCursorToEnd);
     },
-    [answer, lockedCursor, moveCursorToEnd, onChange],
+    [answer, lockedCursor, onChange],
   );
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      if (!lockedCursor) return;
+      // Block paste, cut, undo, redo
+      if (
+        (e.ctrlKey || e.metaKey) &&
+        ["v", "x", "z", "y"].includes(e.key.toLowerCase())
+      ) {
+        e.preventDefault();
+      }
+    },
+    [lockedCursor],
+  );
+
+  const handleMouseDown = useCallback(
+    (e: React.MouseEvent<HTMLTextAreaElement>) => {
+      if (!lockedCursor) return;
+      e.preventDefault(); // prevents repositioning cursor on click
+      textareaRef.current?.focus();
+    },
+    [lockedCursor],
+  );
+
+  const handleTouchStart = useCallback(
+    (e: React.TouchEvent<HTMLTextAreaElement>) => {
+      if (!lockedCursor) return;
+      e.preventDefault();
+      textareaRef.current?.focus();
+    },
+    [lockedCursor],
+  );
+
+  const handleFocus = useCallback(() => {
+    if (!lockedCursor) return;
+    moveCursorToEnd();
+  }, [lockedCursor, moveCursorToEnd]);
 
   const isLow = secondsLeft < 60;
   const pct = Math.min(
@@ -568,58 +580,10 @@ function WritingStage({
         placeholder="Begin your transcription here…"
         value={answer}
         onChange={(e) => handleChange(e.target.value)}
-        onClick={forceEndFocus}
-        onMouseDown={(e) => {
-          if (!lockedCursor) return;
-          e.preventDefault();
-          forceEndFocus();
-        }}
-        onTouchStart={(e) => {
-          if (!lockedCursor) return;
-          e.preventDefault();
-          forceEndFocus();
-        }}
-        onSelect={moveCursorToEnd}
-        onKeyUp={forceEndFocus}
-        onKeyDown={(e) => {
-          if (!lockedCursor) return;
-
-          const allowed = [
-            "Backspace",
-            "Delete",
-            "ArrowLeft",
-            "ArrowRight",
-            "ArrowUp",
-            "ArrowDown",
-            "Home",
-            "End",
-            "Tab",
-          ];
-
-          // Let normal editing keys work only at the end; we snap back after input.
-          // Block obvious shortcuts that could move/select/cut/paste into the middle.
-          const isShortcut =
-            (e.ctrlKey || e.metaKey) &&
-            ["a", "x", "v", "c", "z", "y"].includes(e.key.toLowerCase());
-
-          if (isShortcut) {
-            // allow copy/select-all shortcuts if you want, but prevent destructive/mid-edit behavior
-            if (["x", "v", "z", "y"].includes(e.key.toLowerCase())) {
-              e.preventDefault();
-            }
-            return;
-          }
-
-          if (
-            !allowed.includes(e.key) &&
-            e.key.length === 1 &&
-            textareaRef.current
-          ) {
-            // typing is allowed; we will validate the resulting value in onChange
-            return;
-          }
-        }}
-        onFocus={forceEndFocus}
+        onKeyDown={handleKeyDown}
+        onMouseDown={handleMouseDown}
+        onTouchStart={handleTouchStart}
+        onFocus={handleFocus}
         spellCheck={false}
         autoFocus
       />
@@ -636,6 +600,7 @@ function WritingStage({
     </div>
   );
 }
+
 // ─── Live clock ───────────────────────────────────────────────────────────────
 
 function LiveClock() {

@@ -98,13 +98,13 @@ export function UserSidebar({ user }: SidebarProps) {
     <Sidebar>
       <SidebarHeader className="px-4 py-4">
         <Link href={"/user"} className="flex flex-col items-center gap-2.5">
-          <div className="flex h-13.5 w-13.5 items-center justify-center rounded-sm bg-white shadow-sm">
+          <div className="flex h-13.5 w-13.5 items-center justify-center overflow-hidden rounded-sm bg-white shadow-sm">
             <Image
               src="/icon.png"
               alt="Logo"
-              width={300}
-              height={300}
-              className="h-full w-full"
+              width={200}
+              height={200}
+              className="h-full w-full translate-y-0.5 scale-135 object-contain"
             />
           </div>
           <div className="flex flex-col items-center justify-center leading-none">

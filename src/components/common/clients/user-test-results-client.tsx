@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useMemo } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { trpc } from "~/trpc/react";
@@ -362,9 +362,7 @@ function AttemptCard({
         {/* CENTER (ABSOLUTE) */}
         <div className="absolute left-1/2 flex -translate-x-1/2 items-center gap-4">
           <div className="text-center">
-            <p className={`text-lg font-bold tabular-nums`}>
-              {totalWords}
-            </p>
+            <p className={`text-lg font-bold tabular-nums`}>{totalWords}</p>
             <p className="text-muted-foreground text-[10px] uppercase">
               Matter Words
             </p>
@@ -578,6 +576,11 @@ function ResultsBody({
   const hasOutline = !!testData?.outlinePdfUrl;
   const hasResources = hasSolutionAudio || hasMatter || hasOutline;
 
+  const words = useMemo(
+    () => testData?.correctAnswer?.trim().split(/\s+/) ?? 0,
+    [testData?.correctAnswer],
+  );
+
   if (isLoading) return <PageSkeleton />;
 
   return (
@@ -648,9 +651,7 @@ function ResultsBody({
                 key={entry.attempt.id}
                 entry={entry}
                 index={i}
-                totalWords={
-                  testData.correctAnswer.trim().split(" ").length ?? 0
-                }
+                totalWords={words.length}
                 highlight={entry.attempt.id === highlightId}
                 isAdmin={isAdmin}
               />

@@ -12,22 +12,8 @@ export type DiffToken = {
 };
 
 // ─── tokenizer ────────────────────────────────────────────────────────────────
-//
-// A "word unit" is ANY unbroken run of non-whitespace characters.
-// This naturally handles every punctuation pattern:
-//
-//   F.I.R.        → ["F.I.R."]          (≠ "F.I.R"  → replace)
-//   F.I.R         → ["F.I.R"]           (≠ "F.I.R." → replace)
-//   maybe,        → ["maybe,"]          (≠ "maybe"  → replace)
-//   it's          → ["it's"]
-//   Rs.500        → ["Rs.500"]
-//   U.S.A.,       → ["U.S.A.,"]
-//   "hello"       → ['"hello"']
-//   (section)     → ["(section)"]
-//   --            → ["--"]              (pure-punctuation, still one token)
-//
-// Each whitespace character is its own token so NW can flag extra spaces.
-//
+// Each whitespace-separated run = one word token.
+// Whitespace characters are their own tokens (for extra_space detection).
 function tokenize(text: string): string[] {
   const tokens: string[] = [];
   let i = 0;
@@ -38,7 +24,6 @@ function tokenize(text: string): string[] {
       i++;
       continue;
     }
-    // Consume everything until the next whitespace
     let j = i + 1;
     while (j < text.length && !/\s/.test(text[j]!)) j++;
     tokens.push(text.slice(i, j));
@@ -47,34 +32,15 @@ function tokenize(text: string): string[] {
   return tokens;
 }
 
-// ─── suppress adjacent extra spaces ──────────────────────────────────────────
-//
-// An extra_space immediately beside an insert/delete is just the space that
-// travels with the inserted/deleted word. Demote it to "correct" so it
-// doesn't double-count the mistake.
-//
-function suppressAdjacentExtraSpaces(tokens: DiffToken[]): DiffToken[] {
-  const isWordError = (t: DiffToken) =>
-    t.type === "insert" || t.type === "delete";
-  const isExtraSpace = (t: DiffToken) => t.type === "extra_space";
-
-  return tokens.map((tok, i) => {
-    if (!isExtraSpace(tok)) return tok;
-    const prev = tokens[i - 1];
-    const next = tokens[i + 1];
-    if ((prev && isWordError(prev)) || (next && isWordError(next))) {
-      return { original: " ", typed: " ", type: "correct" };
-    }
-    return tok;
-  });
+// ─── word-only tokens (no whitespace) ────────────────────────────────────────
+function wordTokens(text: string): string[] {
+  return tokenize(text).filter((t) => !/^\s+$/.test(t));
 }
 
-// ─── Needleman-Wunsch global alignment ───────────────────────────────────────
-//
-// Exact-match only (case-sensitive). Each token is atomic — no partial credit
-// within a token.
-//
-function nwAlign(A: string[], B: string[]): DiffToken[] {
+// ─── Needleman-Wunsch on word tokens only ────────────────────────────────────
+// We align only the word arrays. Spaces are handled separately.
+// Each position in the alignment = exactly one mistake if not "correct".
+function nwWords(A: string[], B: string[]): DiffToken[] {
   const m = A.length;
   const n = B.length;
 
@@ -107,57 +73,136 @@ function nwAlign(A: string[], B: string[]): DiffToken[] {
     if (i > 0 && j > 0) {
       const diagScore = A[i - 1] === B[j - 1] ? MATCH : MISMATCH;
       if (dp[i]![j] === dp[i - 1]![j - 1]! + diagScore) {
-        const type = A[i - 1] === B[j - 1] ? "correct" : "replace";
-        result.push({ original: A[i - 1], typed: B[j - 1], type });
+        result.push({
+          original: A[i - 1],
+          typed: B[j - 1],
+          type: A[i - 1] === B[j - 1] ? "correct" : "replace",
+        });
         i--;
         j--;
         continue;
       }
     }
-
     if (i > 0 && (j === 0 || dp[i]![j] === dp[i - 1]![j]! + GAP)) {
       result.push({ original: A[i - 1], type: "delete" });
       i--;
     } else {
-      const tok = B[j - 1]!;
-      const type: DiffType = /^\s$/.test(tok) ? "extra_space" : "insert";
-      result.push({ typed: tok, type });
+      result.push({ typed: B[j - 1], type: "insert" });
       j--;
     }
   }
 
   result.reverse();
-  return suppressAdjacentExtraSpaces(result);
+  return result;
+}
+
+// ─── rebuild full diff with spaces re-inserted ────────────────────────────────
+// After aligning words, walk both original and typed token streams to re-insert
+// space tokens in the right places and detect extra_space.
+function buildFullDiff(original: string, typed: string): DiffToken[] {
+  const origWords = wordTokens(original);
+  const typedWords = wordTokens(typed);
+  const wordDiff = nwWords(origWords, typedWords);
+
+  // Re-tokenize both sides to get spacing info
+  const origTokens = tokenize(original);
+  const typedTokens = tokenize(typed);
+
+  // Collect space runs between words from typed input
+  // We'll append extra_space tokens where multiple spaces appear between words
+  const typedSpaceCounts: number[] = [];
+  let spaceRun = 0;
+  for (const t of typedTokens) {
+    if (/^\s$/.test(t)) {
+      spaceRun++;
+    } else {
+      typedSpaceCounts.push(spaceRun);
+      spaceRun = 0;
+    }
+  }
+
+  // Build final token list: interleave word diff tokens with space tokens
+  const result: DiffToken[] = [];
+  let typedWordIdx = 0;
+
+  for (let wi = 0; wi < wordDiff.length; wi++) {
+    const tok = wordDiff[wi]!;
+
+    // Add a space before each word (except the first)
+    if (wi > 0) {
+      const spacesTyped = typedSpaceCounts[typedWordIdx] ?? 1;
+      if (tok.type !== "delete") {
+        // only count spaces when typed word exists
+        if (spacesTyped > 1) {
+          for (let s = 1; s < spacesTyped; s++) {
+            result.push({ typed: " ", type: "extra_space" });
+          }
+        }
+      }
+      result.push({ original: " ", typed: " ", type: "correct" }); // the expected single space
+    }
+
+    result.push(tok);
+
+    if (tok.type !== "delete") {
+      typedWordIdx++;
+    }
+  }
+
+  return result;
 }
 
 // ─── public API ───────────────────────────────────────────────────────────────
 
 export default class ScoringEngine {
   compare(original: string, typed: string): DiffToken[] {
-    const A = tokenize(original.trim());
-    const B = tokenize(typed.trim());
-    return nwAlign(A, B);
+    return buildFullDiff(original.trim(), typed.trim());
   }
 
   evaluate(original: string, typed: string, durationSeconds: number) {
     original = original.trim();
     typed = typed.trim();
 
-    const diff = this.compare(original, typed);
+    const origWords = wordTokens(original);
+    const typedWords = wordTokens(typed);
+    const wordDiff = nwWords(origWords, typedWords);
 
-    let mistakes = 0;
-    for (const d of diff) {
-      if (d.type === "replace" || d.type === "insert" || d.type === "delete") {
-        mistakes++;
+    // Count extra spaces from typed input
+    const typedTokens = tokenize(typed);
+    let extraSpaces = 0;
+    let spaceRun = 0;
+    let seenWord = false;
+    for (const t of typedTokens) {
+      if (/^\s$/.test(t)) {
+        if (seenWord) spaceRun++;
+      } else {
+        if (spaceRun > 1) extraSpaces += spaceRun - 1;
+        spaceRun = 0;
+        seenWord = true;
       }
     }
 
-    const total = tokenize(original).length;
-    const correct = Math.max(0, total - mistakes);
+    // One mistake per wrong/missing/extra word position + extra spaces
+    let wordMistakes = 0;
+    for (const d of wordDiff) {
+      if (d.type === "replace" || d.type === "insert" || d.type === "delete") {
+        wordMistakes++;
+      }
+    }
+
+    const mistakes = wordMistakes + extraSpaces;
+    const total = origWords.length;
+    const correct = Math.max(0, total - wordMistakes);
     const accuracy = total === 0 ? 0 : Math.round((correct / total) * 100);
     const wpm = Math.max(0, Math.round(correct / (durationSeconds / 60)));
 
-    return { mistakes, accuracy, wpm, score: correct, diff };
+    return {
+      mistakes,
+      accuracy,
+      wpm,
+      score: correct,
+      diff: this.compare(original, typed),
+    };
   }
 }
 

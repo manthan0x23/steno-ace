@@ -1,24 +1,11 @@
-logo  -> circle , zoom
-
-favicon
-img is small logo
-
-__
-
-legal -> taraju weights
-
-___
 priority
 
 admin can approve multiple IPS
-()
-
 1 Device login
 
 ___
 scoring engine
 
-__
 #################################################################
 
 DONE ->
@@ -75,3 +62,14 @@ test attempt
 cursor is locked
 
 time <-> saved
+
+__
+
+legal -> taraju weights
+
+__
+logo  -> circle , zoom
+
+favicon
+img is small logo
+
