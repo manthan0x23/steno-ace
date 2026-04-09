@@ -18,6 +18,7 @@ import {
   CalendarCheck,
   TrendingUp,
   BookOpen,
+  CheckCircle2,
 } from "lucide-react";
 
 export const metadata = {
@@ -104,6 +105,29 @@ const govtBodies = [
   "Delhi Police",
 ];
 
+const steps = [
+  {
+    num: "01",
+    title: "Enroll in a Course",
+    desc: "Pick your level — beginner to advanced. Exam-mapped from day one.",
+  },
+  {
+    num: "02",
+    title: "Practice Daily",
+    desc: "Speed drills, dictation passages, and shorthand exercises every day.",
+  },
+  {
+    num: "03",
+    title: "Take Weekly Tests",
+    desc: "Every Sunday, benchmark your WPM and accuracy against real exam patterns.",
+  },
+  {
+    num: "04",
+    title: "Get Selected",
+    desc: "Walk into the exam room prepared. Our students get selected.",
+  },
+];
+
 /* ─────────────────── PAGE ─────────────────── */
 
 export default function LandingHome() {
@@ -111,122 +135,96 @@ export default function LandingHome() {
     <main className="bg-background text-foreground antialiased">
       <Hero />
       <LogoStrip />
+      <HowItWorks />
       <Features />
-      <StudyMoment />
       <Benefits />
-      <ShorthandGallery />
+      <StudySection />
       <Motivation />
       <FAQ />
     </main>
   );
 }
 
-/* ─── HERO ─── */
-function Hero() {
+export function Hero() {
   return (
     <section className="relative isolate flex min-h-screen flex-col items-center justify-center overflow-hidden px-4 pt-24 pb-20 text-center">
-      {/* ─── BACKGROUND ─── */}
-      <div className="bg-background absolute inset-0 -z-20" />
-
-      {/* Hero image — faded into background on right */}
-      <div className="pointer-events-none absolute inset-y-0 right-0 -z-10 hidden w-[48%] lg:block">
-        <div className="relative h-full w-full">
-          <Image
-            src="/landing/5.jpeg"
-            alt=""
-            fill
-            className="object-cover object-left opacity-[0.12]"
-            priority
-          />
-          {/* fade to left */}
-          <div className="from-background absolute inset-0 bg-gradient-to-r via-transparent to-transparent" />
-        </div>
-      </div>
-
-      {/* primary glow */}
+      {/* Grid background */}
       <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[520px] animate-[driftGlow_12s_ease-in-out_infinite] bg-[radial-gradient(ellipse_80%_60%_at_25%_-10%,hsl(var(--primary)/0.28),transparent)]"
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[520px] animate-[driftGlow_16s_ease-in-out_infinite] bg-[radial-gradient(ellipse_70%_50%_at_70%_0%,hsl(var(--secondary)/0.18),transparent)]"
-      />
-      <div
-        aria-hidden
-        className="bg-primary/10 pointer-events-none absolute bottom-[-120px] left-1/2 -z-10 h-[320px] w-[700px] -translate-x-1/2 animate-[driftGlow_18s_ease-in-out_infinite] blur-3xl"
-      />
-
-      {/* subtle grid */}
-      <div
-        className="absolute inset-0 -z-10 opacity-[0.06]"
+        className="absolute inset-0 -z-10"
         style={{
           backgroundImage:
-            "linear-gradient(to right, hsl(var(--foreground)) 1px, transparent 1px), linear-gradient(to bottom, hsl(var(--foreground)) 1px, transparent 1px)",
-          backgroundSize: "64px 64px",
-          maskImage:
-            "radial-gradient(circle at center, black 30%, transparent 80%)",
+            "linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px)",
+          backgroundSize: "80px 80px",
         }}
       />
-      <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_center,transparent_0%,transparent_60%,hsl(var(--background))_100%)]" />
 
-      {/* ─── CONTENT ─── */}
+      <div
+        className="absolute inset-0 -z-10"
+        style={{
+          background:
+            "linear-gradient(to bottom, #1a1714 0%, transparent 25%, transparent 75%, #1a1714 100%), linear-gradient(to right, #1a1714 0%, transparent 20%, transparent 80%, #1a1714 100%)",
+        }}
+      />
+      {/* Vignette — fades grid at edges */}
+      <div
+        className="absolute inset-0 -z-10"
+        style={{
+          background:
+            "radial-gradient(ellipse 80% 60% at 50% 50%, transparent 30%, hsl(var(--background)) 100%)",
+        }}
+      />
+
+      {/* Badge */}
       <Badge
         variant="outline"
-        className="mb-6 gap-2 rounded-full px-4 py-3 text-xs font-semibold tracking-widest uppercase backdrop-blur-sm"
+        className="mb-8 gap-2 rounded-full px-4 py-2 text-xs font-bold tracking-widest uppercase"
       >
         <span className="bg-primary h-1.5 w-1.5 animate-pulse rounded-full" />
         India&apos;s #1 Stenography Platform
       </Badge>
 
-      <h1 className="max-w-4xl text-5xl leading-[1.06] font-extrabold tracking-tight sm:text-6xl md:text-[72px]">
-        Master Stenography.
+      {/* Heading */}
+      <h1 className="max-w-4xl text-5xl leading-[1.04] font-extrabold tracking-tight sm:text-6xl md:text-[76px]">
+        Master <span className="text-primary">Stenography.</span>
         <br />
-        <span className="from-primary via-primary to-secondary bg-gradient-to-r bg-clip-text text-transparent">
-          Land Your Dream Job.
-        </span>
+        Land Your Dream Job.
       </h1>
 
-      <p className="text-muted-foreground mt-5 text-sm font-semibold tracking-[0.3em] uppercase">
-        Speed &nbsp;&middot;&nbsp; Precision &nbsp;&middot;&nbsp; Success
+      {/* Subtext */}
+      <p className="text-foreground mx-auto mt-6 max-w-xl text-lg leading-relaxed">
+        Structured daily practice, expert courses and weekly tests — built to
+        get you selected in SSC, High Court &amp; government exams.
       </p>
 
-      <p className="text-muted-foreground mt-5 max-w-lg text-lg leading-relaxed">
-        Structured daily practice, expert courses and weekly assessments — built
-        to get you selected in SSC, High Court &amp; government exams.
-      </p>
+      {/* Trust pills */}
+      <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+        {["Progress in 15 days", "Exam-mapped content", "7-day refund"].map(
+          (t) => (
+            <span
+              key={t}
+              className="border-border bg-muted/30 text-foreground rounded-full border px-4 py-1.5 text-xs font-semibold"
+            >
+              <span className="text-primary mr-1.5">✓</span>
+              {t}
+            </span>
+          ),
+        )}
+      </div>
 
+      {/* CTAs */}
       <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
         <Button
           size="lg"
           asChild
-          className="shadow-primary/20 gap-2 px-7 text-base font-semibold shadow-lg"
+          className="shadow-primary/20 gap-2 px-8 text-base font-bold shadow-lg"
         >
           <Link href="/user">
             Start Today <ArrowRight className="h-4 w-4" />
           </Link>
         </Button>
-
-        <Button size="lg" variant="outline" asChild className="px-7 text-base">
+        <Button size="lg" variant="outline" asChild className="px-8 text-base">
           <Link href="/courses">Browse Courses</Link>
         </Button>
-      </div>
-
-      {/* stats */}
-      <div className="border-border/70 bg-background/50 divide-border mt-16 grid grid-cols-3 divide-x overflow-hidden rounded-2xl border shadow-lg shadow-black/5 backdrop-blur-md">
-        {[
-          { value: "900K+", label: "Active Learners" },
-          { value: "98%", label: "Success Rate" },
-          { value: "15 Days", label: "Guaranteed Progress" },
-        ].map((s) => (
-          <div
-            key={s.label}
-            className="bg-muted/20 px-8 py-5 text-center sm:px-12"
-          >
-            <p className="text-primary text-3xl font-extrabold">{s.value}</p>
-            <p className="text-muted-foreground mt-1 text-xs">{s.label}</p>
-          </div>
-        ))}
       </div>
     </section>
   );
@@ -236,15 +234,12 @@ function Hero() {
 function LogoStrip() {
   return (
     <div className="border-border bg-muted/20 border-y px-4 py-5">
-      <p className="text-muted-foreground mb-3 text-center text-[10px] font-semibold tracking-widest uppercase">
+      <p className="text-muted-foreground mb-3 text-center text-[10px] font-bold tracking-widest uppercase">
         Our students selected in
       </p>
       <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-2">
         {govtBodies.map((item) => (
-          <span
-            key={item}
-            className="text-muted-foreground/70 text-sm font-medium"
-          >
+          <span key={item} className="text-foreground text-sm font-semibold">
             {item}
           </span>
         ))}
@@ -253,10 +248,58 @@ function LogoStrip() {
   );
 }
 
+/* ─── HOW IT WORKS ─── */
+function HowItWorks() {
+  return (
+    <section className="px-4 py-24">
+      <div className="mx-auto max-w-6xl">
+        <div className="grid items-center gap-16 lg:grid-cols-2">
+          {/* Illustration */}
+          <div className="flex justify-center lg:order-2">
+            <Image
+              src="/illustrations/achievement.svg"
+              alt="Student journey to success"
+              width={480}
+              height={380}
+              className="w-full max-w-[480px]"
+            />
+          </div>
+
+          {/* Steps */}
+          <div className="lg:order-1">
+            <p className="text-primary mb-2 text-xs font-bold tracking-widest uppercase">
+              How It Works
+            </p>
+            <h2 className="text-4xl leading-tight font-extrabold tracking-tight">
+              From zero to selected — in four steps.
+            </h2>
+
+            <div className="mt-10 space-y-8">
+              {steps.map((step) => (
+                <div key={step.num} className="flex gap-5">
+                  <div className="text-primary mt-0.5 text-3xl leading-none font-extrabold tabular-nums opacity-20">
+                    {step.num}
+                  </div>
+                  <div>
+                    <p className="text-foreground font-bold">{step.title}</p>
+                    <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
+                      {step.desc}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 /* ─── FEATURES ─── */
 function Features() {
   return (
-    <section id="features" className="px-4 py-24">
+    <section id="features" className="bg-muted/20 px-4 py-24">
       <div className="mx-auto max-w-6xl">
         <SectionHead
           tag="Why Steno Dexter"
@@ -269,7 +312,7 @@ function Features() {
             return (
               <Card
                 key={f.title}
-                className="border-border transition-shadow hover:shadow-md"
+                className="border-border bg-background transition-shadow hover:shadow-md"
               >
                 <CardHeader className="pb-2">
                   <div className="bg-primary/10 mb-3 inline-flex h-10 w-10 items-center justify-center rounded-lg">
@@ -291,68 +334,12 @@ function Features() {
   );
 }
 
-/* ─── STUDY MOMENT — image 1 (laptop + notebook) & image 3 (typewriter) ─── */
-function StudyMoment() {
-  return (
-    <section className="px-4 py-10 pb-24">
-      <div className="mx-auto max-w-6xl">
-        {/* Bento-style image row */}
-        <div className="grid grid-cols-12 gap-4">
-          {/* Large: notebook + laptop */}
-          <div className="relative col-span-12 overflow-hidden rounded-2xl md:col-span-7">
-            <div className="relative h-72 w-full md:h-96">
-              <Image
-                src="/landing/1.jpeg"
-                alt="Student studying stenography with laptop and notebook"
-                fill
-                className="object-cover object-center"
-              />
-              <div className="from-background/80 absolute inset-0 bg-gradient-to-t via-transparent to-transparent" />
-              <div className="absolute bottom-0 left-0 p-6">
-                <p className="text-foreground text-sm font-semibold tracking-widest uppercase opacity-80">
-                  Study on your terms
-                </p>
-                <p className="text-muted-foreground mt-1 max-w-xs text-xs leading-relaxed">
-                  Combine digital lessons with handwritten shorthand practice —
-                  the proven formula for retention.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Tall: vintage typewriter */}
-          <div className="relative col-span-12 overflow-hidden rounded-2xl md:col-span-5">
-            <div className="relative h-72 w-full md:h-96">
-              <Image
-                src="/landing/3.jpeg"
-                alt="Hands on a vintage typewriter — the art of stenography"
-                fill
-                className="object-cover object-center"
-              />
-              <div className="from-background/70 absolute inset-0 bg-gradient-to-t via-transparent to-transparent" />
-              <div className="absolute bottom-0 left-0 p-6">
-                <p className="text-foreground text-sm font-semibold tracking-widest uppercase opacity-80">
-                  A timeless craft
-                </p>
-                <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
-                  Stenography has powered courts and offices for 150 years.
-                  Master it today.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
 /* ─── BENEFITS ─── */
 function Benefits() {
   return (
     <section id="benefits" className="px-4 py-24">
       <div className="mx-auto max-w-6xl">
-        <div className="grid gap-16 lg:grid-cols-2 lg:items-center">
+        <div className="grid items-center gap-16 lg:grid-cols-2">
           <div>
             <SectionHead
               tag="What You Get"
@@ -365,7 +352,7 @@ function Benefits() {
               }
               sub="One platform. All the structure, material and support — from beginner to job-ready."
             />
-            <Button className="mt-8 gap-2" asChild>
+            <Button className="mt-8 gap-2 font-bold" asChild>
               <Link href="/user">
                 Start Learning <ArrowRight className="h-4 w-4" />
               </Link>
@@ -381,7 +368,7 @@ function Benefits() {
                   className="hover:border-primary/40 p-4 transition-colors"
                 >
                   <Icon className="text-primary mb-3 h-5 w-5" />
-                  <p className="text-sm font-semibold">{b.title}</p>
+                  <p className="text-sm font-bold">{b.title}</p>
                   <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
                     {b.desc}
                   </p>
@@ -395,62 +382,49 @@ function Benefits() {
   );
 }
 
-/* ─── SHORTHAND GALLERY — images 2, 4 (shorthand notes) ─── */
-function ShorthandGallery() {
+/* ─── STUDY SECTION — illustration based ─── */
+function StudySection() {
   return (
-    <section className="px-4 py-10 pb-24">
+    <section className="bg-muted/20 px-4 py-24">
       <div className="mx-auto max-w-6xl">
-        <div className="mb-10 text-center">
-          <p className="text-primary mb-2 text-xs font-semibold tracking-widest uppercase">
-            The Craft
-          </p>
-          <h2 className="text-3xl font-extrabold tracking-tight">
-            Shorthand in action
-          </h2>
-          <p className="text-muted-foreground mx-auto mt-3 max-w-md text-sm leading-relaxed">
-            Every curved symbol is a word. Every line is precision. Our
-            exercises take you from alphabet to fluency.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-12 gap-4">
-          {/* Shorthand notes handwritten */}
-          <div className="col-span-12 md:col-span-5">
-            <div className="relative h-80 w-full overflow-hidden rounded-2xl">
-              <Image
-                src="/landing/2.jpeg"
-                alt="Handwritten shorthand notes"
-                fill
-                className="object-cover object-top"
-              />
-              <div className="from-background/60 absolute inset-0 bg-gradient-to-t" />
-              <div className="absolute bottom-0 left-0 p-5">
-                <Badge variant="outline" className="text-[10px] tracking-wider">
-                  Handwritten Practice
-                </Badge>
-              </div>
-            </div>
+        <div className="grid items-center gap-16 lg:grid-cols-2">
+          {/* Illustration */}
+          <div className="flex justify-center">
+            <Image
+              src="/illustrations/goal.svg"
+              alt="Student studying shorthand at desk"
+              width={460}
+              height={380}
+              className="w-full max-w-[460px]"
+            />
           </div>
 
-          {/* Shorthand textbook exercises */}
-          <div className="col-span-12 md:col-span-7">
-            <div className="relative h-80 w-full overflow-hidden rounded-2xl">
-              <Image
-                src="/landing/4.jpeg"
-                alt="Shorthand exercise book — Exercise 115 and 116"
-                fill
-                className="object-cover object-center"
-              />
-              <div className="from-background/70 absolute inset-0 bg-gradient-to-t" />
-              <div className="absolute bottom-0 left-0 p-5">
-                <Badge variant="outline" className="text-[10px] tracking-wider">
-                  Structured Exercises
-                </Badge>
-                <p className="text-muted-foreground mt-2 max-w-xs text-xs leading-relaxed">
-                  Hundreds of graded exercises, mirroring real exam passages
-                  from SSC & High Court papers.
-                </p>
-              </div>
+          <div>
+            <p className="text-primary mb-2 text-xs font-bold tracking-widest uppercase">
+              The Practice
+            </p>
+            <h2 className="text-4xl leading-tight font-extrabold tracking-tight">
+              Real shorthand.
+              <br />
+              Real exams.
+              <br />
+              <span className="text-primary">Real results.</span>
+            </h2>
+            <p className="text-foreground mt-5 max-w-md text-base leading-relaxed">
+              Our exercises are built directly from SSC and High Court exam
+              passages. Every curve, every stroke you practice here is one you
+              will see on exam day.
+            </p>
+            <p className="text-foreground mt-3 max-w-md text-base leading-relaxed">
+              Hundreds of graded exercises take you from alphabet to full-speed
+              dictation — with performance tracking at every step.
+            </p>
+            <div className="mt-8">
+              <Button variant="outline" asChild className="gap-2 font-bold">
+                <Link href="/courses">
+                  View Exercise Library <ArrowRight className="h-4 w-4" />
+                </Link>
+              </Button>
             </div>
           </div>
         </div>
@@ -459,44 +433,55 @@ function ShorthandGallery() {
   );
 }
 
-/* ─── MOTIVATION BANNER — image 6 (Now or Never study desk) ─── */
+/* ─── MOTIVATION BANNER ─── */
 function Motivation() {
   return (
-    <section className="px-4 py-10 pb-24">
+    <section className="px-4 py-24">
       <div className="mx-auto max-w-6xl">
-        <div className="relative overflow-hidden rounded-3xl">
-          {/* Background image */}
-          <div className="relative h-[420px] w-full md:h-[500px]">
-            <Image
-              src="/landing/6.jpeg"
-              alt="Dedicated study desk — Now or Never"
-              fill
-              className="object-cover object-center"
-            />
-            {/* Overlay */}
-            <div className="from-background/95 via-background/70 absolute inset-0 bg-gradient-to-r to-transparent" />
-          </div>
+        <div className="bg-primary relative overflow-hidden rounded-3xl px-8 py-16 md:px-16">
+          {/* Decorative dots */}
+          <div
+            className="absolute inset-0 opacity-10"
+            style={{
+              backgroundImage:
+                "radial-gradient(circle, white 1px, transparent 1px)",
+              backgroundSize: "24px 24px",
+            }}
+          />
 
-          {/* Text content */}
-          <div className="absolute inset-0 flex flex-col items-start justify-center px-8 md:px-16">
-            <p className="text-primary mb-3 text-xs font-semibold tracking-widest uppercase">
-              The Mindset
-            </p>
-            <h2 className="max-w-sm text-4xl font-extrabold leading-tight tracking-tight md:text-5xl">
-              Now or{" "}
-              <span className="from-primary to-secondary bg-gradient-to-r bg-clip-text text-transparent">
-                Never.
-              </span>
-            </h2>
-            <p className="text-muted-foreground mt-4 max-w-xs text-sm leading-relaxed">
-              Every topper you admire was once where you are now. The difference
-              is daily practice — and the decision to start today.
-            </p>
-            <Button className="mt-8 gap-2 px-6" asChild>
-              <Link href="/user">
-                Begin Your Journey <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
+          <div className="relative grid items-center gap-12 lg:grid-cols-2">
+            <div>
+              <p className="text-primary-foreground/70 mb-3 text-xs font-bold tracking-widest uppercase">
+                The Mindset
+              </p>
+              <h2 className="text-primary-foreground text-4xl leading-tight font-extrabold tracking-tight md:text-5xl">
+                Now or Never.
+              </h2>
+              <p className="text-primary-foreground/80 mt-4 max-w-sm text-base leading-relaxed">
+                Every topper you admire was once where you are now. The
+                difference is daily practice — and the decision to start today.
+              </p>
+              <Button
+                variant="secondary"
+                className="mt-8 gap-2 px-6 font-bold"
+                asChild
+              >
+                <Link href="/user">
+                  Begin Your Journey <ArrowRight className="h-4 w-4" />
+                </Link>
+              </Button>
+            </div>
+
+            {/* Illustration */}
+            <div className="flex justify-center">
+              <Image
+                src="/illustrations/aspire.svg"
+                alt="Student achieving their goal"
+                width={400}
+                height={320}
+                className="w-full max-w-[400px] brightness-50"
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -518,10 +503,10 @@ function FAQ() {
         <Accordion type="single" collapsible className="mt-10 w-full">
           {faqs.map((f, i) => (
             <AccordionItem key={i} value={`item-${i}`}>
-              <AccordionTrigger className="text-left text-[15px] font-semibold">
+              <AccordionTrigger className="text-left text-[15px] font-bold">
                 {f.q}
               </AccordionTrigger>
-              <AccordionContent className="text-muted-foreground leading-relaxed">
+              <AccordionContent className="text-foreground leading-relaxed">
                 {f.a}
               </AccordionContent>
             </AccordionItem>
@@ -546,7 +531,7 @@ function SectionHead({
 }) {
   return (
     <div className={center ? "text-center" : ""}>
-      <p className="text-primary mb-2 text-xs font-semibold tracking-widest uppercase">
+      <p className="text-primary mb-2 text-xs font-bold tracking-widest uppercase">
         {tag}
       </p>
       <h2 className="text-4xl leading-tight font-extrabold tracking-tight">
@@ -554,7 +539,7 @@ function SectionHead({
       </h2>
       {sub && (
         <p
-          className={`text-muted-foreground mt-3 leading-relaxed ${
+          className={`text-foreground mt-3 leading-relaxed ${
             center ? "mx-auto max-w-md" : "max-w-md"
           }`}
         >

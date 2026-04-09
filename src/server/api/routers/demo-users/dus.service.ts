@@ -9,6 +9,7 @@ import type {
 import type { db as dbInstance } from "~/server/db";
 import { hashPassword } from "~/server/lib/hash";
 import { invalidateSubscriptionCache } from "../../trpc";
+import { notificationsService } from "../notifications/notification.service";
 
 type Db = typeof dbInstance;
 
@@ -34,7 +35,7 @@ export function createDusService(db: Db) {
   return {
     async create(input: CreateDemoUserInput, createdByAdminId: string) {
       const num = Math.floor(10000 + Math.random() * 90000);
-      const SDID = "SD" + num;
+      const SDID = "DEMO" + num;
 
       const userEmail = SDID.toLowerCase() + "@stenodexter.com";
 
@@ -52,7 +53,7 @@ export function createDusService(db: Db) {
           .insert(user)
           .values({
             id: crypto.randomUUID(),
-            name: "DEMO_" + SDID,
+            name: "SD_" + SDID,
             email: userEmail,
             userCode: SDID,
             emailVerified: true,
@@ -75,6 +76,24 @@ export function createDusService(db: Db) {
         });
 
         return created!;
+      });
+
+      await notificationsService.send({
+        title: "🎉 Your demo access is ready",
+        message: `You can now explore the app. ${
+          input.expiresAt
+            ? `Valid till ${new Date(input.expiresAt).toLocaleDateString(
+                "en-IN",
+                {
+                  day: "2-digit",
+                  month: "short",
+                },
+              )}.`
+            : "Enjoy your access."
+        }`,
+        to: newUser.id,
+        link: "/user",
+        isLinkExternal: false,
       });
 
       return {

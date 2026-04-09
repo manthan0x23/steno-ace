@@ -1,7 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "~/components/ui/button";
-import { ThemeToggle } from "../utils/theme-toggle";
 
 export function Navbar() {
   return (
@@ -53,7 +52,6 @@ export function Navbar() {
           <Button variant="ghost" asChild className="hidden sm:inline-flex">
             <Link href="/user/login">Sign In</Link>
           </Button>
-          <ThemeToggle />
           <Button
             asChild
             className="bg-primary text-primary-foreground hover:bg-primary/90"

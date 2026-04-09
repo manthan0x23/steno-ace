@@ -1,10 +1,9 @@
-// ─── server/services/notifications.service.ts ────────────────────────────────
-
 import {
   and,
   arrayContains,
   desc,
   eq,
+  gte,
   inArray,
   not,
   or,
@@ -26,8 +25,11 @@ import type {
 import type { db as dbInstance } from "~/server/db";
 type Db = typeof dbInstance;
 
-function visibleTo(userId: string) {
-  return or(eq(notifications.to, "everyone"), eq(notifications.to, userId));
+function visibleTo(userId: string, userCreatedAt: Date) {
+  return and(
+    or(eq(notifications.to, "everyone"), eq(notifications.to, userId)),
+    gte(notifications.createdAt, userCreatedAt),
+  );
 }
 
 function unreadFor(userId: string) {
@@ -42,9 +44,17 @@ const markSeenSql = (userId: string) => sql`
   END
 `;
 
-// ─── factory ──────────────────────────────────────────────────────────────────
-
 export function createNotificationsService(db: Db) {
+  async function getUserCreatedAt(userId: string): Promise<Date> {
+    const [row] = await db
+      .select({ createdAt: user.createdAt })
+      .from(user)
+      .where(eq(user.id, userId))
+      .limit(1);
+    if (!row) throw new Error(`User ${userId} not found`);
+    return row.createdAt;
+  }
+
   return {
     async send(input: SendNotificationInput) {
       const [row] = await db
@@ -67,9 +77,11 @@ export function createNotificationsService(db: Db) {
       const { userId, unreadOnly, page, pageSize } = input;
       const offset = (page - 1) * pageSize;
 
+      const userCreatedAt = userId ? await getUserCreatedAt(userId) : null;
+
       const conditions = [];
-      if (userId) {
-        conditions.push(visibleTo(userId));
+      if (userId && userCreatedAt) {
+        conditions.push(visibleTo(userId, userCreatedAt));
         if (unreadOnly) conditions.push(unreadFor(userId));
       }
 
@@ -111,11 +123,11 @@ export function createNotificationsService(db: Db) {
       const total = countRow?.count ?? 0;
 
       let unreadCount = 0;
-      if (userId) {
+      if (userId && userCreatedAt) {
         const [unreadRow] = await db
           .select({ count: sql<number>`cast(count(*) as int)` })
           .from(notifications)
-          .where(and(visibleTo(userId), unreadFor(userId)));
+          .where(and(visibleTo(userId, userCreatedAt), unreadFor(userId)));
         unreadCount = unreadRow?.count ?? 0;
       }
 
@@ -141,19 +153,26 @@ export function createNotificationsService(db: Db) {
     },
 
     async markSeen(input: MarkSeenInput): Promise<void> {
+      const userCreatedAt = await getUserCreatedAt(input.userId);
       await db
         .update(notifications)
         .set({ seenBy: markSeenSql(input.userId) })
         .where(
-          and(inArray(notifications.id, input.ids), visibleTo(input.userId)),
+          and(
+            inArray(notifications.id, input.ids),
+            visibleTo(input.userId, userCreatedAt),
+          ),
         );
     },
 
     async markAllSeen(input: MarkAllSeenInput): Promise<void> {
+      const userCreatedAt = await getUserCreatedAt(input.userId);
       await db
         .update(notifications)
         .set({ seenBy: markSeenSql(input.userId) })
-        .where(and(visibleTo(input.userId), unreadFor(input.userId)));
+        .where(
+          and(visibleTo(input.userId, userCreatedAt), unreadFor(input.userId)),
+        );
     },
 
     async update(input: UpdateNotificationInput) {
@@ -195,10 +214,11 @@ export function createNotificationsService(db: Db) {
     },
 
     async unreadCount(userId: string): Promise<number> {
+      const userCreatedAt = await getUserCreatedAt(userId);
       const [row] = await db
         .select({ count: sql<number>`cast(count(*) as int)` })
         .from(notifications)
-        .where(and(visibleTo(userId), unreadFor(userId)));
+        .where(and(visibleTo(userId, userCreatedAt), unreadFor(userId)));
       return row?.count ?? 0;
     },
   };

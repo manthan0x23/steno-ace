@@ -31,11 +31,14 @@ import {
   Phone,
   CheckCircle2,
   Hash,
+  IdCard,
+  CalendarClock,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { authClient } from "~/server/better-auth/client";
 import type { AuthUser } from "~/server/better-auth/config";
 import { Badge } from "~/components/ui/badge";
+import { format } from "date-fns";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -448,22 +451,90 @@ export function PasswordSection({ email }: { email: string }) {
   );
 }
 
+type SubStatus = {
+  active: boolean;
+  expiresAt?: string | null;
+  isRevoked?: boolean;
+  isDemo: boolean;
+};
+
+export function UserIdentity({
+  userCode,
+  sub,
+}: {
+  userCode: string;
+  sub: SubStatus;
+}) {
+  const expires = sub.expiresAt ? new Date(sub.expiresAt) : null;
+
+  return (
+    <div className="flex items-center justify-between rounded-lg border p-3">
+      {/* Left */}
+      <div className="flex items-center gap-3">
+        <div className="bg-primary/10 rounded-sm p-2">
+          <IdCard className="text-primary h-5 w-5" />
+        </div>
+
+        <div className="flex flex-col leading-tight">
+          <span className="text-muted-foreground text-[11px] tracking-wide uppercase">
+            Student ID
+          </span>
+          <span className="text-lg font-semibold tracking-tight">
+            {userCode}
+          </span>
+        </div>
+      </div>
+
+      {/* Right */}
+      <div className="flex items-center gap-2">
+        {/* Demo badge */}
+        {sub.isDemo && (
+          <Badge variant="secondary" className="text-xs">
+            Demo
+          </Badge>
+        )}
+
+        {/* Status badge */}
+        {sub.isRevoked ? (
+          <Badge variant="destructive" className="text-xs">
+            Revoked
+          </Badge>
+        ) : sub.active ? (
+          expires && (
+            <Badge variant="outline" className="text-xs">
+              {`Valid till ${format(expires, "do MMM YYY")}`}
+            </Badge>
+          )
+        ) : (
+          <Badge variant="destructive" className="text-xs">
+            Inactive
+          </Badge>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function UserSettingsPage({
   providers,
   user,
+  sub,
 }: {
   providers: string[];
   user: AuthUser;
+  sub: SubStatus;
 }) {
+  const isExpired =
+    user.isDemo &&
+    user.demoExpiresAt &&
+    new Date(user.demoExpiresAt) < new Date();
+
   return (
     <div className="mx-auto w-full max-w-2xl px-6 py-8">
       <div className="mb-8">
-        <div className="flex items-end gap-2">
-          <span className="text-2xl font-bold tracking-tight">
-            {user.userCode}
-          </span>
-          <span className="text-muted-foreground text-sm">Student ID</span>
-        </div>
+        {user.userCode && (
+          <UserIdentity sub={sub} userCode={user.userCode} key={"user-id"} />
+        )}
         <Separator className="my-4" />
         <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
         <p className="text-muted-foreground mt-0.5 text-sm">
