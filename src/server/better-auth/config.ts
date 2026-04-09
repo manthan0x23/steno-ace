@@ -1,4 +1,4 @@
-import { betterAuth } from "better-auth";
+import { APIError, betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 
 import { env } from "~/env";
@@ -7,6 +7,43 @@ import type { admin, adminSession } from "../db/schema";
 import { emailService } from "../services/mail.service";
 import { comparePassword, hashPassword } from "../lib/hash";
 import { redisService } from "../services/redis.service";
+import { deviceService } from "../api/routers/device/device.service";
+
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
+
+const DEVICE_ID_HEADER = "x-device-id";
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Extract device-id from the raw request headers attached to the better-auth
+ * request object. better-auth exposes `request` on hook context as a standard
+ * `Request` (Fetch API).
+ */
+function getDeviceId(request: Request | undefined): string | null {
+  if (!request) return null;
+  return request.headers.get(DEVICE_ID_HEADER) ?? null;
+}
+
+function getUserAgent(request: Request | undefined): string | null {
+  return request?.headers.get("user-agent") ?? null;
+}
+
+function getIpAddress(request: Request | undefined): string | null {
+  return (
+    request?.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    request?.headers.get("x-real-ip") ??
+    null
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Auth config
+// ---------------------------------------------------------------------------
 
 export const auth = betterAuth({
   ...(env.BETTER_AUTH_SECRET && { secret: env.BETTER_AUTH_SECRET }),
@@ -20,18 +57,9 @@ export const auth = betterAuth({
 
   user: {
     additionalFields: {
-      userCode: {
-        type: "string",
-        required: false,
-      },
-      isDemo: {
-        type: "boolean",
-        required: false,
-      },
-      demoExpiresAt: {
-        type: "date",
-        required: false,
-      },
+      userCode: { type: "string", required: false },
+      isDemo: { type: "boolean", required: false },
+      demoExpiresAt: { type: "date", required: false },
       demoRevoked: { type: "boolean", required: false, defaultValue: false },
       demoNote: { type: "string", required: false, defaultValue: null },
       demoCreatedByAdminId: {
@@ -42,6 +70,65 @@ export const auth = betterAuth({
     },
   },
 
+  // -------------------------------------------------------------------------
+  // Database hooks — single choke point for ALL login methods
+  // -------------------------------------------------------------------------
+
+  databaseHooks: {
+    session: {
+      create: {
+        /**
+         * Fires after better-auth has validated credentials / OAuth token but
+         * BEFORE the session row is written.
+         *
+         * Throwing here aborts the login and returns a 401 to the client.
+         */
+        before: async (session, ctx) => {
+          const request = ctx?.request as Request | undefined;
+          const deviceId = getDeviceId(request);
+          const userId = session.userId;
+
+          console.log(deviceId, userId);
+
+          const existing = await deviceService.get(userId);
+
+          if (!existing) {
+            if (!deviceId) {
+              throw new APIError("UNAUTHORIZED", { message: "DEVICE_MISSING" });
+            }
+
+            await deviceService.create({
+              userId,
+              deviceId,
+              userAgent: getUserAgent(request),
+              ipAddress: getIpAddress(request),
+            });
+
+            return { data: session };
+          }
+
+          if (!deviceId || existing.deviceId !== deviceId) {
+            throw new APIError("UNAUTHORIZED", {
+              message: "DEVICE_MISMATCH",
+            });
+          }
+
+          void deviceService.update({
+            userId,
+            userAgent: getUserAgent(request),
+            ipAddress: getIpAddress(request),
+          });
+
+          return { data: session };
+        },
+      },
+    },
+  },
+
+  // -------------------------------------------------------------------------
+  // Email & password
+  // -------------------------------------------------------------------------
+
   emailAndPassword: {
     enabled: true,
 
@@ -49,7 +136,6 @@ export const auth = betterAuth({
       async hash(password) {
         return await hashPassword(password);
       },
-
       async verify(data) {
         return await comparePassword(data.password, data.hash);
       },
@@ -77,6 +163,10 @@ export const auth = betterAuth({
     },
   },
 
+  // -------------------------------------------------------------------------
+  // Email verification
+  // -------------------------------------------------------------------------
+
   emailVerification: {
     sendVerificationEmail: async ({ user, url }) => {
       await emailService.sendEmail({
@@ -102,6 +192,10 @@ export const auth = betterAuth({
     sendOnSignUp: true,
   },
 
+  // -------------------------------------------------------------------------
+  // Social providers
+  // -------------------------------------------------------------------------
+
   socialProviders: {
     google: {
       clientId: env.BETTER_AUTH_GOOGLE_CLIENT_ID,
@@ -109,6 +203,10 @@ export const auth = betterAuth({
       redirectURI: `${env.BETTER_AUTH_BASE_URL}/api/auth/callback/google`,
     },
   },
+
+  // -------------------------------------------------------------------------
+  // Advanced / rate limiting
+  // -------------------------------------------------------------------------
 
   advanced: {
     defaultCookieAttributes: {
@@ -154,7 +252,6 @@ export const auth = betterAuth({
 });
 
 export type UserSession = typeof auth.$Infer.Session;
-
 export type AuthUser = UserSession["user"];
 export type AdminSession = {
   admin: typeof admin.$inferSelect;

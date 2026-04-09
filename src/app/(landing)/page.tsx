@@ -128,8 +128,6 @@ const steps = [
   },
 ];
 
-/* ─────────────────── PAGE ─────────────────── */
-
 export default function LandingHome() {
   return (
     <main className="bg-background text-foreground antialiased">
@@ -145,7 +143,7 @@ export default function LandingHome() {
   );
 }
 
-export function Hero() {
+function Hero() {
   return (
     <section className="relative isolate flex min-h-screen flex-col items-center justify-center overflow-hidden px-4 pt-24 pb-20 text-center">
       {/* Grid background */}

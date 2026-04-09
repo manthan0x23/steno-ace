@@ -43,6 +43,13 @@
       "when": 1775631824338,
       "tag": "0005_lame_puck",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1775733582105,
+      "tag": "0006_burly_carnage",
+      "breakpoints": true
     }
   ]
 }

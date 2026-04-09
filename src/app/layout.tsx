@@ -11,8 +11,7 @@ import {
   Outfit,
   Figtree,
 } from "next/font/google";
-import Script from "next/script"; 
-
+import Script from "next/script";
 
 import { TRPCReactProvider } from "~/trpc/react";
 import { TooltipProvider } from "~/components/ui/tooltip";
@@ -20,6 +19,7 @@ import { Toaster } from "~/components/ui/sonner";
 import { cn } from "~/lib/utils";
 import { ThemeProvider } from "~/providers/theme-provider";
 import localFont from "next/font/local";
+import { DeviceIdInit } from "~/server/better-auth/client";
 
 const figtree = Figtree({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -112,6 +112,7 @@ export default function RootLayout({
             })();
           `}
         </Script>
+        <DeviceIdInit />
         <ThemeProvider>
           <TooltipProvider>
             <TRPCReactProvider>{children}</TRPCReactProvider>

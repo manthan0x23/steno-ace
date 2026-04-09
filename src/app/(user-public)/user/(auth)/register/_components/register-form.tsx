@@ -7,9 +7,10 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Card, CardContent } from "~/components/ui/card";
-import { Separator } from "~/components/ui/separator";
 import { authClient } from "~/server/better-auth/client";
 import Link from "next/link";
+import { deviceErrorMessage } from "~/server/lib/device-error";
+import { DeviceNotice } from "~/components/utils/device-notice";
 
 function FieldError({ message }: { message: string | undefined }) {
   if (!message) return null;
@@ -58,7 +59,8 @@ export function RegisterForm() {
       });
 
       if (error) {
-        toast.error(error.message ?? "Something went wrong. Please try again.");
+        const deviceMsg = deviceErrorMessage(error.message);
+        toast.error(deviceMsg ?? error.message ?? "Something went wrong");
       } else {
         toast.success("Account created! Welcome 🎉");
         router.push("/user");
@@ -87,9 +89,10 @@ export function RegisterForm() {
               <p className="text-muted-foreground text-sm">
                 Sign up to get started today
               </p>
+              <DeviceNotice variant="login" className="mb-[100px]" />
             </div>
 
-            <span className="flex flex-col gap-3 items-center">
+            <span className="flex flex-col items-center gap-3">
               <Button
                 variant="outline"
                 className="w-full gap-2"

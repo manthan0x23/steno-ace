@@ -10,6 +10,8 @@ import { Card, CardContent } from "~/components/ui/card";
 import { Separator } from "~/components/ui/separator";
 import { authClient } from "~/server/better-auth/client";
 import Link from "next/link";
+import { deviceErrorMessage } from "~/server/lib/device-error";
+import { DeviceNotice } from "~/components/utils/device-notice";
 
 function FieldError({ message }: { message: string | undefined }) {
   if (!message) return null;
@@ -55,7 +57,10 @@ export function LoginForm() {
       });
 
       if (error) {
-        toast.error(error.message ?? "Invalid email or password");
+        console.log(error);
+
+        const deviceMsg = deviceErrorMessage(error.message);
+        toast.error(deviceMsg ?? error.message ?? "Invalid email or password");
       } else {
         toast.success("Welcome back!");
         router.push("/user");
@@ -84,6 +89,7 @@ export function LoginForm() {
               <p className="text-muted-foreground text-sm">
                 Sign in to your account to continue
               </p>
+              <DeviceNotice variant="login" className="mb-[100px]" />
             </div>
 
             <span className="flex flex-col items-center gap-3">
@@ -110,7 +116,7 @@ export function LoginForm() {
           </div>
 
           {/* Column 2 - Form */}
-          <div className="border-l p-8 md:p-12">
+          <div className="my-auto border-l p-8 md:p-12">
             <form
               onSubmit={(e) => {
                 e.preventDefault();

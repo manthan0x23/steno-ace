@@ -42,6 +42,47 @@ export const user = pgTable(
   (t) => [index("is_demo_idx_users").on(t.isDemo)],
 );
 
+export const device = pgTable(
+  "device",
+  {
+    id: text("id").primaryKey(),
+
+    userId: text("user_id")
+      .notNull()
+      .unique() // ← one device per user
+      .references(() => user.id, { onDelete: "cascade" }),
+
+    deviceId: text("device_id").notNull(),
+
+    deviceName: text("device_name"),
+
+    /** Raw user-agent string for debugging */
+    userAgent: text("user_agent"),
+
+    ipAddress: text("ip_address"),
+
+    lastLoginAt: timestamp("last_login_at")
+      .$defaultFn(() => new Date())
+      .notNull(),
+
+    createdAt: timestamp("created_at")
+      .$defaultFn(() => new Date())
+      .notNull(),
+
+    updatedAt: timestamp("updated_at")
+      .$defaultFn(() => new Date())
+      .notNull(),
+  },
+  (t) => [
+    index("device_user_id_idx").on(t.userId),
+    index("device_device_id_idx").on(t.deviceId),
+  ],
+);
+
+export const deviceRelations = relations(device, ({ one }) => ({
+  user: one(user, { fields: [device.userId], references: [user.id] }),
+}));
+
 export const session = pgTable(
   "session",
   {
