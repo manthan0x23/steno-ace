@@ -21,7 +21,7 @@ export class EmailService {
 
   constructor(key: string) {
     this.resend = new Resend(key);
-    this.defaultFrom = "onboarding@resend.dev";
+    this.defaultFrom = "StenoDexter <noreply@stenodexter.com>";
   }
 
   async sendEmail(input: SendEmailInput) {
