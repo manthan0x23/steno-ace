@@ -1,7 +1,23 @@
-import { and, eq, gt, isNull, lt, lte, or } from "drizzle-orm";
+import {
+  and,
+  eq,
+  gt,
+  inArray,
+  isNotNull,
+  isNull,
+  lt,
+  lte,
+  or,
+  sql,
+} from "drizzle-orm";
 import { env } from "~/env";
 import { db } from "~/server/db";
-import { subscription, user } from "~/server/db/schema";
+import {
+  subscription,
+  testAttempts,
+  testSpeeds,
+  user,
+} from "~/server/db/schema";
 import { emailService } from "~/server/services/mail.service";
 
 export const cronService = {
@@ -102,5 +118,43 @@ export const cronService = {
         console.error("Failed to send reminder:", sub.email, err);
       }
     }
+  },
+
+  async expireStaleAttempts() {
+    const BUFFER_SECONDS = 90;
+
+    const now = new Date();
+
+    const stale = await db
+      .select({ id: testAttempts.id })
+      .from(testAttempts)
+      .innerJoin(testSpeeds, eq(testAttempts.speedId, testSpeeds.id))
+      .where(
+        and(
+          eq(testAttempts.isSubmitted, false),
+          isNotNull(testAttempts.stageStartedAt),
+          sql`${testAttempts.stageStartedAt} + make_interval(secs => ${testSpeeds.dictationSeconds} + ${testSpeeds.breakSeconds} + ${testSpeeds.writtenDurationSeconds} + ${BUFFER_SECONDS}) < ${now}`,
+        ),
+      );
+
+    if (stale.length === 0) {
+      console.log("No stale attempts found");
+      return;
+    }
+
+    const staleIds = stale.map((a) => a.id);
+
+    await db
+      .update(testAttempts)
+      .set({
+        isSubmitted: true,
+        stage: "submitted",
+        submittedAt: now,
+        answerFinal: sql`coalesce(${testAttempts.answerFinal}, ${testAttempts.answerDraft})`,
+        updatedAt: now,
+      })
+      .where(inArray(testAttempts.id, staleIds));
+
+    console.log(`Expired ${staleIds.length} stale attempt(s)`);
   },
 };

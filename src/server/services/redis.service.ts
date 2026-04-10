@@ -68,11 +68,12 @@ export class RedisService {
    * );
    */
   async rateLimitOrThrow(
-    { headers, route }: { headers: Headers; route: string },
+    { headers, route }: { headers?: Headers; route: string },
     limit: number,
     windowSec: number,
   ): Promise<void> {
-    const ip = this.extractIp(headers);
+    let ip = "";
+    if (headers) ip = this.extractIp(headers);
     const key = `rl:${route}:${ip}`;
     const { allowed, reset } = await this.rateLimit(key, limit, windowSec);
 
