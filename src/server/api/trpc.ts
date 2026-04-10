@@ -45,21 +45,34 @@ export const createTRPCContext = async (opts: { headers: Headers }) => {
   };
 };
 
-// ---------------------------------------------------------------------------
-// 2. INITIALIZATION
-// ---------------------------------------------------------------------------
-
 const t = initTRPC.context<typeof createTRPCContext>().create({
   transformer: superjson,
   errorFormatter({ shape, error }) {
-    return {
-      ...shape,
-      data: {
-        ...shape.data,
-        zodError:
-          error.cause instanceof ZodError ? error.cause.flatten() : null,
-      },
-    };
+    const cause = error.cause;
+
+    if (cause instanceof ZodError) {
+      return {
+        ...shape,
+        data: {
+          ...shape.data,
+          code: "VALIDATION_ERROR",
+          message: cause.errors.map((e) => e.message).join(", "),
+        },
+      };
+    }
+
+    if (cause instanceof Error) {
+      return {
+        ...shape,
+        data: {
+          ...shape.data,
+          code: shape.data.code,
+          message: cause.message,
+        },
+      };
+    }
+
+    return shape;
   },
 });
 
@@ -70,22 +83,21 @@ export const createTRPCRouter = t.router;
 // Rate Limit Middleware
 // ---------------------------------------------------------------------------
 
-// const rateLimitMiddleware = t.middleware(async ({ ctx, next, path }) => {
-//   await redisService.rateLimitOrThrow(
-//     { headers: ctx.headers, route: path },
-//     60,
-//     60,
-//   );
-//   return next({ ctx });
-// });
+const rateLimitMiddleware = t.middleware(async ({ ctx, next, path }) => {
+  await redisService.rateLimitOrThrow(
+    { headers: ctx.headers, route: path },
+    60,
+    60,
+  );
+  return next({ ctx });
+});
 
 // ---------------------------------------------------------------------------
 // 3. PROCEDURES
 // ---------------------------------------------------------------------------
 
 /** Public — no auth required */
-export const publicProcedure = t.procedure;
-// .use(rateLimitMiddleware);
+export const publicProcedure = t.procedure.use(rateLimitMiddleware);
 
 /** Protected user — better-auth session already resolved in context */
 export const protectedProcedure = publicProcedure.use(({ ctx, next }) => {

@@ -7,6 +7,7 @@ export async function GET(req: Request) {
     await Promise.all([
       api.crons.expireSubscription(),
       api.crons.sendExpiryReminders(),
+      api.crons.expireStaleAttempts(),
     ]);
 
     return Response.json({ success: true });
