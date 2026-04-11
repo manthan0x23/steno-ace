@@ -49,6 +49,7 @@ import {
   KeyRound,
   Copy,
   Check,
+  MoreHorizontal,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { toast } from "sonner";
@@ -60,12 +61,13 @@ import {
 } from "~/components/ui/popover";
 import { CalendarIcon } from "lucide-react";
 import { addDays, format } from "date-fns";
+import { DemoUserActionsDialog } from "./_components/demo-actions-dialog";
 
 // ─── types ────────────────────────────────────────────────────────────────────
 
 type DemoStatus = "active" | "expired" | "revoked";
 
-type DemoUserRow = {
+export type DemoUserRow = {
   id: string;
   name: string | null;
   email: string;
@@ -506,6 +508,7 @@ function DemoUsersTable({
 }) {
   const [revokeTarget, setRevokeTarget] = useState<DemoUserRow | null>(null);
   const [resetTarget, setResetTarget] = useState<DemoUserRow | null>(null);
+  const [actionsTarget, setActionsTarget] = useState<DemoUserRow | null>(null);
 
   const { data, isLoading, isFetching } = trpc.dus.list.useQuery(
     { page, limit: pageSize, search: query || undefined, status: statusFilter },
@@ -612,36 +615,18 @@ function DemoUsersTable({
 
                     {/* Actions */}
                     <TableCell className="py-3 pr-4">
-                      <div className="flex items-center justify-end gap-1.5">
-                        {!u.demoRevoked && (
-                          <>
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              className="h-7 w-7 opacity-0 transition-opacity group-hover:opacity-100"
-                              title="Reset password"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setResetTarget(u);
-                              }}
-                            >
-                              <KeyRound className="h-3.5 w-3.5" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              className="h-7 w-7 border-red-500/30 text-red-500 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-red-500/10"
-                              title="Revoke demo access"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setRevokeTarget(u);
-                              }}
-                            >
-                              <ShieldOff className="h-3.5 w-3.5" />
-                            </Button>
-                          </>
-                        )}
-                      </div>
+                      <Button
+                        variant="outline"
+                        size="xs"
+                        className="opacity-0 transition-opacity group-hover:opacity-100"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActionsTarget(u);
+                        }}
+                      >
+                        <MoreHorizontal className="h-3.5 w-3.5" />
+                        Actions
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -709,6 +694,11 @@ function DemoUsersTable({
           userEmail={resetTarget.email}
         />
       )}
+
+      <DemoUserActionsDialog
+        user={actionsTarget}
+        onClose={() => setActionsTarget(null)}
+      />
     </>
   );
 }

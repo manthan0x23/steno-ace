@@ -29,6 +29,7 @@ export function createAnalyticsService(db: Db) {
     async getPlatformOverview() {
       const [
         usersCount,
+        paidUsersCount,
         testsCount,
         attemptsCount,
         active1d,
@@ -39,14 +40,30 @@ export function createAnalyticsService(db: Db) {
           .select({ count: count() })
           .from(user)
           .then(([r]) => r),
+
+        db
+          .select({ count: count() })
+          .from(user)
+          .innerJoin(
+            subscription,
+            and(
+              eq(subscription.userId, user.id),
+              eq(subscription.status, "active"),
+              gt(subscription.currentPeriodEnd, new Date()),
+            ),
+          )
+          .then(([r]) => r),
+
         db
           .select({ count: count() })
           .from(tests)
           .then(([r]) => r),
+
         db
           .select({ count: count() })
           .from(testAttempts)
           .then(([r]) => r),
+
         db
           .select({
             count: sql<number>`count(distinct ${testAttempts.userId})`,
@@ -54,6 +71,7 @@ export function createAnalyticsService(db: Db) {
           .from(testAttempts)
           .where(sql`${testAttempts.createdAt} >= now() - interval '1 day'`)
           .then(([r]) => r),
+
         db
           .select({
             count: sql<number>`count(distinct ${testAttempts.userId})`,
@@ -61,6 +79,7 @@ export function createAnalyticsService(db: Db) {
           .from(testAttempts)
           .where(sql`${testAttempts.createdAt} >= now() - interval '7 day'`)
           .then(([r]) => r),
+
         db
           .select({
             count: sql<number>`count(distinct ${testAttempts.userId})`,
@@ -72,6 +91,7 @@ export function createAnalyticsService(db: Db) {
 
       return {
         totalUsers: usersCount?.count ?? 0,
+        paidUsers: paidUsersCount?.count ?? 0,
         totalTests: testsCount?.count ?? 0,
         totalAttempts: attemptsCount?.count ?? 0,
         activeUsers: {
@@ -499,11 +519,7 @@ export function createAnalyticsService(db: Db) {
         profilePicUrl: u.image ? R2Service.getPublicUrl(u.image) : null,
         createdAt: u.createdAt,
         renewCount: renewMap[u.id] ?? 0,
-        isPaid:
-          u.subStatus === "active" ||
-          (u.isDemo === true &&
-            u.demoRevoked === false &&
-            (u.demoExpiresAt === null || u.demoExpiresAt > now)),
+        isPaid: u.subStatus === "active",
       }));
 
       if (sortField === "renew") {

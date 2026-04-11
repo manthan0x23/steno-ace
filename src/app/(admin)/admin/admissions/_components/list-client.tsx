@@ -314,6 +314,7 @@ export function AdmissionsList() {
             <TableHeader>
               <TableRow>
                 <TableHead>Student</TableHead>
+                <TableHead>ID</TableHead>
                 <TableHead>Amount</TableHead>
                 <TableHead>UPI ID</TableHead>
                 <TableHead>Status</TableHead>
@@ -347,6 +348,11 @@ export function AdmissionsList() {
                     </div>
                   </TableCell>
 
+                  <TableCell>
+                    <span className="text-sm font-semibold tabular-nums text-primary/80">
+                      {p.user.userCode}
+                    </span>
+                  </TableCell>
                   {/* Amount */}
                   <TableCell>
                     <span className="text-sm font-semibold tabular-nums">

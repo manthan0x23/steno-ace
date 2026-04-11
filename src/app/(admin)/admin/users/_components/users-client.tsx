@@ -128,7 +128,7 @@ function UserKpiCards({
           </span>
         </div>
         <p className="text-4xl leading-none font-bold tracking-tight tabular-nums">
-          {overview.totalUsers.toLocaleString("en-IN")}
+          {overview.paidUsers.toLocaleString("en-IN")}
         </p>
         <div className="flex items-center gap-1.5">
           <Users className="text-muted-foreground h-3.5 w-3.5" />
