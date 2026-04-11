@@ -45,6 +45,7 @@ import {
 import { trpc } from "~/trpc/react";
 import { useMemo } from "react";
 import Image from "next/image";
+import { Logo } from "~/components/utils/logo";
 
 const MAIN_NAV = [
   { label: "Analytics", href: "/admin/analytics", icon: BarChart2 },
@@ -121,9 +122,7 @@ export function AdminSidebar() {
             />
           </div>
           <div className="flex flex-col items-center justify-center leading-none">
-            <span className="font-logo text-xl font-bold tracking-tight">
-              <span className="text-primary"> STENO</span> DEXTER
-            </span>
+            <Logo />
             <span className="text-muted-foreground text-[10px] font-medium tracking-widest uppercase">
               Speed. Precision. Success.
             </span>

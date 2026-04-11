@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "~/components/ui/button";
+import { Logo } from "../utils/logo";
 
 export function Navbar() {
   return (
@@ -16,9 +17,7 @@ export function Navbar() {
               className="h-full w-full scale-135 object-cover"
             />
           </div>
-          <span className="font-logo text-xl font-bold tracking-tight">
-            STENO<span className="text-primary"> DEXTER</span>
-          </span>
+          <Logo />
         </Link>
 
         <div className="hidden gap-8 md:flex">

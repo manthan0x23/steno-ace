@@ -156,14 +156,7 @@ function AttemptRow({
       </div>
       <Separator orientation="vertical" className="h-7" />
 
-      {/* Accuracy + mistakes — mobile */}
       <div className="flex items-center gap-1.5 sm:hidden">
-        <span
-          className={`text-sm font-bold tabular-nums ${accuracyCls(attempt.result.accuracy)}`}
-        >
-          {attempt.result.accuracy}%
-        </span>
-        <span className="text-muted-foreground/40">·</span>
         <span className="text-sm font-bold text-red-500 tabular-nums">
           {attempt.result.mistakes}
         </span>

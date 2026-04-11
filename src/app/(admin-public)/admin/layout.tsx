@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Logo } from "~/components/utils/logo";
 import { ThemeToggle } from "~/components/utils/theme-toggle";
 
 export const metadata: Metadata = {
@@ -14,9 +15,7 @@ export default async function AdminAuthLayout({
   return (
     <>
       <div className="absolute top-0 left-0 flex w-full items-center justify-between p-4">
-        <h3 className="font-logo tracking-tight">
-          STENO<span className="text-primary"> DEXTER</span>
-        </h3>
+        <Logo />
         <ThemeToggle />
       </div>
       {children}

@@ -313,9 +313,10 @@ export function TestLeaderboardPage({
     ? entries.find((e) => e.user.id === currentUserId)
     : null;
 
-  const totalWordsInCorrectAnswer = useMemo(() => {
-    return testData?.correctAnswer.trim().split(" ").length;
-  }, [testData]);
+  const wordsInCorrectAnswer = useMemo(
+    () => testData?.correctAnswer?.trim().split(/\s+/) ?? [],
+    [testData?.correctAnswer],
+  );
 
   const handleDownloadPDF = async () => {
     if (!testData) return;
@@ -531,7 +532,7 @@ export function TestLeaderboardPage({
           currentUserId={currentUserId}
           isAdmin={isAdmin}
           testId={testId}
-          totalWords={totalWordsInCorrectAnswer ?? 0}
+          totalWords={wordsInCorrectAnswer.length ?? 0}
         />
       )}
 

@@ -39,6 +39,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import type { api } from "~/trpc/server";
+import { Logo } from "~/components/utils/logo";
 
 const TEST_TYPES = [
   { label: "All Tests", href: "/user/tests", icon: ClipboardList },
@@ -108,9 +109,7 @@ export function UserSidebar({ user }: SidebarProps) {
             />
           </div>
           <div className="flex flex-col items-center justify-center leading-none">
-            <span className="font-logo text-xl font-bold tracking-tight">
-              <span className="text-primary"> STENO</span> DEXTER
-            </span>
+            <Logo />
             <span className="text-muted-foreground text-[10px] font-medium tracking-widest uppercase">
               Speed. Precision. Success.
             </span>
