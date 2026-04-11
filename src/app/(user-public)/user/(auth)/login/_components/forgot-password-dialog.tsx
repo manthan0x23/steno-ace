@@ -72,17 +72,26 @@ export function ForgotPasswordDialog() {
     setError(null);
 
     try {
-      await authClient.requestPasswordReset({
+      const res = await authClient.requestPasswordReset({
         email,
         redirectTo: "/user/reset-password",
       });
 
+      if (res?.error) {
+        const msg = res.error.message || "Failed to send reset link.";
+
+        setError(msg);
+        toast.error(msg);
+        return;
+      }
+
       setSent(true);
       cooldownEndTimeRef.current = Date.now() + RESEND_COOLDOWN_SEC * 1000;
       startCountdown();
+
       toast.success(`Reset link sent to ${email}`);
-    } catch {
-      const msg = "Failed to send reset link. Try again.";
+    } catch (e: any) {
+      const msg = e?.message || "Unexpected error. Try again.";
       setError(msg);
       toast.error(msg);
     } finally {

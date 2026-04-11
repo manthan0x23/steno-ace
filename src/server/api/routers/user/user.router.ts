@@ -36,9 +36,8 @@ const editUserSchema = z.object({
 
 export const userRouter = createTRPCRouter({
   me: protectedProcedure.query(async ({ ctx }) => {
-    const found = await ctx.db.query.user.findFirst({
-      where: eq(user.id, ctx.user.id),
-    });
+    const found = ctx.user;
+
     return {
       ...found,
       profilePicUrl: found?.image ? R2Service.getPublicUrl(found.image) : null,

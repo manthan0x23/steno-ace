@@ -3,7 +3,7 @@ import { auth } from "~/server/better-auth";
 import { redirect } from "next/navigation";
 import ForgotPasswordPage from "./_client";
 
-export default async function VerifyEmailPageServer() {
+export default async function FrogetPasswordPageServer() {
   const session = await auth.api.getSession({
     headers: await headers(),
   });

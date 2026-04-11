@@ -461,14 +461,21 @@ type SubStatus = {
 export function UserIdentity({
   userCode,
   sub,
+  className,
 }: {
   userCode: string;
-  sub: SubStatus;
+  sub?: SubStatus;
+  className?: string;
 }) {
-  const expires = sub.expiresAt ? new Date(sub.expiresAt) : null;
+  const expires = sub && sub.expiresAt ? new Date(sub.expiresAt) : null;
 
   return (
-    <div className="flex items-center justify-between rounded-lg border p-3">
+    <div
+      className={cn(
+        "flex items-center justify-between rounded-lg border p-3",
+        className,
+      )}
+    >
       {/* Left */}
       <div className="flex items-center gap-3">
         <div className="bg-primary/10 rounded-sm p-2">
@@ -486,31 +493,33 @@ export function UserIdentity({
       </div>
 
       {/* Right */}
-      <div className="flex items-center gap-2">
-        {/* Demo badge */}
-        {sub.isDemo && (
-          <Badge variant="secondary" className="text-xs">
-            Demo
-          </Badge>
-        )}
-
-        {/* Status badge */}
-        {sub.isRevoked ? (
-          <Badge variant="destructive" className="text-xs">
-            Revoked
-          </Badge>
-        ) : sub.active ? (
-          expires && (
-            <Badge variant="outline" className="text-xs">
-              {`Valid till ${format(expires, "do MMM YYY")}`}
+      {sub && (
+        <div className="flex items-center gap-2">
+          {/* Demo badge */}
+          {sub.isDemo && (
+            <Badge variant="secondary" className="text-xs">
+              Demo
             </Badge>
-          )
-        ) : (
-          <Badge variant="destructive" className="text-xs">
-            Inactive
-          </Badge>
-        )}
-      </div>
+          )}
+
+          {/* Status badge */}
+          {sub.isRevoked ? (
+            <Badge variant="destructive" className="text-xs">
+              Revoked
+            </Badge>
+          ) : sub.active ? (
+            expires && (
+              <Badge variant="outline" className="text-xs">
+                {`Valid till ${format(expires, "do MMM YYY")}`}
+              </Badge>
+            )
+          ) : (
+            <Badge variant="destructive" className="text-xs">
+              Inactive
+            </Badge>
+          )}
+        </div>
+      )}
     </div>
   );
 }

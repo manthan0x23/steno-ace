@@ -17,7 +17,7 @@ export function Navbar() {
             />
           </div>
           <span className="font-logo text-xl font-bold tracking-tight">
-            <span className="text-primary">STENO</span> DEXTER
+            STENO<span className="text-primary"> DEXTER</span>
           </span>
         </Link>
 

@@ -22,6 +22,8 @@ import { Button } from "~/components/ui/button";
 import { CheckCircle2, Clock, Upload, X } from "lucide-react";
 import Image from "next/image";
 import { DeviceNotice } from "~/components/utils/device-notice";
+import { UserIdentity } from "../settings/_components/settings-client";
+import { authClient } from "~/server/better-auth/client";
 
 const AMOUNT = 1500;
 
@@ -87,6 +89,8 @@ export function PaymentDialog({
   const [upiID, setUPIId] = useState("");
   const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const user = trpc.user.me.useQuery();
 
   useEffect(() => {
     if (!open) return;
@@ -201,6 +205,19 @@ export function PaymentDialog({
               </p>
             </div>
             <div className="w-full rounded-xl border border-amber-500/20 bg-amber-500/5 px-5 py-4 text-left text-sm text-amber-700 dark:text-amber-400">
+              {user.data?.userCode && (
+                <div className="bg-muted/50 flex w-full items-center justify-between rounded-lg border px-3 py-2 mb-2">
+                  <div className="min-w-0">
+                    <p className="text-muted-foreground text-xs">
+                      Your User Code
+                    </p>
+                    <p className="font-mono text-sm font-semibold tracking-wider">
+                      {user.data.userCode}
+                    </p>
+                  </div>
+                  <CopyButton value={user.data.userCode} />
+                </div>
+              )}
               <p className="font-semibold">What happens next?</p>
               <ul className="mt-2 list-inside list-disc space-y-1 text-xs">
                 <li>Admin reviews and approves your payment</li>
@@ -280,6 +297,19 @@ export function PaymentDialog({
             {/* Right — UPI + screenshot */}
             <div className="flex flex-col gap-4 md:pl-6">
               <div>
+                {user.data?.userCode && (
+                  <div className="bg-muted/50 mb-3 flex items-center justify-between rounded-lg border px-3 py-2">
+                    <div className="min-w-0">
+                      <p className="text-muted-foreground text-xs">
+                        Your User Code
+                      </p>
+                      <p className="font-mono text-sm font-semibold tracking-wider">
+                        {user.data.userCode}
+                      </p>
+                    </div>
+                    <CopyButton value={user.data.userCode} />
+                  </div>
+                )}
                 <label
                   htmlFor="upi-id"
                   className="mb-1.5 block text-sm font-medium"

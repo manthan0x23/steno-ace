@@ -3,6 +3,7 @@
 import { useForm } from "@tanstack/react-form";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { useRef } from "react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -43,6 +44,8 @@ function GoogleIcon() {
 
 export function RegisterForm() {
   const router = useRouter();
+  // Ref-based submit lock — immune to render cycle delays unlike isSubmitting
+  const submittingRef = useRef(false);
 
   const form = useForm({
     defaultValues: {
@@ -52,19 +55,52 @@ export function RegisterForm() {
       confirmPassword: "",
     },
     onSubmit: async ({ value }) => {
-      const { error } = await authClient.signUp.email({
-        name: value.name,
-        email: value.email,
-        password: value.password,
-        callbackURL: "/user",
-      });
+      // Guard against double-submit from rapid clicks
+      if (submittingRef.current) return;
+      submittingRef.current = true;
 
-      if (error) {
-        const deviceMsg = deviceErrorMessage(error.message);
-        toast.error(deviceMsg ?? error.message ?? "Something went wrong");
-      } else {
+      try {
+        // Step 1: Create the account
+        const { error: signUpError } = await authClient.signUp.email({
+          name: value.name,
+          email: value.email,
+          password: value.password,
+          callbackURL: "/user",
+        });
+
+        if (signUpError) {
+          const deviceMsg = deviceErrorMessage(signUpError.message);
+          toast.error(
+            deviceMsg ?? signUpError.message ?? "Something went wrong",
+          );
+          return;
+        }
+
+        // Step 2: Immediately sign in to get the session cookie — same as login flow
+        const { error: signInError } = await authClient.signIn.email({
+          email: value.email,
+          password: value.password,
+          callbackURL: "/user",
+          fetchOptions: {
+            // Pass deviceId header so the session hook doesn't throw DEVICE_MISSING
+            headers: {
+              "x-device-id": getOrCreateDeviceId(),
+            },
+          },
+        });
+
+        if (signInError) {
+          // Account was created but sign-in failed — send them to login
+          toast.success("Account created! Please sign in.");
+          router.push("/user/login");
+          return;
+        }
+
         toast.success("Account created! Welcome 🎉");
         router.push("/user");
+      } finally {
+        // Always release the lock so the form isn't permanently frozen on error
+        submittingRef.current = false;
       }
     },
   });
@@ -73,9 +109,7 @@ export function RegisterForm() {
     const { error } = await authClient.signIn.social({
       provider: "google",
       callbackURL: "/user",
-      additionalData: {
-        deviceId: getOrCreateDeviceId(),
-      },
+      additionalData: { deviceId: getOrCreateDeviceId() },
     });
     if (error) toast.error(error.message ?? "Google sign-in failed");
   };
@@ -84,7 +118,7 @@ export function RegisterForm() {
     <Card className="w-full max-w-4xl shadow-lg">
       <CardContent className="p-0">
         <div className="flex items-center justify-between">
-          {/* Column 1 - Heading & Google */}
+          {/* Column 1 */}
           <div className="flex w-[50%] flex-col justify-between space-y-6 p-8 md:p-12">
             <div className="space-y-2">
               <h2 className="text-3xl font-semibold tracking-tight">
@@ -121,17 +155,18 @@ export function RegisterForm() {
 
           <Separator orientation="vertical" />
 
-          {/* Column 2 - Form */}
+          {/* Column 2 */}
           <div className="w-[50%] p-8 md:p-12">
             <form
               onSubmit={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
+                // Second line of defence: block native re-submit if ref is locked
+                if (submittingRef.current) return;
                 form.handleSubmit();
               }}
               className="space-y-4"
             >
-              {/* Full Name */}
               <form.Field
                 name="name"
                 validators={{
@@ -139,7 +174,6 @@ export function RegisterForm() {
                     if (!value.trim()) return "Full name is required";
                     if (value.trim().length < 2)
                       return "Name must be at least 2 characters";
-                    return undefined;
                   },
                 }}
               >
@@ -164,7 +198,6 @@ export function RegisterForm() {
                 )}
               </form.Field>
 
-              {/* Email */}
               <form.Field
                 name="email"
                 validators={{
@@ -172,7 +205,6 @@ export function RegisterForm() {
                     if (!value.trim()) return "Email is required";
                     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value))
                       return "Enter a valid email address";
-                    return undefined;
                   },
                 }}
               >
@@ -198,7 +230,6 @@ export function RegisterForm() {
                 )}
               </form.Field>
 
-              {/* Password */}
               <form.Field
                 name="password"
                 validators={{
@@ -210,7 +241,6 @@ export function RegisterForm() {
                       return "Include at least one uppercase letter";
                     if (!/[0-9]/.test(value))
                       return "Include at least one number";
-                    return undefined;
                   },
                 }}
               >
@@ -236,7 +266,6 @@ export function RegisterForm() {
                 )}
               </form.Field>
 
-              {/* Confirm Password */}
               <form.Field
                 name="confirmPassword"
                 validators={{
@@ -245,7 +274,6 @@ export function RegisterForm() {
                     if (!value) return "Please confirm your password";
                     if (value !== fieldApi.form.getFieldValue("password"))
                       return "Passwords do not match";
-                    return undefined;
                   },
                 }}
               >
@@ -278,9 +306,11 @@ export function RegisterForm() {
                   <Button
                     type="submit"
                     className="w-full"
-                    disabled={!canSubmit || isSubmitting}
+                    disabled={
+                      !canSubmit || isSubmitting || submittingRef.current
+                    }
                   >
-                    {isSubmitting ? "Sending Link" : "Verify Email →"}
+                    {isSubmitting ? "Creating account…" : "Create account →"}
                   </Button>
                 )}
               </form.Subscribe>

@@ -8,7 +8,9 @@ export default async function VerifyEmailPageServer() {
     headers: await headers(),
   });
 
-  if (!session) redirect("/user/login");
+  console.log("USER SESSION", session);
+
+  if (!session || !session.user.email) redirect("/user/login");
 
   return <VerifyEmailPage userEmail={session?.user.email} />;
 }

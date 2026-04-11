@@ -21,11 +21,49 @@ export const auth = betterAuth({
 
   user: {
     additionalFields: {
-      userCode: { type: "string", required: false },
-      isDemo: { type: "boolean", required: false },
-      demoExpiresAt: { type: "date", required: false },
-      demoRevoked: { type: "boolean", required: false, defaultValue: false },
-      demoNote: { type: "string", required: false, defaultValue: null },
+      userCode: {
+        type: "string",
+        required: false,
+      },
+
+      phone: {
+        type: "string",
+        required: false,
+      },
+
+      image: {
+        type: "string",
+        required: false,
+      },
+
+      gender: {
+        type: "string",
+        required: false,
+      },
+
+      isDemo: {
+        type: "boolean",
+        required: false,
+        defaultValue: false,
+      },
+
+      demoExpiresAt: {
+        type: "date",
+        required: false,
+      },
+
+      demoRevoked: {
+        type: "boolean",
+        required: false,
+        defaultValue: false,
+      },
+
+      demoNote: {
+        type: "string",
+        required: false,
+        defaultValue: null,
+      },
+
       demoCreatedByAdminId: {
         type: "string",
         required: false,
@@ -116,6 +154,11 @@ export const auth = betterAuth({
         await redisService.del(key);
       } catch {}
     },
+  },
+
+  session: {
+    storeSessionInDatabase: true,
+    preserveSessionInDatabase: true,
   },
 });
 

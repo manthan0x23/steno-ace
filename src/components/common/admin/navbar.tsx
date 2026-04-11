@@ -11,12 +11,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
-import { BellPlus, LogOut, Plus, User } from "lucide-react";
+import { BellPlus, LogOut } from "lucide-react";
 import type { api } from "~/trpc/server";
 import { ThemeToggle } from "~/components/utils/theme-toggle";
 import { useState } from "react";
 import SendNotificationDialog from "./send-notification";
 import { useLocalStorage } from "~/hooks/use-local-storage";
+import { trpc } from "~/trpc/react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 interface NavbarProps {
   admin: Awaited<ReturnType<typeof api.admin.auth.me>>;
@@ -25,6 +28,16 @@ interface NavbarProps {
 export function AdminNavbar({ admin }: NavbarProps) {
   const [openNotify, setOpenNotify] = useState(false);
   const [_isOpen, setIsOpen] = useLocalStorage<boolean>("sidebar-open", true);
+  const router = useRouter();
+
+  const logout = trpc.admin.auth.logout.useMutation({
+    onSuccess: () => {
+      router.push("/admin/login");
+    },
+    onError(error) {
+      toast.error(error.message);
+    },
+  });
 
   return (
     <>
@@ -34,7 +47,7 @@ export function AdminNavbar({ admin }: NavbarProps) {
           onClick={() => setIsOpen((prev) => !prev)}
         />
         <Separator orientation="vertical" className="mr-2 h-4" />
-        <span className="text-sm font-semibold">Hi , {admin.name}</span>
+        <span className="text-sm font-semibold">Hi, {admin.name}</span>
 
         <div className="ml-auto flex items-center gap-3">
           <button
@@ -56,10 +69,13 @@ export function AdminNavbar({ admin }: NavbarProps) {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
-
-              <DropdownMenuItem className="text-destructive">
+              <DropdownMenuItem
+                onClick={() => logout.mutate()}
+                disabled={logout.isPending}
+                className="text-destructive"
+              >
                 <LogOut className="mr-2 h-4 w-4" />
-                Logout
+                {logout.isPending ? "Logging out…" : "Logout"}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

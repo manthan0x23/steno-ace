@@ -9,11 +9,13 @@ import {
   ilike,
   or,
   desc,
+  eq,
+  gt,
 } from "drizzle-orm";
 import { db as globalDb } from "~/server/db";
 import { user } from "~/server/db/schema/user";
 import { tests, testAttempts, testSpeeds } from "~/server/db/schema/tests";
-import { results, leaderboard } from "~/server/db/schema";
+import { results, leaderboard, subscription } from "~/server/db/schema";
 import R2Service from "~/server/services/r2.service";
 import type { GetUsersInput } from "./analytics.schema";
 
@@ -350,9 +352,6 @@ export function createAnalyticsService(db: Db) {
       };
     },
 
-    // ── 7. Test stats ────────────────────────────────────────────────────────
-    // results has no testId — join through testAttempts.
-
     async getTestStats(testId: string) {
       const rows = await db.execute<{
         score: string;
@@ -396,21 +395,16 @@ export function createAnalyticsService(db: Db) {
       };
     },
 
-    // ── 8. Get users (with global rank) ──────────────────────────────────────
-    // CTE updated: score/accuracy/wpm column names, partition by (test_id, speed_id).
-
     async getUsers(input: GetUsersInput) {
       const { query, page, pageSize, sortField, sortOrder, filter } = input;
       const offset = (page - 1) * pageSize;
 
-      // 🔹 Active users subquery (last 30 days attempts)
       const activeUsersSubquery = db
         .select({ id: testAttempts.userId })
         .from(testAttempts)
         .where(sql`${testAttempts.createdAt} >= now() - interval '30 days'`)
         .groupBy(testAttempts.userId);
 
-      // 🔹 WHERE conditions
       const searchConditions = [
         query
           ? or(
@@ -419,14 +413,14 @@ export function createAnalyticsService(db: Db) {
               ilike(user.email, `%${query}%`),
             )
           : undefined,
-
         filter === "active" ? inArray(user.id, activeUsersSubquery) : undefined,
       ];
 
       const whereClause = and(...searchConditions.filter(Boolean));
 
-      // 🔹 Base sorting (DB level)
-      let dbOrderBy =
+      const now = new Date();
+
+      const dbOrderBy =
         sortField === "name"
           ? sortOrder === "asc"
             ? [asc(user.name)]
@@ -435,26 +429,38 @@ export function createAnalyticsService(db: Db) {
             ? sortOrder === "asc"
               ? [asc(user.createdAt)]
               : [desc(user.createdAt)]
-            : [desc(user.createdAt)]; // fallback (renew handled later)
+            : [desc(user.createdAt)];
 
-      // 🔹 Fetch users + count
       const [[countRow], rows] = await Promise.all([
         db.select({ count: count() }).from(user).where(whereClause),
 
-        db.query.user.findMany({
-          columns: {
-            id: true,
-            name: true,
-            email: true,
-            image: true,
-            createdAt: true,
-            userCode: true,
-          },
-          where: whereClause,
-          orderBy: dbOrderBy,
-          limit: pageSize,
-          offset,
-        }),
+        db
+          .select({
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            image: user.image,
+            createdAt: user.createdAt,
+            userCode: user.userCode,
+            isDemo: user.isDemo,
+            demoRevoked: user.demoRevoked,
+            demoExpiresAt: user.demoExpiresAt,
+            subStatus: subscription.status,
+            subEnd: subscription.currentPeriodEnd,
+          })
+          .from(user)
+          .leftJoin(
+            subscription,
+            and(
+              eq(subscription.userId, user.id),
+              eq(subscription.status, "active"),
+              gt(subscription.currentPeriodEnd, now),
+            ),
+          )
+          .where(whereClause)
+          .orderBy(...dbOrderBy)
+          .limit(pageSize)
+          .offset(offset),
       ]);
 
       const total = countRow?.count ?? 0;
@@ -466,7 +472,6 @@ export function createAnalyticsService(db: Db) {
 
       const userIds = rows.map((u) => u.id);
 
-      // 🔹 Renew counts
       const renewCounts = await db.execute<{
         user_id: string;
         renew_count: string;
@@ -494,9 +499,13 @@ export function createAnalyticsService(db: Db) {
         profilePicUrl: u.image ? R2Service.getPublicUrl(u.image) : null,
         createdAt: u.createdAt,
         renewCount: renewMap[u.id] ?? 0,
+        isPaid:
+          u.subStatus === "active" ||
+          (u.isDemo === true &&
+            u.demoRevoked === false &&
+            (u.demoExpiresAt === null || u.demoExpiresAt > now)),
       }));
 
-      // 🔹 In-memory sorting for renew
       if (sortField === "renew") {
         shaped.sort((a, b) =>
           sortOrder === "asc"
@@ -506,13 +515,11 @@ export function createAnalyticsService(db: Db) {
       }
 
       return {
-        data: shaped,
+        data: shaped.filter((r) => r.isPaid),
         meta: { page, pageSize, total, totalPages },
       };
     },
   };
 }
-
-// ── default export ────────────────────────────────────────────────────────────
 
 export const analyticsService = createAnalyticsService(globalDb);
